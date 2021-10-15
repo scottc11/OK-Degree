@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
+            "includePath": [
+                "${workspaceFolder}/Core/Inc/*",
+                "${workspaceFolder}/Core/Src/*",
+                "${workspaceFolder}/Drivers/*"
+            ],
+            "intelliSenseMode": "macos-gcc-arm",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++14"
+        }
+    ],
+    "version": 4
+}
