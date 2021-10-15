@@ -7,7 +7,7 @@
         {
             "name": "Cortex Debug",
             "cwd": "${workspaceRoot}",
-            "executable": "build/ok-cubemx.elf",
+            "executable": "build/ok-dev-board.elf",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",

@@ -4,9 +4,15 @@
             "name": "Mac",
             "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
             "includePath": [
+                "${workspaceFolder}/Core/*",
                 "${workspaceFolder}/Core/Inc/*",
                 "${workspaceFolder}/Core/Src/*",
-                "${workspaceFolder}/Drivers/*"
+                "${workspaceFolder}/Drivers/*",
+                "${workspaceFolder}/Drivers/CMSIS/*",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/*",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc/*",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Src/*",
+                "${workspaceFolder}/System/*"
             ],
             "intelliSenseMode": "macos-gcc-arm",
             "cStandard": "gnu17",
