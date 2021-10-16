@@ -56,7 +56,8 @@ System/Src/stm32f4xx_it.c \
 System/Src/system_stm32f4xx.c
 
 CPP_SOURCES = \
-Core/Src/main.cpp
+Core/Src/main.cpp \
+Core/Src/DigitalOut.cpp
 
 # ASM sources
 ASM_SOURCES =  \
