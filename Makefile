@@ -51,7 +51,9 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c \
-System/system_stm32f4xx.c
+System/Src/stm32f4xx_hal_msp.c \
+System/Src/stm32f4xx_it.c \
+System/Src/system_stm32f4xx.c
 
 CPP_SOURCES = \
 Core/Src/main.cpp
@@ -121,7 +123,8 @@ C_INCLUDES =  \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
--IDrivers/CMSIS/Include
+-IDrivers/CMSIS/Include \
+-ISystem/Inc
 
 
 # compile gcc flags
