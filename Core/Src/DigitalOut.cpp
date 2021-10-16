@@ -1,5 +1,18 @@
 #include "DigitalOut.h"
 
+/** A shorthand for write()
+     * \sa DigitalOut::write()
+     * @code
+     *      DigitalIn  button(BUTTON1);
+     *      DigitalOut led(LED1);
+     *      led = button;   // Equivalent to led.write(button.read())
+     * @endcode
+     */
+DigitalOut &DigitalOut::operator= (int value)
+{
+    write(value);
+    return *this;
+}
 
 void DigitalOut::gpio_init(PinName pin)
 {
@@ -34,6 +47,10 @@ void DigitalOut::write(int value) {
     } else {
         HAL_GPIO_WritePin(_port, _pin, GPIO_PIN_RESET);
     }
+}
+
+int DigitalOut::read() {
+    return HAL_GPIO_ReadPin(_port, _pin);
 }
 
 /**

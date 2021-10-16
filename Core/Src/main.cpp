@@ -12,10 +12,8 @@ int main(void) {
     SystemClock_Config();
 
     while (1) {
-        led.write(1);
-        HAL_Delay(200);
-        led.write(0);
-        HAL_Delay(200);
+        led = !led.read();
+        HAL_Delay(500);
     }
 }
 
