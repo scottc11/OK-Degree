@@ -12,20 +12,28 @@ void DigitalOut::gpio_init(PinName pin)
     enable_gpio_clock(PortH);
     
     // enable gpio clock
-    GPIO_TypeDef *port = enable_gpio_clock(STM_PORT(pin));
-    uint32_t pin_num = gpio_pin_map[STM_PIN(pin)];
+    _port = enable_gpio_clock(STM_PORT(pin));
+    _pin = gpio_pin_map[STM_PIN(pin)];
 
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(port, pin_num, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(_port, _pin, GPIO_PIN_RESET);
 
     /*Configure GPIO pin : PA1 */
-    GPIO_InitStruct.Pin = pin_num;
+    GPIO_InitStruct.Pin = _pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(port, &GPIO_InitStruct);
+    HAL_GPIO_Init(_port, &GPIO_InitStruct);
+}
+
+void DigitalOut::write(int value) {
+    if (value) {
+        HAL_GPIO_WritePin(_port, _pin, GPIO_PIN_SET);
+    } else {
+        HAL_GPIO_WritePin(_port, _pin, GPIO_PIN_RESET);
+    }
 }
 
 /**

@@ -10,11 +10,12 @@ int main(void) {
     HAL_Init();
 
     SystemClock_Config();
-    // MX_GPIO_Init();
 
     while (1) {
-        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
-        HAL_Delay(100);
+        led.write(1);
+        HAL_Delay(200);
+        led.write(0);
+        HAL_Delay(200);
     }
 }
 
