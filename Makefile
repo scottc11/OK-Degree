@@ -58,6 +58,7 @@ System/Src/system_stm32f4xx.c
 
 CPP_SOURCES = \
 Core/Src/main.cpp \
+Core/Src/InteruptIn.cpp \
 Core/Src/DigitalOut.cpp
 
 # ASM sources

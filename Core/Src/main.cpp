@@ -1,8 +1,10 @@
 #include "main.h"
 #include "DigitalOut.h"
-#include "Callback.h"
+#include "InteruptIn.h"
 
 void SystemClock_Config(void);
+
+InteruptIn intPin(PA_3);
 
 DigitalOut led(PA_1);
 DigitalOut led2(PB_7);
@@ -11,7 +13,6 @@ DigitalOut led3(PC_13);
 // OK::Callback<void()> myCallback;
 
 void toggleLED() {
-    led = !led.read();
     led2 = !led2.read();
     led3 = !led3.read();
 }
