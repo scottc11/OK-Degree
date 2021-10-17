@@ -18,5 +18,4 @@ public:
     int read();
 
     void gpio_init(PinName pin);
-    GPIO_TypeDef* enable_gpio_clock(uint32_t port);
 };

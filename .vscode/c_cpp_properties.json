@@ -4,6 +4,9 @@
             "name": "Mac",
             "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
             "includePath": [
+                "${workspaceFolder}/API/*",
+                "${workspaceFolder}/API/Inc/*",
+                "${workspaceFolder}/API/Src/*",                
                 "${workspaceFolder}/Core/*",
                 "${workspaceFolder}/Core/Inc/*",
                 "${workspaceFolder}/Core/Src/*",
