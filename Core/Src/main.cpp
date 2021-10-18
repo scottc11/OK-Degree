@@ -1,6 +1,7 @@
 #include "main.h"
 #include "DigitalOut.h"
 #include "InteruptIn.h"
+#include "Callback.h"
 
 void SystemClock_Config(void);
 
@@ -10,21 +11,27 @@ DigitalOut led(PA_1);
 DigitalOut led2(PB_7);
 DigitalOut led3(PC_13);
 
-// OK::Callback<void()> myCallback;
-
 void toggleLED() {
     led2 = !led2.read();
     led3 = !led3.read();
 }
 
+void handleCallback(mbed::Callback<void()> cb) {
+  if (cb) {
+    cb();
+  }
+}
+
 int main(void) {
-    // myCallback = toggleLED;    
+    
+    
+
     HAL_Init();
 
     SystemClock_Config();
 
     while (1) {
-        toggleLED();
+        handleCallback(mbed::callback(toggleLED));
         HAL_Delay(500);
     }
 }
