@@ -2,10 +2,15 @@
 #include "DigitalOut.h"
 #include "InteruptIn.h"
 #include "Callback.h"
+#include "MultiChanADC.h"
 
 void SystemClock_Config(void);
 
 InteruptIn intPin(PA_3);
+
+PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
+
+MultiChanADC<8> adcChannels(adcPins);
 
 DigitalOut led(PA_1);
 DigitalOut led2(PB_7);
@@ -23,12 +28,12 @@ void handleCallback(mbed::Callback<void()> cb) {
 }
 
 int main(void) {
-    
-    
-
     HAL_Init();
 
     SystemClock_Config();
+
+    adcChannels.init();
+    adcChannels.start();    
 
     while (1) {
         handleCallback(mbed::callback(toggleLED));
