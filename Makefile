@@ -37,6 +37,7 @@ BUILD_DIR = build
 # C sources
 C_SOURCES =  \
 API/Src/gpio_api.c \
+API/Src/dma_api.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
@@ -63,7 +64,7 @@ Core/Src/main.cpp \
 Core/Src/InteruptIn.cpp \
 Core/Src/DigitalOut.cpp
 
-# ASM sources
+# ASM sources ("Assembly Language") - defines main() function
 ASM_SOURCES =  \
 startup_stm32f446xx.s
 
@@ -190,7 +191,7 @@ $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
 
 $(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR)
 	mkdir -p $(@D)
-	$(CXX) $(CPPFLAGS) -c $< -o $@ -MD -MP -MF $(BUILD_DIR)/$(notdir $(<:.cpp=.dep))
+	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	$(AS) -c $(CFLAGS) $< -o $@
@@ -216,6 +217,7 @@ clean:
   
 #######################################
 # dependencies
+# searches for all .d files in given directory and inserts them into the .c file
 #######################################
 -include $(wildcard $(BUILD_DIR)/*.d)
 

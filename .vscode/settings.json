@@ -50,6 +50,7 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "gpio_api.h": "c"
+        "gpio_api.h": "c",
+        "dma_api.h": "c"
     }
 }
