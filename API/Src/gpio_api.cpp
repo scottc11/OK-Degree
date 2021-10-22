@@ -25,3 +25,16 @@ GPIO_TypeDef * enable_gpio_clock(uint32_t port)
     }
 }
 
+void enable_adc_pin(PinName pin)
+{
+    // enable gpio clock
+    GPIO_TypeDef *port = enable_gpio_clock(STM_PORT(pin));
+    uint32_t pin_num = gpio_pin_map[STM_PIN(pin)];
+
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    GPIO_InitStruct.Pin = pin_num;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(port, &GPIO_InitStruct);
+}

@@ -36,8 +36,6 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
-API/Src/gpio_api.c \
-API/Src/dma_api.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
@@ -60,8 +58,11 @@ System/Src/stm32f4xx_it.c \
 System/Src/system_stm32f4xx.c
 
 CPP_SOURCES = \
+API/Src/gpio_api.cpp \
+API/Src/dma_api.cpp \
 Core/Src/main.cpp \
 Core/Src/InteruptIn.cpp \
+Core/Src/MultiChanADC.cpp \
 Core/Src/DigitalOut.cpp
 
 # ASM sources ("Assembly Language") - defines main() function

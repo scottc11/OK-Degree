@@ -10,8 +10,6 @@ InteruptIn intPin(PA_3);
 
 PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
 
-MultiChanADC<8> adcChannels(adcPins);
-
 DigitalOut led(PA_1);
 DigitalOut led2(PB_7);
 DigitalOut led3(PC_13);
@@ -27,18 +25,25 @@ void handleCallback(mbed::Callback<void()> cb) {
   }
 }
 
-int main(void) {
-    HAL_Init();
+void ADC1_DMA_Callback(uint16_t values[])
+{
+  led = !led.read();
+}
 
-    SystemClock_Config();
+int main(void)
+{
+  HAL_Init();
 
-    adcChannels.init();
-    adcChannels.start();    
+  SystemClock_Config();
 
-    while (1) {
-        handleCallback(mbed::callback(toggleLED));
-        HAL_Delay(500);
-    }
+  multi_chan_adc_init();
+  multi_chan_adc_start();
+
+  while (1)
+  {
+    handleCallback(mbed::callback(toggleLED));
+    HAL_Delay(500);
+  }
 }
 
 /**
