@@ -14,6 +14,7 @@
                 "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/*",
                 "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc/*",
                 "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Src/*",
+                "${workspaceFolder}/ok-drivers/**",
                 "${workspaceFolder}/MBED/**",
                 "${workspaceFolder}/System/*",
                 "${workspaceFolder}/System/Inc/*",

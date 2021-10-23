@@ -3,6 +3,8 @@
 #include "InteruptIn.h"
 #include "Callback.h"
 #include "MultiChanADC.h"
+#include "SX1509.h"
+#include "I2C.h"
 
 void SystemClock_Config(void);
 
@@ -14,10 +16,9 @@ DigitalOut led(PA_1);
 DigitalOut led2(PB_7);
 DigitalOut led3(PC_13);
 
-void toggleLED() {
-    led2 = !led2.read();
-    led3 = !led3.read();
-}
+I2C i2c3(I2C3_SDA, I2C3_SCL, I2C3);
+
+SX1509 io(&i2c3);
 
 void handleCallback(mbed::Callback<void()> cb) {
   if (cb) {
@@ -36,13 +37,21 @@ int main(void)
 
   SystemClock_Config();
 
-  multi_chan_adc_init();
-  multi_chan_adc_start();
+  // multi_chan_adc_init();
+  // multi_chan_adc_start();
+
+  i2c3.init();
+
+  io.init();
+  io.setBlinkFrequency(SX1509::ULTRA_FAST);
+  io.ledConfig(10);
 
   while (1)
   {
-    handleCallback(mbed::callback(toggleLED));
-    HAL_Delay(500);
+    io.setPWM(10, 240);
+    HAL_Delay(100);
+    io.setPWM(10, 0);
+    HAL_Delay(100);
   }
 }
 

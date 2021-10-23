@@ -53,6 +53,8 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
 System/Src/stm32f4xx_hal_msp.c \
 System/Src/stm32f4xx_it.c \
 System/Src/system_stm32f4xx.c
@@ -60,10 +62,13 @@ System/Src/system_stm32f4xx.c
 CPP_SOURCES = \
 API/Src/gpio_api.cpp \
 API/Src/dma_api.cpp \
+API/Src/I2C.cpp \
 Core/Src/main.cpp \
 Core/Src/InteruptIn.cpp \
 Core/Src/MultiChanADC.cpp \
-Core/Src/DigitalOut.cpp
+Core/Src/DigitalOut.cpp \
+ok-drivers/drivers/SX1509/SX1509.cpp \
+ok-drivers/utils/BitwiseMethods/BitwiseMethods.cpp
 
 # ASM sources ("Assembly Language") - defines main() function
 ASM_SOURCES =  \
@@ -134,6 +139,8 @@ C_INCLUDES =  \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include \
+-Iok-drivers/drivers/SX1509 \
+-Iok-drivers/utils/BitwiseMethods \
 -ISystem/Inc
 
 

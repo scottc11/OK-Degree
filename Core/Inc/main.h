@@ -11,3 +11,6 @@
 #define PB_ADC_B PA_5
 #define PB_ADC_C PB_0
 #define PB_ADC_D PB_1
+
+#define I2C3_SDA PC_9
+#define I2C3_SCL PA_8
