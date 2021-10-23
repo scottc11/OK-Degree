@@ -25,25 +25,36 @@ GPIO_TypeDef * enable_gpio_clock(PinName pin)
     }
 }
 
+uint32_t get_pin_num(PinName pin)
+{
+    return gpio_pin_map[STM_PIN(pin)];
+}
+
+GPIO_TypeDef * get_pin_port(PinName pin) {
+    uint32_t port = STM_PORT(pin);
+    switch (port) {
+        case PortA:
+            return GPIOA;
+        case PortB:
+            return GPIOB;
+        case PortC:
+            return GPIOC;
+        case PortH:
+            return GPIOH;
+        default:
+            return (GPIO_TypeDef *)0;
+    }
+}
+
 void enable_adc_pin(PinName pin)
 {
     // enable gpio clock
     GPIO_TypeDef *port = enable_gpio_clock(pin);
-    uint32_t pin_num = gpio_pin_map[STM_PIN(pin)];
 
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    GPIO_InitStruct.Pin = pin_num;
+    GPIO_InitStruct.Pin = get_pin_num(pin);
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(port, &GPIO_InitStruct);
-}
-
-void pin_config_i2c(PinName pin) {
-    GPIO_TypeDef *port = enable_gpio_clock(pin);
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF4_I2C3;
 }

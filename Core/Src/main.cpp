@@ -16,7 +16,7 @@ DigitalOut led(PA_1);
 DigitalOut led2(PB_7);
 DigitalOut led3(PC_13);
 
-I2C i2c3(I2C3_SDA, I2C3_SCL, I2C3);
+I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
 
 SX1509 io(&i2c3, 0x70);
 
