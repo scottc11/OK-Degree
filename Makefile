@@ -62,6 +62,7 @@ System/Src/system_stm32f4xx.c
 CPP_SOURCES = \
 API/Src/gpio_api.cpp \
 API/Src/dma_api.cpp \
+API/Src/error_handler.cpp \
 API/Src/I2C.cpp \
 Core/Src/main.cpp \
 Core/Src/InteruptIn.cpp \

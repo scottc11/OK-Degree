@@ -51,6 +51,8 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "gpio_api.h": "c",
-        "dma_api.h": "c"
+        "dma_api.h": "c",
+        "ratio": "cpp",
+        "api.h": "c"
     }
 }
