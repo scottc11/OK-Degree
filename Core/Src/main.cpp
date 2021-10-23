@@ -131,4 +131,7 @@ void SystemClock_Config(void)
     {
         // Error_Handler();
     }
+
+    // I think you just always need to enable this clock
+    __HAL_RCC_GPIOH_CLK_ENABLE();
 }

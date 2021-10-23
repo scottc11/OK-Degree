@@ -20,12 +20,9 @@ void DigitalOut::gpio_init(PinName pin)
     {
         return;
     }
-
-    // TODO: you always need to enable PortH, so move it to system config
-    enable_gpio_clock(PortH);
     
     // enable gpio clock
-    _port = enable_gpio_clock(STM_PORT(pin));
+    _port = enable_gpio_clock(pin);
     _pin = gpio_pin_map[STM_PIN(pin)];
 
     GPIO_InitTypeDef GPIO_InitStruct = {0};

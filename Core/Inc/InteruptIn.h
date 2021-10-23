@@ -27,7 +27,7 @@ public:
 
     void gpio_irq_init(PinName pin)
     {
-        _port = enable_gpio_clock(STM_PORT(pin));
+        _port = enable_gpio_clock(pin);
         _pin = gpio_pin_map[STM_PIN(pin)];
         
         // configure gpio for interupt
