@@ -43,10 +43,12 @@ HAL_StatusTypeDef I2C::write(int address, uint8_t *data, int length, bool repeat
 {
     HAL_StatusTypeDef status;
 
+    while (HAL_I2C_GetState(&_hi2c) != HAL_I2C_STATE_READY) {};
+
     status = HAL_I2C_Master_Transmit(&_hi2c, address, data, length, HAL_MAX_DELAY);
     if (status != HAL_OK)
     {
-        return status;
+        error_handler(status);
     }
 
     return status;
@@ -54,5 +56,13 @@ HAL_StatusTypeDef I2C::write(int address, uint8_t *data, int length, bool repeat
 
 int I2C::read(int address, uint8_t *data, int length, bool repeated /*=false*/)
 {
-    return 0;
+    HAL_StatusTypeDef status;
+
+    while (HAL_I2C_GetState(&_hi2c) != HAL_I2C_STATE_READY) {};
+    
+    status = HAL_I2C_Master_Receive(&_hi2c, address, data, length, HAL_MAX_DELAY);
+    if (status != HAL_OK) {
+        error_handler(status);
+    }
+    return status;
 }

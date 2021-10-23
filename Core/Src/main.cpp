@@ -18,7 +18,11 @@ DigitalOut led3(PC_13);
 
 I2C i2c3(I2C3_SDA, I2C3_SCL, I2C3);
 
-SX1509 io(&i2c3);
+SX1509 io(&i2c3, 0x70);
+
+const int CHAN_LED_PINS[8] = {15, 14, 13, 12, 7, 6, 5, 4}; // io pin map for channel LEDs
+int thresholds[8] = { 8191, 16382, 24573, 32764, 40955, 49146, 57337, 65535 };
+uint8_t ioState;
 
 void handleCallback(mbed::Callback<void()> cb) {
   if (cb) {
@@ -28,7 +32,30 @@ void handleCallback(mbed::Callback<void()> cb) {
 
 void ADC1_DMA_Callback(uint16_t values[])
 {
-  led = !led.read();
+  // create threshold array of 8 values divided by 65535
+  // take the incoming value, bit shift it, then map it to one of those 8 values by iterating over each value and
+  // seeing if it is less than i
+  int curr = 0;
+  for (int i = 0; i < 8; i++)
+  {
+    uint16_t vall = convert12to16(values[0]);
+    if (vall < thresholds[i])
+    {
+      curr = i;
+      break;
+    }
+  }
+
+  for (int i = 0; i < 8; i++)
+  {
+    if (i == curr) {
+      // bit set
+      ioState = bitSet(ioState, i);
+      continue;
+    } else {
+      ioState = bitClear(ioState, i);
+    }
+  }
 }
 
 int main(void)
@@ -37,21 +64,34 @@ int main(void)
 
   SystemClock_Config();
 
-  // multi_chan_adc_init();
-  // multi_chan_adc_start();
+  multi_chan_adc_init();
+  multi_chan_adc_start();
 
   i2c3.init();
 
   io.init();
   io.setBlinkFrequency(SX1509::ULTRA_FAST);
-  io.ledConfig(10);
+
+  for (int i = 0; i < 8; i++)
+  {
+    io.ledConfig(CHAN_LED_PINS[i]);
+  }
 
   while (1)
   {
-    io.setPWM(10, 240);
-    HAL_Delay(100);
-    io.setPWM(10, 0);
-    HAL_Delay(100);
+    for (int i = 0; i < 8; i++)
+    {
+      int status = bitRead(ioState, i);
+      if (status)
+      {
+        io.analogWrite(CHAN_LED_PINS[i], 240);
+      }
+      else
+      {
+        io.analogWrite(CHAN_LED_PINS[i], 0);
+      }
+    }
+    
   }
 }
 
