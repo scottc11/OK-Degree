@@ -2,6 +2,25 @@
 
 InterruptIn *InterruptIn::_instances[NUM_GPIO_IRQ_INSTANCES] = {0};
 
+void InterruptIn::init() {
+    for (int i = 0; i < NUM_GPIO_IRQ_INSTANCES; i++)
+    {
+        if (_instances[i] == NULL)
+        {
+            _instances[i] = this;
+            break;
+        }
+    }
+}
+
+/**
+ * @brief set pin as PullUp, PullDown, or PullNone
+*/ 
+void InterruptIn::mode(PinMode mode) {
+    _pull = mode;
+    gpio_irq_init(_pin);
+}
+
 void InterruptIn::rise(Callback<void()> func)
 {
     if (func) {
@@ -40,8 +59,8 @@ void InterruptIn::gpio_irq_init(PinName pin)
     // configure gpio for interupt
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = _pin_num;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    set_pin_pull(&GPIO_InitStruct, _pull);
 
     switch (_mode) {
         case TriggerMode::Rising:

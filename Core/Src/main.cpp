@@ -8,7 +8,7 @@
 
 void SystemClock_Config(void);
 
-InterruptIn intPin(PA_3);
+InterruptIn intPin(PA_3, PullDown);
 
 PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
 

@@ -70,6 +70,7 @@ Core/Src/MultiChanADC.cpp \
 Core/Src/DigitalOut.cpp \
 ok-drivers/drivers/SX1509/SX1509.cpp \
 ok-drivers/drivers/IS31FL3739/IS31FL3739.cpp \
+ok-drivers/drivers/MPR121/MPR121.cpp \
 ok-drivers/utils/BitwiseMethods/BitwiseMethods.cpp
 
 # ASM sources ("Assembly Language") - defines main() function

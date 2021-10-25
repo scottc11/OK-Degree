@@ -58,3 +58,18 @@ void enable_adc_pin(PinName pin)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(port, &GPIO_InitStruct);
 }
+
+void set_pin_pull(GPIO_InitTypeDef *config, PinMode mode) {
+    switch (mode)
+    {
+    case PullUp:
+        config->Pull = GPIO_PULLUP;
+        break;
+    case PullDown:
+        config->Pull = GPIO_PULLDOWN;
+        break;
+    case PullNone:
+        config->Pull = GPIO_NOPULL;
+        break;
+    }
+}
