@@ -90,6 +90,16 @@ typedef enum
     PortK = 10
 } PortName;
 
+typedef enum
+{
+    PullNone = 0,
+    PullUp = 1,
+    PullDown = 2,
+    OpenDrainPullUp = 3,
+    OpenDrainNoPull = 4,
+    OpenDrainPullDown = 5
+} PinMode;
+
 /**
  * Array which maps the value returned from STM_PIN to the HAL GPIO addresses
 */ 

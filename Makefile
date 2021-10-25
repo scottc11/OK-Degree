@@ -65,10 +65,11 @@ API/Src/dma_api.cpp \
 API/Src/error_handler.cpp \
 API/Src/I2C.cpp \
 Core/Src/main.cpp \
-Core/Src/InteruptIn.cpp \
+Core/Src/InterruptIn.cpp \
 Core/Src/MultiChanADC.cpp \
 Core/Src/DigitalOut.cpp \
 ok-drivers/drivers/SX1509/SX1509.cpp \
+ok-drivers/drivers/IS31FL3739/IS31FL3739.cpp \
 ok-drivers/utils/BitwiseMethods/BitwiseMethods.cpp
 
 # ASM sources ("Assembly Language") - defines main() function
@@ -141,7 +142,10 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include \
 -Iok-drivers/drivers/SX1509 \
+-Iok-drivers/drivers/IS31FL3739 \
+-Iok-drivers/drivers/MPR121 \
 -Iok-drivers/utils/BitwiseMethods \
+-Iok-drivers/utils/OK_I2C \
 -ISystem/Inc
 
 

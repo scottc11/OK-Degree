@@ -1,6 +1,6 @@
 #include "main.h"
 #include "DigitalOut.h"
-#include "InteruptIn.h"
+#include "InterruptIn.h"
 #include "Callback.h"
 #include "MultiChanADC.h"
 #include "SX1509.h"
@@ -8,7 +8,7 @@
 
 void SystemClock_Config(void);
 
-InteruptIn intPin(PA_3);
+InterruptIn intPin(PA_3);
 
 PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
 
@@ -16,6 +16,7 @@ DigitalOut led(PA_1);
 DigitalOut led2(PB_7);
 DigitalOut led3(PC_13);
 
+I2C i2c1(I2C1_SDA, I2C1_SCL, I2C::Instance::I2C_1);
 I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
 
 SX1509 io(&i2c3, 0x70);
@@ -24,10 +25,8 @@ const int CHAN_LED_PINS[8] = {15, 14, 13, 12, 7, 6, 5, 4}; // io pin map for cha
 int thresholds[8] = { 8191, 16382, 24573, 32764, 40955, 49146, 57337, 65535 };
 uint8_t ioState;
 
-void handleCallback(mbed::Callback<void()> cb) {
-  if (cb) {
-    cb();
-  }
+void toggleLED() {
+  led = !led.read();
 }
 
 void ADC1_DMA_Callback(uint16_t values[])
@@ -66,6 +65,8 @@ int main(void)
 
   multi_chan_adc_init();
   multi_chan_adc_start();
+
+  intPin.rise(mbed::callback(toggleLED));
 
   i2c3.init();
 
