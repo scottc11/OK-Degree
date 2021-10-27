@@ -92,11 +92,6 @@ void InterruptIn::RouteCallback(uint16_t GPIO_Pin)
     }
 }
 
-extern "C" void EXTI3_IRQHandler(void)
-{
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
-}
-
 extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     InterruptIn::RouteCallback(GPIO_Pin);

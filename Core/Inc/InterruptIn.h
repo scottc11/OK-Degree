@@ -4,8 +4,6 @@
 #include "gpio_api.h"
 #include "Callback.h"
 
-// for some reason, you need to declare this function in the header file as extern "C" for it to work
-extern "C" void EXTI3_IRQHandler(void);
 
 using namespace mbed;
 
