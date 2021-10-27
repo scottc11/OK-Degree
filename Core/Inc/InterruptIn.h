@@ -9,18 +9,12 @@ using namespace mbed;
 
 class InterruptIn {
 public:
-    enum class TriggerMode
-    {
-        Rising = GPIO_MODE_IT_RISING,
-        Falling = GPIO_MODE_IT_FALLING,
-        RiseFall = GPIO_MODE_IT_RISING_FALLING
-    };
 
     PinName _pin;
     PinMode _pull;
     GPIO_TypeDef *_port;
     uint32_t _pin_num;
-    TriggerMode _mode;
+    IrqEvent _event;
     Callback<void()> riseCallback;
     Callback<void()> fallCallback;
 
@@ -37,12 +31,12 @@ public:
     }
 
     void init();
+    int read();
     void handleInterupt();
     void mode(PinMode mode);
     void rise(Callback<void()> func);
     void fall(Callback<void()> func);
     void gpio_irq_init(PinName pin);
-
     static void RouteCallback(uint16_t GPIO_Pin);
 
 private:

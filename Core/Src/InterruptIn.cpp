@@ -3,6 +3,9 @@
 InterruptIn *InterruptIn::_instances[NUM_GPIO_IRQ_INSTANCES] = {0};
 
 void InterruptIn::init() {
+    gpio_irq_init(_pin);
+
+    // push new instance onto static instances array
     for (int i = 0; i < NUM_GPIO_IRQ_INSTANCES; i++)
     {
         if (_instances[i] == NULL)
@@ -12,6 +15,10 @@ void InterruptIn::init() {
         }
     }
 }
+
+int InterruptIn::read() {
+    return gpio_read_pin(_pin);
+};
 
 /**
  * @brief set pin as PullUp, PullDown, or PullNone
@@ -26,8 +33,8 @@ void InterruptIn::rise(Callback<void()> func)
     if (func) {
         riseCallback = func;
     }
-    _mode = TriggerMode::Rising;
-    gpio_irq_init(_pin);
+    _event = IRQ_EVENT_RISE;
+    gpio_irq_set(_pin, _event, true);
 }
 void InterruptIn::fall(Callback<void()> func)
 {
@@ -35,16 +42,16 @@ void InterruptIn::fall(Callback<void()> func)
     {
         fallCallback = func;
     }
-    _mode = TriggerMode::Falling;
-    gpio_irq_init(_pin);
+    _event = IRQ_EVENT_FALL;
+    gpio_irq_set(_pin, _event, true);
 }
 
 void InterruptIn::handleInterupt() {
-    if (this->_mode == TriggerMode::Rising) {
+    if (this->_event == IRQ_EVENT_RISE) {
         if (riseCallback) {
             riseCallback();
         }
-    } else if (this->_mode == TriggerMode::Falling) {
+    } else if (this->_event == IRQ_EVENT_FALL) {
         if (fallCallback) {
             fallCallback();
         }
@@ -54,25 +61,14 @@ void InterruptIn::handleInterupt() {
 void InterruptIn::gpio_irq_init(PinName pin)
 {
     _port = enable_gpio_clock(pin);
-    _pin_num = get_pin_num(pin);
+    _pin_num = gpio_get_pin(pin);
 
     // configure gpio for interupt
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = _pin_num;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     set_pin_pull(&GPIO_InitStruct, _pull);
-
-    switch (_mode) {
-        case TriggerMode::Rising:
-            GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-            break;
-        case TriggerMode::Falling:
-            GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-            break;
-        case TriggerMode::RiseFall:
-            GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-            break;
-    }
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
 
     HAL_GPIO_Init(_port, &GPIO_InitStruct);
 
@@ -81,6 +77,7 @@ void InterruptIn::gpio_irq_init(PinName pin)
     HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 }
 
+// note: potentially add a break; once gpio matched
 void InterruptIn::RouteCallback(uint16_t GPIO_Pin)
 {
     for (auto ins : _instances)

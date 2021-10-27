@@ -10,7 +10,8 @@
 
 void SystemClock_Config(void);
 void mcpConfig();
-// InterruptIn intPin(PA_3, PullDown);
+InterruptIn intPin(PA_3);
+InterruptIn ctrlInt(PB_5);
 
 PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
 
@@ -31,9 +32,9 @@ const int CHAN_LED_PINS[8] = {15, 14, 13, 12, 7, 6, 5, 4}; // io pin map for cha
 int thresholds[8] = { 8191, 16382, 24573, 32764, 40955, 49146, 57337, 65535 };
 uint8_t ioState;
 
-void toggleLED(uint8_t pad)
+void toggleLED()
 {
-  // led = !led.read();
+  led = !led.read();
 }
 
 void ADC1_DMA_Callback(uint16_t values[])
@@ -73,7 +74,9 @@ int main(void)
   multi_chan_adc_init();
   multi_chan_adc_start();
 
-  // intPin.rise(mbed::callback(toggleLED));
+  intPin.rise(mbed::callback(toggleLED));
+  intPin.fall(mbed::callback(toggleLED));
+
   i2c1.init();
   i2c3.init();
   io.init();
@@ -86,18 +89,13 @@ int main(void)
   }
 
   mcpConfig();
-
-  // pads.init();
-  // pads.attachInteruptCallback(mbed::callback(&pads, &MPR121::handleTouch));
-  // pads.attachCallbackTouched(&toggleLED);
-  // pads.enable();
-
+  volatile int val = ctrlInt.read();
   volatile uint16_t myVals = mcp.digitalReadAB();
   myVals = mcp.digitalReadAB();
 
   while (1)
   {
-    // pads.poll();
+
     for (int i = 0; i < 8; i++)
     {
       int status = bitRead(ioState, i);
@@ -167,4 +165,12 @@ void mcpConfig() {
   mcp.setInputPolarity(MCP23017_PORTA, 0xff);
   mcp.setInputPolarity(MCP23017_PORTB, 0b01111111);
   mcp.digitalReadAB(); // clear any stray interupts
+}
+
+void touchConfig() {
+  // pads.init();
+  // pads.attachInteruptCallback(mbed::callback(&pads, &MPR121::handleTouch));
+  // pads.attachCallbackTouched(&toggleLED);
+  // pads.enable();
+  // pads.poll();
 }

@@ -25,12 +25,12 @@ GPIO_TypeDef * enable_gpio_clock(PinName pin)
     }
 }
 
-uint32_t get_pin_num(PinName pin)
+uint32_t gpio_get_pin(PinName pin)
 {
     return gpio_pin_map[STM_PIN(pin)];
 }
 
-GPIO_TypeDef * get_pin_port(PinName pin) {
+GPIO_TypeDef * gpio_get_port(PinName pin) {
     uint32_t port = STM_PORT(pin);
     switch (port) {
         case PortA:
@@ -53,7 +53,7 @@ void enable_adc_pin(PinName pin)
 
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    GPIO_InitStruct.Pin = get_pin_num(pin);
+    GPIO_InitStruct.Pin = gpio_get_pin(pin);
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(port, &GPIO_InitStruct);
@@ -71,5 +71,37 @@ void set_pin_pull(GPIO_InitTypeDef *config, PinMode mode) {
     case PullNone:
         config->Pull = GPIO_NOPULL;
         break;
+    }
+}
+
+GPIO_PinState gpio_read_pin(PinName pin)
+{
+    return HAL_GPIO_ReadPin(gpio_get_port(pin), gpio_get_pin(pin));
+}
+
+void gpio_irq_set(PinName pin, IrqEvent event, bool enable)
+{
+    /*  Enable / Disable Edge triggered interrupt and store event */
+    if (event == IrqEvent::IRQ_EVENT_RISE)
+    {
+        if (enable)
+        {
+            LL_EXTI_EnableRisingTrig_0_31(1 << STM_PIN(pin));
+        }
+        else
+        {
+            LL_EXTI_DisableRisingTrig_0_31(1 << STM_PIN(pin));
+        }
+    }
+    if (event == IrqEvent::IRQ_EVENT_FALL)
+    {
+        if (enable)
+        {
+            LL_EXTI_EnableFallingTrig_0_31(1 << STM_PIN(pin));
+        }
+        else
+        {
+            LL_EXTI_DisableFallingTrig_0_31(1 << STM_PIN(pin));
+        }
     }
 }

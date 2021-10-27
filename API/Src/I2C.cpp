@@ -19,11 +19,11 @@ void I2C::init()
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 
-    GPIO_InitStruct.Pin = get_pin_num(_scl_pin);
+    GPIO_InitStruct.Pin = gpio_get_pin(_scl_pin);
     GPIO_TypeDef *port = enable_gpio_clock(_scl_pin);
     HAL_GPIO_Init(port, &GPIO_InitStruct);
     
-    GPIO_InitStruct.Pin = get_pin_num(_sda_pin);
+    GPIO_InitStruct.Pin = gpio_get_pin(_sda_pin);
     port = enable_gpio_clock(_sda_pin);
     HAL_GPIO_Init(port, &GPIO_InitStruct);
 

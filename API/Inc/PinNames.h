@@ -100,9 +100,16 @@ typedef enum
     OpenDrainPullDown = 5
 } PinMode;
 
+typedef enum
+{
+    IRQ_EVENT_RISE,
+    IRQ_EVENT_FALL,
+    IRQ_EVENT_RISE_FALL
+} IrqEvent;
+
 /**
  * Array which maps the value returned from STM_PIN to the HAL GPIO addresses
-*/ 
+*/
 static const uint32_t gpio_pin_map[16] = {
     GPIO_PIN_0,
     GPIO_PIN_1,
@@ -119,8 +126,7 @@ static const uint32_t gpio_pin_map[16] = {
     GPIO_PIN_12,
     GPIO_PIN_13,
     GPIO_PIN_14,
-    GPIO_PIN_15
-};
+    GPIO_PIN_15};
 
 #ifdef __cplusplus
 }
