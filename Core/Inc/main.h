@@ -16,3 +16,10 @@
 #define I2C3_SCL PA_8
 #define I2C1_SDA PB_9
 #define I2C1_SCL PB_8
+
+#define TOUCH_INT_A PC_1
+#define TOUCH_INT_B PC_0
+#define TOUCH_INT_C PC_15
+#define TOUCH_INT_D PC_14
+
+#define MCP23017_CTRL_ADDR 0x24 // 0100100

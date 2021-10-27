@@ -3,18 +3,15 @@
 void I2C::init()
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
+    HAL_StatusTypeDef status;
 
     // peripheral / I2C instance dependant configurations
     if (_instance == I2C_1) {
-        __HAL_RCC_I2C1_CLK_ENABLE(); /* Peripheral clock enable */
         GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-        _hi2c.Instance = I2C1;
     }
     if (_instance == I2C_3)
     {
-        __HAL_RCC_I2C3_CLK_ENABLE();
         GPIO_InitStruct.Alternate = GPIO_AF4_I2C3;
-        _hi2c.Instance = I2C3;
     }
 
     // enable SCL and SDA pins
@@ -34,6 +31,18 @@ void I2C::init()
     // HAL_NVIC_SetPriority(I2C3_EV_IRQn, 0, 0);
     // HAL_NVIC_EnableIRQ(I2C3_EV_IRQn);
 
+    switch (_instance)
+    {
+    case I2C_1:
+        __HAL_RCC_I2C1_CLK_ENABLE(); /* Peripheral clock enable */
+        _hi2c.Instance = I2C1;
+        break;
+    case I2C_3:
+        __HAL_RCC_I2C3_CLK_ENABLE();
+        _hi2c.Instance = I2C3;
+        break;
+    }
+
     // I2C Init
     _hi2c.Init.ClockSpeed = 400000;
     _hi2c.Init.DutyCycle = I2C_DUTYCYCLE_2;
@@ -43,7 +52,10 @@ void I2C::init()
     _hi2c.Init.OwnAddress2 = 0;
     _hi2c.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
     _hi2c.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-    HAL_I2C_Init(&_hi2c);
+    status = HAL_I2C_Init(&_hi2c);
+    if (status != HAL_OK) {
+        error_handler(status);
+    }
 }
 
 HAL_StatusTypeDef I2C::write(int address, uint8_t *data, int length, bool repeated /*=false*/)

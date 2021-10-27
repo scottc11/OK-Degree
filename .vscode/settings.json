@@ -53,6 +53,7 @@
         "gpio_api.h": "c",
         "dma_api.h": "c",
         "ratio": "cpp",
-        "api.h": "c"
+        "api.h": "c",
+        "stm32f4xx_hal_i2c.h": "c"
     }
 }
