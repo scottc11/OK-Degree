@@ -12,3 +12,4 @@ void set_pin_pull(GPIO_InitTypeDef *config, PinMode mode);
 
 GPIO_PinState gpio_read_pin(PinName pin);
 void gpio_irq_set(PinName pin, IrqEvent event, bool enable);
+IRQn_Type gpio_get_irq_line(PinName pin);

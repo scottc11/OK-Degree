@@ -73,8 +73,9 @@ void InterruptIn::gpio_irq_init(PinName pin)
     HAL_GPIO_Init(_port, &GPIO_InitStruct);
 
     /* EXTI interrupt init*/
-    HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+    _irq = gpio_get_irq_line(_pin);
+    HAL_NVIC_SetPriority(_irq, 0, 0);
+    HAL_NVIC_EnableIRQ(_irq);
 }
 
 // note: potentially add a break; once gpio matched

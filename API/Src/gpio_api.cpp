@@ -79,9 +79,12 @@ GPIO_PinState gpio_read_pin(PinName pin)
     return HAL_GPIO_ReadPin(gpio_get_port(pin), gpio_get_pin(pin));
 }
 
+/**
+ * @brief   Enable / Disable Edge triggered interrupt via LL Interupt Registers
+*/
 void gpio_irq_set(PinName pin, IrqEvent event, bool enable)
 {
-    /*  Enable / Disable Edge triggered interrupt and store event */
+    
     if (event == IrqEvent::IRQ_EVENT_RISE)
     {
         if (enable)
@@ -103,5 +106,45 @@ void gpio_irq_set(PinName pin, IrqEvent event, bool enable)
         {
             LL_EXTI_DisableFallingTrig_0_31(1 << STM_PIN(pin));
         }
+    }
+}
+
+IRQn_Type gpio_get_irq_line(PinName pin)
+{
+    uint32_t pin_num = gpio_get_pin(pin);
+    switch (pin_num)
+    {
+    case GPIO_PIN_0:
+        return EXTI0_IRQn;
+    case GPIO_PIN_1:
+        return EXTI1_IRQn;
+    case GPIO_PIN_2:
+        return EXTI2_IRQn;
+    case GPIO_PIN_3:
+        return EXTI3_IRQn;
+    case GPIO_PIN_4:
+        return EXTI4_IRQn;
+    case GPIO_PIN_5:
+        return EXTI9_5_IRQn;
+    case GPIO_PIN_6:
+        return EXTI9_5_IRQn;
+    case GPIO_PIN_7:
+        return EXTI9_5_IRQn;
+    case GPIO_PIN_8:
+        return EXTI9_5_IRQn;
+    case GPIO_PIN_9:
+        return EXTI9_5_IRQn;
+    case GPIO_PIN_10:
+        return EXTI15_10_IRQn;
+    case GPIO_PIN_11:
+        return EXTI15_10_IRQn;
+    case GPIO_PIN_12:
+        return EXTI15_10_IRQn;
+    case GPIO_PIN_13:
+        return EXTI15_10_IRQn;
+    case GPIO_PIN_14:
+        return EXTI15_10_IRQn;
+    case GPIO_PIN_15:
+        return EXTI15_10_IRQn;
     }
 }

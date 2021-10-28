@@ -15,12 +15,14 @@ public:
     GPIO_TypeDef *_port;
     uint32_t _pin_num;
     IrqEvent _event;
+    IRQn_Type _irq;
     Callback<void()> riseCallback;
     Callback<void()> fallCallback;
 
     InterruptIn(PinName pin)
     {
         _pin = pin;
+        _pull = PullNone; // default
         init();
     }
 
