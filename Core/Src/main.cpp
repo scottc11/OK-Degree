@@ -83,7 +83,9 @@ int main(void)
 
   SystemClock_Config();
 
-  superClock.initTIM1(16, 100);
+  superClock.initTIM1(1000, 30000);
+  superClock.attach_tim1_callback(callback(toggleLED2));
+  superClock.start();
 
   multi_chan_adc_init();
   multi_chan_adc_start();

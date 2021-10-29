@@ -3,14 +3,21 @@
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 
-/**
+SuperClock *SuperClock::instance = NULL;
+
+void SuperClock::start()
+{
+    HAL_TIM_Base_Start_IT(&htim1);
+}
+
+    /**
  * @brief Configure TIM1 in Master Mode
  * Timer Overflow Frequency = APB2 / ((prescaler) * (period))
  * 
  * @param prescaler none-zero indexed clock prescaler value
  * @param period none-zero indexed timer period value
 */
-void SuperClock::initTIM1(uint16_t prescaler, uint16_t period)
+    void SuperClock::initTIM1(uint16_t prescaler, uint16_t period)
 {
     __HAL_RCC_TIM1_CLK_ENABLE();
 
@@ -53,10 +60,34 @@ void SuperClock::initTIM1(uint16_t prescaler, uint16_t period)
     }
 }
 
+void SuperClock::attach_tim1_callback(Callback<void()> func)
+{
+    tim1_overflow_callback = func;
+}
+
+void SuperClock::RouteCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim == &htim1)
+    {
+        if (instance->tim1_overflow_callback) {
+            instance->tim1_overflow_callback();
+        }
+    }
+}
+
 /**
   * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
   */
 extern "C" void TIM1_UP_TIM10_IRQHandler(void)
 {
     HAL_TIM_IRQHandler(&htim1);
+}
+
+/**
+ * @brief This callback handles all TIMx overflow interupts (if TIMx was configured in interupt mode)
+ * Ideally, you would use this to manage a global / system tick value, which then gets devided down
+ * to handle events at a lower frequency.
+*/
+extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    SuperClock::RouteCallback(htim);
 }
