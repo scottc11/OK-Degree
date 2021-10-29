@@ -34,6 +34,7 @@ void InterruptIn::rise(Callback<void()> func)
         riseCallback = func;
     }
     _event = IRQ_EVENT_RISE;
+    gpio_irq_set(_pin, IRQ_EVENT_FALL, false); // disable fall event
     gpio_irq_set(_pin, _event, true);
 }
 void InterruptIn::fall(Callback<void()> func)
@@ -43,6 +44,7 @@ void InterruptIn::fall(Callback<void()> func)
         fallCallback = func;
     }
     _event = IRQ_EVENT_FALL;
+    gpio_irq_set(_pin, IRQ_EVENT_RISE, false); // disable rise event
     gpio_irq_set(_pin, _event, true);
 }
 
