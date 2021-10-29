@@ -10,7 +10,7 @@
 
 void SystemClock_Config(void);
 void mcpConfig();
-// InterruptIn clockIn(PA_3);
+InterruptIn clockIn(PA_3);
 InterruptIn ctrlInt(PB_5); // pullup makes no difference
 
 PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
@@ -20,10 +20,10 @@ DigitalOut led2(PB_7);
 DigitalOut led3(PC_13);
 
 I2C i2c1(I2C1_SDA, I2C1_SCL, I2C::Instance::I2C_1);
-// I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
+I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
 
-// SX1509 io2(&i2c3);
-// SX1509 io(&i2c3, 0x70);
+SX1509 io2(&i2c3);
+SX1509 io(&i2c3, 0x70);
 
 MPR121 pads(&i2c1, TOUCH_INT_A);
 MCP23017 mcp(&i2c1, MCP23017_CTRL_ADDR);
@@ -81,22 +81,22 @@ int main(void)
 
   SystemClock_Config();
 
-  // multi_chan_adc_init();
-  // multi_chan_adc_start();
+  multi_chan_adc_init();
+  multi_chan_adc_start();
 
-  // clockIn.rise(callback(toggleLED));
-  // clockIn.fall(callback(toggleLED));
+  clockIn.rise(callback(toggleLED));
+  clockIn.fall(callback(toggleLED));
 
   i2c1.init();
-  // i2c3.init();
-  // io.init();
-  // io2.init();
+  i2c3.init();
+  io.init();
+  io2.init();
 
-  // for (int i = 0; i < 8; i++)
-  // {
-  //   io.ledConfig(CHAN_LED_PINS[i]);
-  //   io2.ledConfig(CHAN_LED_PINS[i]);
-  // }
+  for (int i = 0; i < 8; i++)
+  {
+    io.ledConfig(CHAN_LED_PINS[i]);
+    io2.ledConfig(CHAN_LED_PINS[i]);
+  }
 
   ctrlInt.fall(callback(toggleLED2));
   mcpConfig();
@@ -123,11 +123,11 @@ int main(void)
       int status = bitRead(ioState, i);
       if (status)
       {
-        // io.analogWrite(CHAN_LED_PINS[i], 240);
+        io.analogWrite(CHAN_LED_PINS[i], 240);
       }
       else
       {
-        // io.analogWrite(CHAN_LED_PINS[i], 0);
+        io.analogWrite(CHAN_LED_PINS[i], 0);
       }
     }
     
