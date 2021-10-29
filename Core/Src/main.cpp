@@ -100,6 +100,7 @@ int main(void)
 
   ctrlInt.fall(callback(toggleLED2));
   mcpConfig();
+  mcp.digitalReadAB();
 
   pads.init();
   // pads.attachInteruptCallback(callback(&pads, &MPR121::handleTouch));
