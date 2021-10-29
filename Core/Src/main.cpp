@@ -10,8 +10,8 @@
 
 void SystemClock_Config(void);
 void mcpConfig();
-InterruptIn intPin(PA_3);
-InterruptIn ctrlInt(PB_5);
+// InterruptIn clockIn(PA_3);
+InterruptIn ctrlInt(PB_5); // pullup makes no difference
 
 PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
 
@@ -20,10 +20,10 @@ DigitalOut led2(PB_7);
 DigitalOut led3(PC_13);
 
 I2C i2c1(I2C1_SDA, I2C1_SCL, I2C::Instance::I2C_1);
-I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
+// I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
 
-SX1509 io2(&i2c3);
-SX1509 io(&i2c3, 0x70);
+// SX1509 io2(&i2c3);
+// SX1509 io(&i2c3, 0x70);
 
 MPR121 pads(&i2c1, TOUCH_INT_A);
 MCP23017 mcp(&i2c1, MCP23017_CTRL_ADDR);
@@ -35,6 +35,16 @@ uint8_t ioState;
 void toggleLED()
 {
   led = !led.read();
+}
+bool btnPressed;
+void toggleLED2() {
+  led2 = !led2.read();
+  btnPressed = true;
+}
+
+void toggleLED3(uint8_t pad)
+{
+  led3 = !led3.read();
 }
 
 void ADC1_DMA_Callback(uint16_t values[])
@@ -71,41 +81,53 @@ int main(void)
 
   SystemClock_Config();
 
-  multi_chan_adc_init();
-  multi_chan_adc_start();
+  // multi_chan_adc_init();
+  // multi_chan_adc_start();
 
-  intPin.rise(mbed::callback(toggleLED));
-  intPin.fall(mbed::callback(toggleLED));
+  // clockIn.rise(callback(toggleLED));
+  // clockIn.fall(callback(toggleLED));
 
   i2c1.init();
-  i2c3.init();
-  io.init();
-  io2.init();
+  // i2c3.init();
+  // io.init();
+  // io2.init();
 
-  for (int i = 0; i < 8; i++)
-  {
-    io.ledConfig(CHAN_LED_PINS[i]);
-    io2.ledConfig(CHAN_LED_PINS[i]);
-  }
+  // for (int i = 0; i < 8; i++)
+  // {
+  //   io.ledConfig(CHAN_LED_PINS[i]);
+  //   io2.ledConfig(CHAN_LED_PINS[i]);
+  // }
 
+  ctrlInt.fall(callback(toggleLED2));
   mcpConfig();
-  volatile int val = ctrlInt.read();
-  volatile uint16_t myVals = mcp.digitalReadAB();
-  myVals = mcp.digitalReadAB();
+
+  pads.init();
+  // pads.attachInteruptCallback(callback(&pads, &MPR121::handleTouch));
+  pads.attachCallbackTouched(callback(toggleLED3));
+  pads.attachCallbackReleased(callback(toggleLED3));
+  pads.enable();
 
   while (1)
   {
+
+    if (btnPressed)
+    {
+      btnPressed = false;
+      mcp.digitalReadAB();
+    }
+    
+    pads.poll();
 
     for (int i = 0; i < 8; i++)
     {
       int status = bitRead(ioState, i);
       if (status)
       {
-        io.analogWrite(CHAN_LED_PINS[i], 240);
+        // io.analogWrite(CHAN_LED_PINS[i], 240);
       }
       else
       {
-        io.analogWrite(CHAN_LED_PINS[i], 0);
+        // io.analogWrite(CHAN_LED_PINS[i], 0);
       }
     }
     
@@ -157,19 +179,18 @@ void SystemClock_Config(void)
 void mcpConfig() {
   mcp.init();
   mcp.setDirection(MCP23017_PORTA, 0xff);
-  mcp.setDirection(MCP23017_PORTB, 0xff);
+  mcp.setDirection(MCP23017_PORTB, 0b01111111);
   mcp.setInterupt(MCP23017_PORTA, 0xff);
-  mcp.setInterupt(MCP23017_PORTB, 0xff);
+  mcp.setInterupt(MCP23017_PORTB, 0b01111111);
   mcp.setPullUp(MCP23017_PORTA, 0xff);
-  mcp.setPullUp(MCP23017_PORTB, 0xff);
+  mcp.setPullUp(MCP23017_PORTB, 0b01111111);
   mcp.setInputPolarity(MCP23017_PORTA, 0xff);
   mcp.setInputPolarity(MCP23017_PORTB, 0b01111111);
-  mcp.digitalReadAB(); // clear any stray interupts
 }
 
 void touchConfig() {
   // pads.init();
-  // pads.attachInteruptCallback(mbed::callback(&pads, &MPR121::handleTouch));
+  // pads.attachInteruptCallback(callback(&pads, &MPR121::handleTouch));
   // pads.attachCallbackTouched(&toggleLED);
   // pads.enable();
   // pads.poll();
