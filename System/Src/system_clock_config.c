@@ -1,12 +1,5 @@
 #include "system_clock_config.h"
 
-#define HCLK_MHZ 180
-#define SYSCLK_MHZ 180
-#define APB1_PERIPHERAL_CLK 45
-#define APB1_TIM_CLK 90
-#define APB2_PERIPHERAL_CLK 90
-#define APB2_TIM_CLK 180
-
 /**
   * @brief System Clock Configuration
   * @retval None
