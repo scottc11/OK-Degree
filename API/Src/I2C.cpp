@@ -61,7 +61,7 @@ void I2C::init()
 HAL_StatusTypeDef I2C::write(int address, uint8_t *data, int length, bool repeated /*=false*/)
 {
     HAL_StatusTypeDef status;
-
+    HAL_Delay(1);
     while (HAL_I2C_GetState(&_hi2c) != HAL_I2C_STATE_READY) {};
 
     status = HAL_I2C_Master_Transmit(&_hi2c, address, data, length, HAL_MAX_DELAY);
@@ -76,7 +76,7 @@ HAL_StatusTypeDef I2C::write(int address, uint8_t *data, int length, bool repeat
 int I2C::read(int address, uint8_t *data, int length, bool repeated /*=false*/)
 {
     HAL_StatusTypeDef status;
-
+    HAL_Delay(1);
     while (HAL_I2C_GetState(&_hi2c) != HAL_I2C_STATE_READY) {};
     
     status = HAL_I2C_Master_Receive(&_hi2c, address, data, length, HAL_MAX_DELAY);
