@@ -35,14 +35,6 @@
 #endif
 
 
-namespace mbed {
-/** \addtogroup platform-public-api */
-/** @{*/
-/**
- * \defgroup platform_Callback Callback class
- * @{
- */
-
 /** Callback class based on template specialization
  *
  * @note Synchronization level: Not protected
@@ -826,10 +818,5 @@ template <typename T, typename U, typename R, typename... ArgTs>
 Callback(R(*func)(const volatile T *, ArgTs...), const volatile U *arg) -> Callback<R(ArgTs...)>;
 #endif
 
-/**@}*/
-
-/**@}*/
-
-} // namespace mbed
 
 #endif

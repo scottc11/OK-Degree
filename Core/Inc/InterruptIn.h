@@ -4,9 +4,6 @@
 #include "gpio_api.h"
 #include "Callback.h"
 
-
-using namespace mbed;
-
 class InterruptIn {
 public:
 
