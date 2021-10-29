@@ -58,7 +58,8 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
 System/Src/stm32f4xx_hal_msp.c \
 System/Src/stm32f4xx_it.c \
-System/Src/system_stm32f4xx.c
+System/Src/system_stm32f4xx.c \
+System/Src/system_clock_config.c
 
 CPP_SOURCES = \
 API/Src/gpio_api.cpp \

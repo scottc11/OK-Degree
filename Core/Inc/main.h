@@ -1,6 +1,7 @@
 #pragma once
 
 #include "api.h"
+#include "system_clock_config.h"
 
 #define ADC_A PA_6
 #define ADC_B PA_7
