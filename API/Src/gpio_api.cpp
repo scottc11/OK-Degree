@@ -59,6 +59,18 @@ void enable_adc_pin(PinName pin)
     HAL_GPIO_Init(port, &GPIO_InitStruct);
 }
 
+void gpio_config_input_capture(PinName pin) {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    GPIO_TypeDef *port = enable_gpio_clock(pin);
+    GPIO_InitStruct.Pin = gpio_get_pin(pin);
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+    HAL_GPIO_Init(port, &GPIO_InitStruct);
+}
+
 void set_pin_pull(GPIO_InitTypeDef *config, PinMode mode) {
     switch (mode)
     {
