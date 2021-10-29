@@ -1,4 +1,5 @@
 #include "main.h"
+#include "SuperClock.h"
 #include "DigitalOut.h"
 #include "InterruptIn.h"
 #include "Callback.h"
@@ -26,6 +27,8 @@ SX1509 io(&i2c3, 0x70);
 
 MPR121 pads(&i2c1, TOUCH_INT_A);
 MCP23017 mcp(&i2c1, MCP23017_CTRL_ADDR);
+
+SuperClock superClock;
 
 const int CHAN_LED_PINS[8] = {15, 14, 13, 12, 7, 6, 5, 4}; // io pin map for channel LEDs
 int thresholds[8] = { 8191, 16382, 24573, 32764, 40955, 49146, 57337, 65535 };
@@ -79,6 +82,8 @@ int main(void)
   HAL_Init();
 
   SystemClock_Config();
+
+  superClock.initTIM1(16, 100);
 
   multi_chan_adc_init();
   multi_chan_adc_start();

@@ -58,6 +58,10 @@ void PendSV_Handler(void);
 void SysTick_Handler(void);
 
 /**
+ * TIMx Interupt Handlers
+*/
+
+/**
  *  GPIO Interupt Handlers
  * These functions are defined and called via the startup_stm32f446xx.s assembly file
  * They handle all 16 gpio pins if they are configured as external interupt pins.
