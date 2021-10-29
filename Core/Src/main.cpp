@@ -10,7 +10,7 @@
 #include "MCP23017.h"
 
 void mcpConfig();
-InterruptIn clockIn(PA_3);
+
 InterruptIn ctrlInt(PB_5); // pullup makes no difference
 
 PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
@@ -83,15 +83,13 @@ int main(void)
 
   SystemClock_Config();
 
-  superClock.initTIM1(1000, 30000);
-  superClock.attach_tim1_callback(callback(toggleLED2));
+  superClock.initTIM1(16, 100);
+  superClock.initTIM2(1, 65536);
+  superClock.attach_input_capture_callback(callback(toggleLED2));
   superClock.start();
 
   multi_chan_adc_init();
   multi_chan_adc_start();
-
-  clockIn.rise(callback(toggleLED));
-  clockIn.fall(callback(toggleLED));
 
   i2c1.init();
   i2c3.init();

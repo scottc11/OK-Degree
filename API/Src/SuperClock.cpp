@@ -8,16 +8,17 @@ SuperClock *SuperClock::instance = NULL;
 void SuperClock::start()
 {
     HAL_TIM_Base_Start_IT(&htim1);
+    HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 }
 
-    /**
+/**
  * @brief Configure TIM1 in Master Mode
  * Timer Overflow Frequency = APB2 / ((prescaler) * (period))
  * 
  * @param prescaler none-zero indexed clock prescaler value
  * @param period none-zero indexed timer period value
 */
-    void SuperClock::initTIM1(uint16_t prescaler, uint16_t period)
+void SuperClock::initTIM1(uint16_t prescaler, uint16_t period)
 {
     __HAL_RCC_TIM1_CLK_ENABLE();
 
@@ -60,9 +61,70 @@ void SuperClock::start()
     }
 }
 
+/**
+ * @brief initialize TIM2 as a slave to TIM1
+ * @param prescaler setting to 1 should be best
+ * @param period setting to 65535 should be best
+*/
+void SuperClock::initTIM2(uint16_t prescaler, uint16_t period)
+{
+    tim2_freq = tim1_freq / (prescaler * period);
+
+    __HAL_RCC_TIM2_CLK_ENABLE(); // turn on timer clock
+
+    gpio_config_input_capture(PA_3);  // config PA3 in input capture mode
+
+    /* TIM2 interrupt Init */
+    HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+    TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+    TIM_MasterConfigTypeDef sMasterConfig = {0};
+    TIM_IC_InitTypeDef sConfigIC = {0};
+    HAL_StatusTypeDef status;
+
+    htim2.Instance = TIM2;
+    htim2.Init.Prescaler = prescaler;
+    htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim2.Init.Period = period;
+    htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    status = HAL_TIM_Base_Init(&htim2);
+    if (status != HAL_OK)
+        error_handler(status);
+
+    status = HAL_TIM_IC_Init(&htim2);
+    if (status != HAL_OK)
+        error_handler(status);
+
+    sSlaveConfig.SlaveMode = TIM_SLAVEMODE_EXTERNAL1;
+    sSlaveConfig.InputTrigger = TIM_TS_ITR0;
+    status = HAL_TIM_SlaveConfigSynchro(&htim2, &sSlaveConfig);
+    if (status != HAL_OK)
+        error_handler(status);
+
+    sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    status = HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig);
+    if (status != HAL_OK)
+        error_handler(status);
+
+    sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
+    sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+    sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+    sConfigIC.ICFilter = 0;
+    status = HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_4);
+    if (status != HAL_OK)
+        error_handler(status);
+}
+
 void SuperClock::attach_tim1_callback(Callback<void()> func)
 {
     tim1_overflow_callback = func;
+}
+
+void SuperClock::attach_input_capture_callback(Callback<void()> func) {
+    input_capture_callback = func;
 }
 
 void SuperClock::RouteCallback(TIM_HandleTypeDef *htim)
@@ -76,11 +138,52 @@ void SuperClock::RouteCallback(TIM_HandleTypeDef *htim)
 }
 
 /**
+ * The key in this callback is to reset the sequencer and/or clock step to 0 (ie. step 1)
+ * This way, the sequence will always be in sync with the beat because the rising edge of the external tempo signal will always line up to tick 0 of the sequence.
+ * 
+ * The caveat being we risk losing ticks near the end of each external clock signal, because the callback could execute before the final few ticks have a chance to be executed.
+ * This could cause issues if there is important sequence data in those last remaining ticks, such as setting a trigger output high or low.
+ * 
+ * To remedy this problem, we could keep track of how many ticks have executed in the sequence for each clock signal, so that if the HAL_TIM_IC_CaptureCallback executes prior to 
+ * the last tick in the sequence, we could quickly execute all those remaining ticks in rapid succession - which could sound weird, but likely neccessary.
+ * 
+ * NOTE: The downfall of this approach is that some steps of the sequence will be missed when the external tempo signal increases,
+ * but this should be a more musical way to keeping things in sync.
+ * 
+ * NOTE: When jumping from a really fast tempo to a really slow tempo, the sequence steps will progress much faster than the incoming tempo (before the IC Calculation has time to update the sequencer pulse duration)
+ * This means the sequence could technically get several beats ahead of any other gear.
+ * To handle this, you could prevent the next sequence step from occuring if all sub-steps of the current step have been executed prior to a new IC event
+ */
+void SuperClock::RouteCaptureCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM2)
+    {
+        if (instance->input_capture_callback) {
+            instance->input_capture_callback();
+        }
+        // currTick = 0; // Reset the sequence clock to zero, so it will trigger the clock output in the period elapsed loop callback
+
+        __HAL_TIM_SetCounter(&htim2, 0); // reset counter after each input capture
+        // inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
+        // stepLength = (inputCapture * 2) / PPQN;
+        // subStepLength = stepLength / 4;
+    }
+}
+
+/**
   * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
-  */
+*/
 extern "C" void TIM1_UP_TIM10_IRQHandler(void)
 {
     HAL_TIM_IRQHandler(&htim1);
+}
+
+/**
+  * @brief This function handles TIM2 global interrupt.
+*/
+void TIM2_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&htim2);
 }
 
 /**
@@ -90,4 +193,12 @@ extern "C" void TIM1_UP_TIM10_IRQHandler(void)
 */
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     SuperClock::RouteCallback(htim);
+}
+
+/**
+ * @brief Input Capture Callback for all TIMx configured in Input Capture mode
+*/ 
+extern "C" void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+    SuperClock::RouteCaptureCallback(htim);
 }
