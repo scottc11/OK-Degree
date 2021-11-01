@@ -85,7 +85,7 @@ int main(void)
 
   superClock.initTIM1(16, 100);
   superClock.initTIM2(1, 65536);
-  superClock.attach_input_capture_callback(callback(toggleLED2));
+  superClock.attachInputCaptureCallback(callback(toggleLED2));
   superClock.start();
 
   multi_chan_adc_init();

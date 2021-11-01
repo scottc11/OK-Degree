@@ -123,8 +123,21 @@ void SuperClock::attach_tim1_callback(Callback<void()> func)
     tim1_overflow_callback = func;
 }
 
-void SuperClock::attach_input_capture_callback(Callback<void()> func) {
+void SuperClock::attachInputCaptureCallback(Callback<void()> func) {
     input_capture_callback = func;
+}
+
+void SuperClock::handleInputCaptureCallback()
+{
+    // currTick = 0; // Reset the sequence clock to zero, so it will trigger the clock output in the period elapsed loop callback
+    __HAL_TIM_SetCounter(&htim2, 0); // reset counter after each input capture
+    // inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
+    // stepLength = (inputCapture * 2) / PPQN;
+    // subStepLength = stepLength / 4;
+    if (input_capture_callback)
+    {
+        input_capture_callback();
+    }
 }
 
 void SuperClock::RouteCallback(TIM_HandleTypeDef *htim)
@@ -158,15 +171,7 @@ void SuperClock::RouteCaptureCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM2)
     {
-        if (instance->input_capture_callback) {
-            instance->input_capture_callback();
-        }
-        // currTick = 0; // Reset the sequence clock to zero, so it will trigger the clock output in the period elapsed loop callback
-
-        __HAL_TIM_SetCounter(&htim2, 0); // reset counter after each input capture
-        // inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
-        // stepLength = (inputCapture * 2) / PPQN;
-        // subStepLength = stepLength / 4;
+        instance->handleInputCaptureCallback();
     }
 }
 

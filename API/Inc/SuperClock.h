@@ -4,6 +4,10 @@
 #include "tim_api.h"
 #include "Callback.h"
 
+#ifndef PPQN
+#define PPQN 96
+#endif
+
 extern TIM_HandleTypeDef htim1; // 16-bit timer
 extern TIM_HandleTypeDef htim2; // 32-bit timer
 
@@ -26,7 +30,8 @@ public:
     void initTIM2(uint16_t prescaler, uint16_t period);
     void start();
     void attach_tim1_callback(Callback<void()> func);
-    void attach_input_capture_callback(Callback<void()> func);
+    void attachInputCaptureCallback(Callback<void()> func);
+    void handleInputCaptureCallback();
     static void RouteCallback(TIM_HandleTypeDef *htim);
     static void RouteCaptureCallback(TIM_HandleTypeDef *htim);
 
