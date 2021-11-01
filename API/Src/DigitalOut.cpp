@@ -14,7 +14,7 @@ DigitalOut &DigitalOut::operator= (int value)
     return *this;
 }
 
-void DigitalOut::gpio_init(PinName pin)
+void DigitalOut::gpio_init(PinName pin, int value)
 {
     if (pin == PinName::NC)
     {
@@ -28,7 +28,7 @@ void DigitalOut::gpio_init(PinName pin)
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(_port, _pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(_port, _pin, (GPIO_PinState)value);
 
     /*Configure GPIO pin : PA1 */
     GPIO_InitStruct.Pin = _pin;

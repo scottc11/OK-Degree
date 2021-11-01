@@ -9,7 +9,12 @@ public:
     uint32_t _pin;
 
     DigitalOut(PinName pin) {
-        gpio_init(pin);
+        gpio_init(pin, 0);
+    }
+    
+    DigitalOut(PinName pin, int value)
+    {
+        gpio_init(pin, value);
     }
 
     DigitalOut &operator=(int value);
@@ -17,5 +22,5 @@ public:
     void write(int value);
     int read();
 
-    void gpio_init(PinName pin);
+    void gpio_init(PinName pin, int value);
 };
