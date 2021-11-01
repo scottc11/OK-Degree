@@ -17,12 +17,18 @@ extern "C" void TIM2_IRQHandler(void);
 class SuperClock {
 public:
     
-    uint32_t tim1_freq;
-    uint32_t tim2_freq;
-    Callback<void()> tim1_overflow_callback; // this callback gets executed at a frequency equal to tim1_freq
-    Callback<void()> input_capture_callback; // this callback gets executed at a frequency equal to tim1_freq
+    int currTick;
+    uint16_t inputCapture;
+    uint16_t ticksPerStep;
 
-    SuperClock() {
+    Callback<void()> tickCallback; // this callback gets executed at a frequency equal to tim1_freq
+    Callback<void()> input_capture_callback; // this callback gets executed every on the rising edge of external input
+    Callback<void()> ppqnCallback; // this callback gets executed at a rate eaual to input capture / PPQN
+    Callback<void()> resetCallback;
+    Callback<void()> overflowCallback; // callback executes when all when a full step completes
+
+    SuperClock()
+    {
         instance = this;
     };
 
@@ -32,9 +38,12 @@ public:
     void attach_tim1_callback(Callback<void()> func);
     void attachInputCaptureCallback(Callback<void()> func);
     void handleInputCaptureCallback();
+    void handleTickCallback();
     static void RouteCallback(TIM_HandleTypeDef *htim);
     static void RouteCaptureCallback(TIM_HandleTypeDef *htim);
 
 private:
     static SuperClock *instance;
+    uint32_t tim1_freq;
+    uint32_t tim2_freq;
 };

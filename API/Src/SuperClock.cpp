@@ -7,8 +7,11 @@ SuperClock *SuperClock::instance = NULL;
 
 void SuperClock::start()
 {
-    HAL_TIM_Base_Start_IT(&htim1);
-    HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
+    HAL_StatusTypeDef status;
+    status = HAL_TIM_Base_Start_IT(&htim1);
+    error_handler(status);
+    status = HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
+    error_handler(status);
 }
 
 /**
@@ -120,7 +123,7 @@ void SuperClock::initTIM2(uint16_t prescaler, uint16_t period)
 
 void SuperClock::attach_tim1_callback(Callback<void()> func)
 {
-    tim1_overflow_callback = func;
+    tickCallback = func;
 }
 
 void SuperClock::attachInputCaptureCallback(Callback<void()> func) {
@@ -129,14 +132,38 @@ void SuperClock::attachInputCaptureCallback(Callback<void()> func) {
 
 void SuperClock::handleInputCaptureCallback()
 {
-    // currTick = 0; // Reset the sequence clock to zero, so it will trigger the clock output in the period elapsed loop callback
+    currTick = 0; // Reset the sequence clock to zero, so it will trigger the clock output in the period elapsed loop callback
     __HAL_TIM_SetCounter(&htim2, 0); // reset counter after each input capture
-    // inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
-    // stepLength = (inputCapture * 2) / PPQN;
-    // subStepLength = stepLength / 4;
+    inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
+    ticksPerStep = inputCapture / PPQN;
     if (input_capture_callback)
     {
         input_capture_callback();
+    }
+}
+
+void SuperClock::handleTickCallback()
+{
+    
+    if (currTick < ticksPerStep) { // make sure you don't loose a step by not using "<=" instead of "<"
+        if (currTick == 0) { // handle first tick in step
+            if (resetCallback) resetCallback();
+        }
+        else if (currTick == ticksPerStep) // if the currTick 
+        {
+            if (ppqnCallback) ppqnCallback();
+        }
+
+    }
+    // this block will continue the sequence when an external clock is not detected.
+    else {
+        currTick = 0;
+        if (overflowCallback) overflowCallback();
+    }
+
+    if (tickCallback)
+    {
+        tickCallback();
     }
 }
 
@@ -144,9 +171,7 @@ void SuperClock::RouteCallback(TIM_HandleTypeDef *htim)
 {
     if (htim == &htim1)
     {
-        if (instance->tim1_overflow_callback) {
-            instance->tim1_overflow_callback();
-        }
+        instance->handleTickCallback();
     }
 }
 

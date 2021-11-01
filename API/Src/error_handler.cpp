@@ -37,6 +37,8 @@ HAL_StatusTypeDef error_handler(HAL_StatusTypeDef error)
             HAL_Delay(500);
         }
         break;
+    case HAL_OK:
+        break;
     default:
         break;
     }
