@@ -84,7 +84,7 @@ int main(void)
   SystemClock_Config();
 
   superClock.initTIM1(16, 100);
-  superClock.initTIM2(1, 65536);
+  superClock.initTIM2(1, 65535);
   superClock.attachInputCaptureCallback(callback(toggleLED2));
   superClock.start();
 
