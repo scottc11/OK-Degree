@@ -22,7 +22,7 @@ void DigitalOut::gpio_init(PinName pin, int value)
     }
     
     // enable gpio clock
-    _port = enable_gpio_clock(pin);
+    _port = gpio_enable_clock(pin);
     _pin = gpio_pin_map[STM_PIN(pin)];
 
     GPIO_InitTypeDef GPIO_InitStruct = {0};

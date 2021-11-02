@@ -4,7 +4,7 @@
  * @brief enables the given GPIO Ports Clock
  * @return the pointer to the given ports GPIO_TypeDef
 */
-GPIO_TypeDef * enable_gpio_clock(PinName pin)
+GPIO_TypeDef * gpio_enable_clock(PinName pin)
 {
     uint32_t port = STM_PORT(pin);
     switch (port) {
@@ -49,7 +49,7 @@ GPIO_TypeDef * gpio_get_port(PinName pin) {
 void enable_adc_pin(PinName pin)
 {
     // enable gpio clock
-    GPIO_TypeDef *port = enable_gpio_clock(pin);
+    GPIO_TypeDef *port = gpio_enable_clock(pin);
 
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -62,7 +62,7 @@ void enable_adc_pin(PinName pin)
 void gpio_config_input_capture(PinName pin) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    GPIO_TypeDef *port = enable_gpio_clock(pin);
+    GPIO_TypeDef *port = gpio_enable_clock(pin);
     GPIO_InitStruct.Pin = gpio_get_pin(pin);
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -84,6 +84,14 @@ void set_pin_pull(GPIO_InitTypeDef *config, PinMode mode) {
         config->Pull = GPIO_NOPULL;
         break;
     }
+}
+
+/**
+ * @brief Use HAL LL to set pin speed after initialization
+*/ 
+void gpio_set_pin_speed(PinName pin, GPIO_Speed speed)
+{
+    LL_GPIO_SetPinSpeed(gpio_get_port(pin), gpio_get_pin(pin), speed);
 }
 
 GPIO_PinState gpio_read_pin(PinName pin)

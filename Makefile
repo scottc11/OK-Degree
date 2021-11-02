@@ -44,6 +44,7 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_gpio.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c \
@@ -66,6 +67,7 @@ API/Src/gpio_api.cpp \
 API/Src/dma_api.cpp \
 API/Src/error_handler.cpp \
 API/Src/I2C.cpp \
+API/Src/SPI.cpp \
 API/Src/DigitalOut.cpp \
 API/Src/SuperClock.cpp \
 API/Src/tim_api.cpp \

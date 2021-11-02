@@ -107,6 +107,14 @@ typedef enum
     IRQ_EVENT_RISE_FALL
 } IrqEvent;
 
+typedef enum
+{
+    FREQ_LOW = GPIO_SPEED_FREQ_LOW,
+    FREQ_MEDIUM = GPIO_SPEED_FREQ_MEDIUM,
+    FREQ_HIGH = GPIO_SPEED_FREQ_HIGH,
+    FREQ_VERY_HIGH = GPIO_SPEED_FREQ_VERY_HIGH,
+} GPIO_Speed;
+
 /**
  * Array which maps the value returned from STM_PIN to the HAL GPIO addresses
 */

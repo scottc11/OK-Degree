@@ -62,7 +62,7 @@ void InterruptIn::handleInterupt() {
 
 void InterruptIn::gpio_irq_init(PinName pin)
 {
-    _port = enable_gpio_clock(pin);
+    _port = gpio_enable_clock(pin);
     _pin_num = gpio_get_pin(pin);
 
     // configure gpio for interupt
