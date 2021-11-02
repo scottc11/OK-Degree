@@ -57,6 +57,7 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c \
 System/Src/stm32f4xx_hal_msp.c \
 System/Src/stm32f4xx_it.c \
 System/Src/system_stm32f4xx.c \
@@ -74,6 +75,7 @@ API/Src/tim_api.cpp \
 Core/Src/main.cpp \
 Core/Src/InterruptIn.cpp \
 Core/Src/MultiChanADC.cpp \
+ok-drivers/drivers/DAC8554/DAC8554.cpp \
 ok-drivers/drivers/SX1509/SX1509.cpp \
 ok-drivers/drivers/IS31FL3739/IS31FL3739.cpp \
 ok-drivers/drivers/MPR121/MPR121.cpp \
@@ -149,6 +151,7 @@ C_INCLUDES =  \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include \
+-Iok-drivers/drivers/DAC8554 \
 -Iok-drivers/drivers/SX1509 \
 -Iok-drivers/drivers/IS31FL3739 \
 -Iok-drivers/drivers/MPR121 \

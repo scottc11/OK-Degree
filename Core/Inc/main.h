@@ -23,4 +23,11 @@
 #define TOUCH_INT_C PC_15
 #define TOUCH_INT_D PC_14
 
+#define DAC1_CS PB_12
+#define DAC2_CS PC_8
+
+#define SPI2_MOSI PB_15
+#define SPI2_MISO PB_14
+#define SPI2_SCK  PB_13
+
 #define MCP23017_CTRL_ADDR 0x24 // 0100100

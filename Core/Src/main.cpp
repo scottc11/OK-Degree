@@ -8,6 +8,7 @@
 #include "I2C.h"
 #include "MPR121.h"
 #include "MCP23017.h"
+#include "DAC8554.h"
 
 void mcpConfig();
 
@@ -27,6 +28,7 @@ SX1509 io(&i2c3, 0x70);
 
 MPR121 pads(&i2c1, TOUCH_INT_A);
 MCP23017 mcp(&i2c1, MCP23017_CTRL_ADDR);
+DAC8554 dac(SPI2_MOSI, SPI2_SCK, DAC2_CS);
 
 SuperClock superClock;
 
@@ -107,13 +109,20 @@ int main(void)
   mcp.digitalReadAB();
 
   pads.init();
-  // pads.attachInteruptCallback(callback(&pads, &MPR121::handleTouch));
   pads.attachCallbackTouched(callback(toggleLED3));
   pads.attachCallbackReleased(callback(toggleLED3));
   pads.enable();
 
+  dac.init();
+  uint16_t value = 0;
   while (1)
   {
+    value += 50;
+    dac.write(DAC8554::Channels::CHAN_A, value);
+    dac.write(DAC8554::Channels::CHAN_B, value);
+    dac.write(DAC8554::Channels::CHAN_C, value);
+    dac.write(DAC8554::Channels::CHAN_D, value);
+    HAL_Delay(1);
 
     if (btnPressed)
     {
@@ -149,12 +158,4 @@ void mcpConfig() {
   mcp.setPullUp(MCP23017_PORTB, 0b01111111);
   mcp.setInputPolarity(MCP23017_PORTA, 0xff);
   mcp.setInputPolarity(MCP23017_PORTB, 0b01111111);
-}
-
-void touchConfig() {
-  // pads.init();
-  // pads.attachInteruptCallback(callback(&pads, &MPR121::handleTouch));
-  // pads.attachCallbackTouched(&toggleLED);
-  // pads.enable();
-  // pads.poll();
 }
