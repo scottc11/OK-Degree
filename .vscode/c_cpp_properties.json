@@ -20,6 +20,14 @@
                 "${workspaceFolder}/System/Inc/*",
                 "${workspaceFolder}/System/Src/*"
             ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "${default}",
+                "path": [
+                    "${workspaceFolder}/**",
+                    ""
+                ]
+            },
             "intelliSenseMode": "macos-gcc-arm",
             "cStandard": "gnu17",
             "cppStandard": "gnu++14"
