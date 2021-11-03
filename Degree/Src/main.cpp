@@ -21,12 +21,21 @@ I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
 
 
 MPR121 touchA(&i2c1, TOUCH_INT_A);
+MPR121 touchB(&i2c1, TOUCH_INT_B, MPR121::ADDR_VDD);
+MPR121 touchC(&i2c1, TOUCH_INT_C, MPR121::ADDR_SCL);
+MPR121 touchD(&i2c1, TOUCH_INT_D, MPR121::ADDR_SDA);
 
 SX1509 ledsA(&i2c3, SX1509_CHAN_A_ADDR);
+SX1509 ledsB(&i2c3, SX1509_CHAN_B_ADDR);
+SX1509 ledsC(&i2c3, SX1509_CHAN_C_ADDR);
+SX1509 ledsD(&i2c3, SX1509_CHAN_D_ADDR);
 
 SuperClock superClock;
 
 Channel chanA(&touchA, &ledsA);
+Channel chanB(&touchB, &ledsB);
+Channel chanC(&touchC, &ledsC);
+Channel chanD(&touchD, &ledsD);
 
 /**
  * @brief handle all ADC inputs here
@@ -60,10 +69,16 @@ int main(void)
   i2c3.init();
 
   chanA.init();
+  chanB.init();
+  chanC.init();
+  chanD.init();
 
   while (1)
   {
     chanA.poll();
+    chanB.poll();
+    chanC.poll();
+    chanD.poll();
   }
 }
 // ----------------------------------------

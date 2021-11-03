@@ -32,6 +32,9 @@ void Channel::init()
     {
         setLED(i, LOW);
     }
+
+    triggerNote(_currDegree, _currOctave, NOTE_ON);
+    setLED(OCTAVE_LED_PINS[_currOctave], HIGH);
 }
 
 void Channel::poll() {
