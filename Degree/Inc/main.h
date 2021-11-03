@@ -27,6 +27,8 @@
 #define TOUCH_INT_C PC_15
 #define TOUCH_INT_D PC_14
 
+#define DEGREES_INT PB_4
+
 #define DAC1_CS PB_12
 #define DAC2_CS PC_8
 
@@ -40,5 +42,7 @@
 #define SX1509_CHAN_B_ADDR 0x70
 #define SX1509_CHAN_C_ADDR 0x3F
 #define SX1509_CHAN_D_ADDR 0x71
+
+#define MCP23017_DEGREES_ADDR 0x20 // 0100000
 
 #define FLASH_CONFIG_ADDR 0x08060000  // sector 7
