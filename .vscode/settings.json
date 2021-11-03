@@ -58,6 +58,10 @@
         "common.h": "c",
         "stm32f4xx_hal_gpio_ex.h": "c",
         "stm32f4xx_ll_gpio.h": "c",
-        "stm32f4xx_hal_def.h": "c"
+        "stm32f4xx_hal_def.h": "c",
+        "stdint.h": "c",
+        "stdbool.h": "c",
+        "error_handler.h": "c",
+        "stm32f4xx_ll_exti.h": "c"
     }
 }

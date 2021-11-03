@@ -69,12 +69,12 @@ API/Src/dma_api.cpp \
 API/Src/error_handler.cpp \
 API/Src/Flash.cpp \
 API/Src/I2C.cpp \
+API/Src/InterruptIn.cpp \
 API/Src/SPI.cpp \
 API/Src/DigitalOut.cpp \
 API/Src/SuperClock.cpp \
 API/Src/tim_api.cpp \
 Core/Src/main.cpp \
-Core/Src/InterruptIn.cpp \
 Core/Src/MultiChanADC.cpp \
 ok-drivers/drivers/DAC8554/DAC8554.cpp \
 ok-drivers/drivers/SX1509/SX1509.cpp \

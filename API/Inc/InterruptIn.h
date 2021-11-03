@@ -1,6 +1,6 @@
 #pragma once
 
-#include "main.h"
+#include "common.h"
 #include "gpio_api.h"
 #include "Callback.h"
 
