@@ -57,6 +57,7 @@
         "stm32f4xx_hal_i2c.h": "c",
         "common.h": "c",
         "stm32f4xx_hal_gpio_ex.h": "c",
-        "stm32f4xx_ll_gpio.h": "c"
+        "stm32f4xx_ll_gpio.h": "c",
+        "stm32f4xx_hal_def.h": "c"
     }
 }

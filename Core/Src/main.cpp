@@ -9,8 +9,11 @@
 #include "MPR121.h"
 #include "MCP23017.h"
 #include "DAC8554.h"
+#include "Flash.h"
 
 void mcpConfig();
+
+Flash flash;
 
 InterruptIn ctrlInt(PB_5); // pullup makes no difference
 
@@ -103,6 +106,14 @@ int main(void)
     io.ledConfig(CHAN_LED_PINS[i]);
     io2.ledConfig(CHAN_LED_PINS[i]);
   }
+
+  flash.erase(ADDR_FLASH_SECTOR_7);
+
+  uint32_t data[4] = { 10000, 25, 32677, 64987 };
+  flash.write(ADDR_FLASH_SECTOR_7, data, 4);
+
+  uint32_t buffer[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  flash.read(ADDR_FLASH_SECTOR_7, buffer, 4);
 
   ctrlInt.fall(callback(toggleLED2));
   mcpConfig();

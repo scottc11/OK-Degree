@@ -31,3 +31,5 @@
 #define SPI2_SCK  PB_13
 
 #define MCP23017_CTRL_ADDR 0x24 // 0100100
+
+#define FLASH_CONFIG_ADDR 0x08060000  // sector 7
