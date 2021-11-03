@@ -74,8 +74,8 @@ API/Src/SPI.cpp \
 API/Src/DigitalOut.cpp \
 API/Src/SuperClock.cpp \
 API/Src/tim_api.cpp \
-Core/Src/main.cpp \
-Core/Src/MultiChanADC.cpp \
+Degree/Src/main.cpp \
+Degree/Src/MultiChanADC.cpp \
 ok-drivers/drivers/DAC8554/DAC8554.cpp \
 ok-drivers/drivers/SX1509/SX1509.cpp \
 ok-drivers/drivers/IS31FL3739/IS31FL3739.cpp \
@@ -145,7 +145,7 @@ AS_INCLUDES =
 # C includes
 C_INCLUDES =  \
 -IAPI/Inc \
--ICore/Inc \
+-IDegree/Inc \
 -IMBED/Inc \
 -IMBED/cxxsupport \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
