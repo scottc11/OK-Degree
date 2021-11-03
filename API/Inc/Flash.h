@@ -39,6 +39,17 @@ System memory ---- 0x1FFF 0000 - 0x1FFF 77FF --------- 30 Kbytes
 OTP area --------- 0x1FFF 7800 - 0x1FFF 7A0F --------- 528 bytes
 Option bytes ----- 0x1FFF C000 - 0x1FFF C00F --------- 16 bytes
 
+
+Example: Erase, Write, Read
+
+  flash.erase(ADDR_FLASH_SECTOR_7);
+
+  uint32_t data[4] = { 10000, 25, 32677, 64987 };
+  flash.write(ADDR_FLASH_SECTOR_7, data, 4);
+
+  uint32_t buffer[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  flash.read(ADDR_FLASH_SECTOR_7, buffer, 4);
+
 */
 
 #pragma once
@@ -46,6 +57,9 @@ Option bytes ----- 0x1FFF C000 - 0x1FFF C00F --------- 16 bytes
 #include "common.h"
 #include <string.h>
 
+/**
+ * @brief static class for handling flash read, write, and erase methods
+*/ 
 class Flash {
 public:
     Flash(){};
