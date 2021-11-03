@@ -1,13 +1,13 @@
-#include "Channel.h"
+#include "TouchChannel.h"
 
 using namespace DEGREE;
 
-void Channel::init()
+void TouchChannel::init()
 {
     // initialize channel touch pads
     _touchPads->init();
-    _touchPads->attachCallbackTouched(callback(this, &Channel::onTouch));
-    _touchPads->attachCallbackReleased(callback(this, &Channel::onRelease));
+    _touchPads->attachCallbackTouched(callback(this, &TouchChannel::onTouch));
+    _touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
     _touchPads->enable();
 
     // initialize LED Driver
@@ -37,11 +37,11 @@ void Channel::init()
     setLED(OCTAVE_LED_PINS[_currOctave], HIGH);
 }
 
-void Channel::poll() {
+void TouchChannel::poll() {
     _touchPads->poll();
 }
 
-void Channel::onTouch(uint8_t pad)
+void TouchChannel::onTouch(uint8_t pad)
 {
     if (pad < 8)  // handle degree pads
     {
@@ -67,12 +67,12 @@ void Channel::onTouch(uint8_t pad)
     }
 }
 
-void Channel::onRelease(uint8_t pad)
+void TouchChannel::onRelease(uint8_t pad)
 {
 
 }
 
-void Channel::triggerNote(int degree, int octave, Action action)
+void TouchChannel::triggerNote(int degree, int octave, Action action)
 {
     _prevDegree = _currDegree;
     _prevOctave = _currOctave;
@@ -100,7 +100,23 @@ void Channel::triggerNote(int degree, int octave, Action action)
     }
 }
 
-void Channel::setLED(int index, LedState state)
+void TouchChannel::updateDegrees()
+{
+    switch (_mode)
+    {
+    case MONOPHONIC:
+        triggerNote(_currDegree, _currOctave, SUSTAIN);
+        break;
+    case MONO_LOOP:
+        break;
+    case QUANTIZER:
+        break;
+    case QUANTIZER_LOOP:
+        break;
+    }
+}
+
+void TouchChannel::setLED(int index, LedState state)
 {
     switch (state) {
         case LOW:

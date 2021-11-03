@@ -3,6 +3,7 @@
 #include "main.h"
 #include "MPR121.h"
 #include "SX1509.h"
+#include "Degrees.h"
 
 namespace DEGREE {
 
@@ -14,7 +15,7 @@ namespace DEGREE {
     static const int DEGREE_LED_PINS[8] = { 15, 14, 13, 12, 7, 6, 5, 4 }; // led driver pin map for channel LEDs
     static const int CHAN_TOUCH_PADS[12] = { 7, 6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0 }; // for mapping touch pads to index values
 
-    class Channel {
+    class TouchChannel {
     public:
         enum Action {
             NOTE_ON,
@@ -24,7 +25,7 @@ namespace DEGREE {
             BEND_PITCH
         };
 
-        enum ChannelMode {
+        enum TouchChannelMode {
             MONOPHONIC,
             MONO_LOOP,
             QUANTIZER,
@@ -36,10 +37,11 @@ namespace DEGREE {
             HIGH
         };
 
-        Channel(MPR121 *touchPads, SX1509 *leds)
+        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees)
         {
             _touchPads = touchPads;
             _leds = leds;
+            _degrees = degrees;
             _mode = MONOPHONIC;
             _currDegree = 0;
             _currOctave = 0;
@@ -47,7 +49,8 @@ namespace DEGREE {
 
         MPR121 *_touchPads;
         SX1509 *_leds;
-        ChannelMode _mode;
+        Degrees *_degrees;
+        TouchChannelMode _mode;
 
         uint8_t _currDegree;
         uint8_t _currOctave;
@@ -60,6 +63,7 @@ namespace DEGREE {
         void onTouch(uint8_t pad);
         void onRelease(uint8_t pad);
         void triggerNote(int degree, int octave, Action action);
+        void updateDegrees();
 
         void setLED(int index, LedState state);
     };

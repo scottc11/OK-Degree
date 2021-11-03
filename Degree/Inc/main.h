@@ -3,6 +3,8 @@
 #include "api.h"
 #include "system_clock_config.h"
 
+#define NUM_DEGREE_CHANNELS 4
+
 #define REC_LED PC_13
 #define FREEZE_LED PB_7
 #define TEMPO_LED PA_1

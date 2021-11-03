@@ -10,8 +10,9 @@
 #include "MCP23017.h"
 #include "DAC8554.h"
 #include "Flash.h"
-#include "Channel.h"
+#include "TouchChannel.h"
 #include "Degrees.h"
+#include "GlobalControl.h"
 
 using namespace DEGREE;
 
@@ -36,10 +37,12 @@ SuperClock superClock;
 
 Degrees degrees(DEGREES_INT, &toggleSwitches);
 
-Channel chanA(&touchA, &ledsA);
-Channel chanB(&touchB, &ledsB);
-Channel chanC(&touchC, &ledsC);
-Channel chanD(&touchD, &ledsD);
+TouchChannel chanA(&touchA, &ledsA, &degrees);
+TouchChannel chanB(&touchB, &ledsB, &degrees);
+TouchChannel chanC(&touchC, &ledsC, &degrees);
+TouchChannel chanD(&touchD, &ledsD, &degrees);
+
+GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees);
 
 /**
  * @brief handle all ADC inputs here
@@ -72,20 +75,11 @@ int main(void)
   i2c1.init();
   i2c3.init();
 
-  degrees.init();
-
-  chanA.init();
-  chanB.init();
-  chanC.init();
-  chanD.init();
+  glblCtrl.init();
 
   while (1)
   {
-    degrees.poll();
-    chanA.poll();
-    chanB.poll();
-    chanC.poll();
-    chanD.poll();
+    glblCtrl.poll();
   }
 }
 // ----------------------------------------

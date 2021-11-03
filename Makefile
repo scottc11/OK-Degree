@@ -76,7 +76,8 @@ API/Src/SuperClock.cpp \
 API/Src/tim_api.cpp \
 Degree/Src/main.cpp \
 Degree/Src/MultiChanADC.cpp \
-Degree/Src/Channel.cpp \
+Degree/Src/TouchChannel.cpp \
+Degree/Src/GlobalControl.cpp \
 ok-drivers/drivers/DAC8554/DAC8554.cpp \
 ok-drivers/drivers/SX1509/SX1509.cpp \
 ok-drivers/drivers/IS31FL3739/IS31FL3739.cpp \
