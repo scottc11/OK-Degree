@@ -45,7 +45,10 @@ uint16_t FILTERED_ADC_VALUES[ADC_DMA_BUFF_SIZE];
 
 Degrees degrees(DEGREES_INT, &toggleSwitches);
 
-Bender benderA(&dac2, DAC8554::CHAN_A, 5);
+Bender benderA(&dac2, DAC8554::CHAN_A, 4);
+Bender benderB(&dac2, DAC8554::CHAN_B, 5);
+Bender benderC(&dac2, DAC8554::CHAN_C, 6);
+Bender benderD(&dac2, DAC8554::CHAN_D, 7);
 
 TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A, 4);
 TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, 5);
@@ -97,12 +100,16 @@ int main(void)
   i2c1.init();
   i2c3.init();
 
+  // wait a few cycles while the ADCs get read a few times
   while (ADC_COUNT < 100)
   {
     // do nothing
   }
   
   benderA.init();
+  benderB.init();
+  benderC.init();
+  benderD.init();
 
   glblCtrl.init();
 
@@ -110,6 +117,9 @@ int main(void)
   {
     glblCtrl.poll();
     benderA.poll();
+    benderB.poll();
+    benderC.poll();
+    benderD.poll();
   }
 }
 // ----------------------------------------

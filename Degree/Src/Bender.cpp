@@ -18,7 +18,7 @@ void Bender::calibrateIdle()
     for (int i = 0; i < PB_CALIBRATION_RANGE; i++)
     {
         calibrationSamples[i] = this->read();
-        HAL_Delay(10);
+        HAL_Delay(1);
     }
 
     // find min/max value from calibration results
@@ -39,7 +39,7 @@ void Bender::calibrateIdle()
 */
 void Bender::calibrateMinMax()
 {
-    this->read();
+    currBend = this->read();
     if (currBend > zeroBend + 1000) // bending upwards
     {
         if (currBend > maxBend)
@@ -60,16 +60,14 @@ void Bender::calibrateMinMax()
 // there are no cycles being saved either way.
 void Bender::poll()
 {
-    this->read();
+    currBend = this->read();
 
     if (this->isIdle())
     {
         updateDAC(0);
         currState = BEND_IDLE;
         if (idleCallback)
-        {
             idleCallback();
-        }
     }
     else
     {
@@ -78,9 +76,7 @@ void Bender::poll()
         updateDAC(myOutput);
 
         if (activeCallback)
-        {
             activeCallback(currBend);
-        }
     }
 
     // handle tri-state
@@ -160,6 +156,5 @@ void Bender::attachTriStateCallback(Callback<void(BendState state)> func)
 
 uint16_t Bender::read()
 {
-    currBend = adc.read_u16();
-    return currBend;
+    return adc.read_u16();
 }
