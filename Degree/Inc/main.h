@@ -4,6 +4,12 @@
 #include "system_clock_config.h"
 
 #define NUM_DEGREE_CHANNELS 4
+#define DAC_1VO_ARR_SIZE 72
+#define BENDER_CALIBRATION_SIZE 2
+#define BENDER_MIN_CAL_INDEX DAC_1VO_ARR_SIZE
+#define BENDER_MAX_CAL_INDEX (DAC_1VO_ARR_SIZE + 1)
+#define CALIBRATION_ARR_SIZE (DAC_1VO_ARR_SIZE + BENDER_CALIBRATION_SIZE)
+#define NUM_FLASH_CHANNEL_BYTES (((CALIBRATION_ARR_SIZE * 4) * 16) / 8) // number of bytes = CALIBRATION_ARR_SIZE * number of channels * 16 bits / 8 bits
 
 #define REC_LED PC_13
 #define FREEZE_LED PB_7
@@ -47,4 +53,4 @@
 
 #define MCP23017_DEGREES_ADDR 0x20 // 0100000
 
-#define FLASH_CONFIG_ADDR 0x08060000  // sector 7
+#define FLASH_CONFIG_ADDR 0x08060000UL  // sector 7

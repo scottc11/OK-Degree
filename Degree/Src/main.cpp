@@ -21,6 +21,8 @@ PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, 
 I2C i2c1(I2C1_SDA, I2C1_SCL, I2C::Instance::I2C_1);
 I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
 
+DAC8554 dac1(SPI2_MOSI, SPI2_SCK, DAC1_CS);
+
 MCP23017 toggleSwitches(&i2c3, MCP23017_DEGREES_ADDR);
 
 MPR121 touchA(&i2c1, TOUCH_INT_A);
@@ -37,10 +39,10 @@ SuperClock superClock;
 
 Degrees degrees(DEGREES_INT, &toggleSwitches);
 
-TouchChannel chanA(&touchA, &ledsA, &degrees);
-TouchChannel chanB(&touchB, &ledsB, &degrees);
-TouchChannel chanC(&touchC, &ledsC, &degrees);
-TouchChannel chanD(&touchD, &ledsD, &degrees);
+TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A);
+TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B);
+TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C);
+TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D);
 
 GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees);
 

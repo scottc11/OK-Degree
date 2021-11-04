@@ -4,6 +4,7 @@
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
+#include "Flash.h"
 
 namespace DEGREE {
 
@@ -29,6 +30,7 @@ namespace DEGREE {
         void init();
         void poll();
         void handleDegreeChange();
+        void loadCalibrationDataFromFlash();
 
     private:
         /* data */

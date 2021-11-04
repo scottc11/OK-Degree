@@ -4,6 +4,8 @@ using namespace DEGREE;
 
 void TouchChannel::init()
 {
+    _output.init(); // must init this first (for the dac)
+
     // initialize channel touch pads
     _touchPads->init();
     _touchPads->attachCallbackTouched(callback(this, &TouchChannel::onTouch));
@@ -72,18 +74,28 @@ void TouchChannel::onRelease(uint8_t pad)
 
 }
 
+/**
+ * @param degree an index value between 0..7 that gets mapped to note arrays and pin arrays
+ * @param octave index value between 0..3 that gets mapped to note arrays and pin arrays
+ * @param action action
+*/
 void TouchChannel::triggerNote(int degree, int octave, Action action)
 {
+    // stack the degree, octave, and degree switch state to get an index between 0..DAC_1VO_ARR_SIZE
+    int dacIndex = DEGREE_INDEX_MAP[degree] + DAC_OCTAVE_MAP[octave] + _degrees->switchStates[degree];
+    
     _prevDegree = _currDegree;
     _prevOctave = _currOctave;
+
     switch (action) {
         case NOTE_ON:
             if (_mode == MONOPHONIC || _mode == MONO_LOOP) {
-                setLED(DEGREE_LED_PINS[_currDegree], LOW); // set the 'previous' active note led LOW
+                setLED(DEGREE_LED_PINS[_prevDegree], LOW); // set the 'previous' active note led LOW
                 setLED(DEGREE_LED_PINS[degree], HIGH); // new active note HIGH
             }
             _currDegree = degree;
             _currOctave = octave;
+            _output.updateDAC(dacIndex, 0);
             break;
         case NOTE_OFF:
             /* code */

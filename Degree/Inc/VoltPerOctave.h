@@ -20,7 +20,7 @@ namespace DEGREE {
     {
     public:
         DAC8554 *dac;                 // pointer to 16 bit DAC driver
-        DAC8554::Channels dacChannel; // DAC channel
+        DAC8554::Channel dacChannel; // DAC channel
 
         uint16_t currOutput; // value being output to the DAC
         int currNoteIndex;

@@ -3,7 +3,9 @@
 #include "main.h"
 #include "MPR121.h"
 #include "SX1509.h"
+#include "DAC8554.h"
 #include "Degrees.h"
+#include "VoltPerOctave.h"
 
 namespace DEGREE {
 
@@ -14,6 +16,9 @@ namespace DEGREE {
     static const int OCTAVE_LED_PINS[4] = { 3, 2, 1, 0 };               // led driver pin map for octave LEDs
     static const int DEGREE_LED_PINS[8] = { 15, 14, 13, 12, 7, 6, 5, 4 }; // led driver pin map for channel LEDs
     static const int CHAN_TOUCH_PADS[12] = { 7, 6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0 }; // for mapping touch pads to index values
+
+    static const int DAC_OCTAVE_MAP[4] = { 0, 12, 24, 36 };               // for mapping a value between 0..3 to octaves
+    static const int DEGREE_INDEX_MAP[8] = { 0, 2, 4, 6, 8, 10, 12, 14 }; // for mapping an index between 0..7 to a scale degree
 
     class TouchChannel {
     public:
@@ -37,7 +42,7 @@ namespace DEGREE {
             HIGH
         };
 
-        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees)
+        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan)
         {
             _touchPads = touchPads;
             _leds = leds;
@@ -45,11 +50,15 @@ namespace DEGREE {
             _mode = MONOPHONIC;
             _currDegree = 0;
             _currOctave = 0;
+            _output.dac = dac;
+            _output.dacChannel = dac_chan;
         };
 
         MPR121 *_touchPads;
         SX1509 *_leds;
         Degrees *_degrees;
+        VoltPerOctave _output;
+
         TouchChannelMode _mode;
 
         uint8_t _currDegree;
