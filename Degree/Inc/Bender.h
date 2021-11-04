@@ -17,8 +17,8 @@
 #include "AnalogHandle.h"
 
 #define PB_CALIBRATION_RANGE 300
-#define DEFAULT_MAX_BEND 40000
-#define DEFAULT_MIN_BEND 25000
+#define DEFAULT_MAX_BEND 50000
+#define DEFAULT_MIN_BEND 15000
 
 class Bender
 {
