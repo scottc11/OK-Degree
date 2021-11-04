@@ -32,15 +32,23 @@ void GlobalControl::handleDegreeChange()
     _channels[3]->updateDegrees();
 }
 
+/**
+ * NOTE: Careful with the creation of this buffer, as it is quite large and may push the memory past its limits
+*/ 
 void GlobalControl::loadCalibrationDataFromFlash()
 {
-    volatile uint32_t buffer[CALIBRATION_ARR_SIZE * 4];
+    uint32_t buffer[CALIBRATION_ARR_SIZE * 4];
     Flash flash;
     flash.read(FLASH_CONFIG_ADDR, (uint32_t *)buffer, CALIBRATION_ARR_SIZE * 4);
 
-    // check if calibration data exists
-    if (buffer[0] == 0xFF && buffer[1] == 0xFF) // if it doesn't, load default 1vo values
+    // check if calibration data exists by testing contents of buffer
+    uint32_t count = 0;
+    for (int i = 0; i < 4; i++)
+        count += (uint16_t)buffer[i];
+        
+    if (count == 4 * 0xFFFF) // if all data is equal to 0xFFFF, than no calibration exists
     {
+        // load default 1VO values
         for (int chan = 0; chan < 4; chan++)
         {
             _channels[chan]->_output.resetVoltageMap();
@@ -53,7 +61,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
             for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
             {
                 int index = i + CALIBRATION_ARR_SIZE * chan; // determine falshData index position based on channel
-                _channels[chan]->_output.dacVoltageMap[i] = buffer[index];
+                _channels[chan]->_output.dacVoltageMap[i] = (uint16_t)buffer[index];
             }
             // _channels[chan]->bender.minBend = buffer[BENDER_MIN_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
             // _channels[chan]->bender.maxBend = buffer[BENDER_MAX_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
