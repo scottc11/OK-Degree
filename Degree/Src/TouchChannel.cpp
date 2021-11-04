@@ -16,22 +16,8 @@ void TouchChannel::init()
     _leds->init();
     _leds->setBlinkFrequency(SX1509::ULTRA_FAST);
 
-    _leds->ledConfig(CHANNEL_PB_LED);
-    _leds->ledConfig(CHANNEL_REC_LED);
-    _leds->ledConfig(CHANNEL_RATCHET_LED);
-    _leds->ledConfig(CHANNEL_QUANT_LED);
-
-    for (int i = 0; i < 8; i++)
-    {
-        _leds->ledConfig(DEGREE_LED_PINS[i]);
-    }
-
-    for (int i = 0; i < 4; i++)
-    {
-        _leds->ledConfig(OCTAVE_LED_PINS[i]);
-    }
-    for (int i = 0; i < 16; i++)
-    {
+    for (int i = 0; i < 16; i++) {
+        _leds->ledConfig(i);
         setLED(i, LOW);
     }
 
@@ -83,7 +69,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
 {
     // stack the degree, octave, and degree switch state to get an index between 0..DAC_1VO_ARR_SIZE
     int dacIndex = DEGREE_INDEX_MAP[degree] + DAC_OCTAVE_MAP[octave] + _degrees->switchStates[degree];
-    
+
     _prevDegree = _currDegree;
     _prevOctave = _currOctave;
 
@@ -101,7 +87,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
             /* code */
             break;
         case SUSTAIN:
-            /* code */
+            _output.updateDAC(dacIndex, 0);
             break;
         case PREV_NOTE:
             /* code */

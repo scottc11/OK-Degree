@@ -6,13 +6,12 @@ void GlobalControl::init() {
     this->loadCalibrationDataFromFlash();
 
     _degrees->init();
+    _degrees->attachCallback(callback(this, &GlobalControl::handleDegreeChange));
 
     _channels[0]->init();
     _channels[1]->init();
     _channels[2]->init();
     _channels[3]->init();
-
-    _degrees->attachCallback(callback(this, &GlobalControl::handleDegreeChange));
 }
 
 void GlobalControl::poll()
@@ -45,7 +44,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
     uint32_t count = 0;
     for (int i = 0; i < 4; i++)
         count += (uint16_t)buffer[i];
-        
+
     if (count == 4 * 0xFFFF) // if all data is equal to 0xFFFF, than no calibration exists
     {
         // load default 1VO values
