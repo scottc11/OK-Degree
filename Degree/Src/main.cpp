@@ -13,6 +13,8 @@
 #include "TouchChannel.h"
 #include "Degrees.h"
 #include "GlobalControl.h"
+#include "Bender.h"
+#include "AnalogHandle.h"
 
 using namespace DEGREE;
 
@@ -22,6 +24,7 @@ I2C i2c1(I2C1_SDA, I2C1_SCL, I2C::Instance::I2C_1);
 I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
 
 DAC8554 dac1(SPI2_MOSI, SPI2_SCK, DAC1_CS);
+DAC8554 dac2(SPI2_MOSI, SPI2_SCK, DAC2_CS);
 
 MCP23017 toggleSwitches(&i2c3, MCP23017_DEGREES_ADDR);
 
@@ -37,9 +40,12 @@ SX1509 ledsD(&i2c3, SX1509_CHAN_D_ADDR);
 
 SuperClock superClock;
 
+uint16_t AnalogHandle::DMA_BUFFER[ADC_DMA_BUFF_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint16_t FILTERED_ADC_VALUES[ADC_DMA_BUFF_SIZE];
 
 Degrees degrees(DEGREES_INT, &toggleSwitches);
+
+Bender benderA(&dac2, DAC8554::CHAN_A, 5);
 
 TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A, 4);
 TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, 5);
@@ -48,15 +54,23 @@ TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, 7);
 
 GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees);
 
+
+volatile int ADC_COUNT = 0;
 /**
  * @brief handle all ADC inputs here
 */ 
 void ADC1_DMA_Callback(uint16_t values[])
 {
+  // take the raw adc values array and chuck them into a filtered adc array
   for(int i=0; i < ADC_DMA_BUFF_SIZE; i++)
   {
-    // take the raw adc values array and chuck them into a filtered adc array
-    FILTERED_ADC_VALUES[i] = (convert12to16(values[i]) * 0.1) + (FILTERED_ADC_VALUES[i] * (1 - 0.1));
+    uint16_t value = convert12to16(values[i]);
+    if (ADC_COUNT < 100) {
+      AnalogHandle::DMA_BUFFER[i] = value;
+      ADC_COUNT++;
+    } else {
+      AnalogHandle::DMA_BUFFER[i] = (value * 0.1) + (AnalogHandle::DMA_BUFFER[i] * (1 - 0.1));
+    }
   }
 }
 
@@ -83,11 +97,19 @@ int main(void)
   i2c1.init();
   i2c3.init();
 
+  while (ADC_COUNT < 100)
+  {
+    // do nothing
+  }
+  
+  benderA.init();
+
   glblCtrl.init();
 
   while (1)
   {
     glblCtrl.poll();
+    benderA.poll();
   }
 }
 // ----------------------------------------

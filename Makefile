@@ -75,6 +75,7 @@ API/Src/DigitalOut.cpp \
 API/Src/SuperClock.cpp \
 API/Src/tim_api.cpp \
 Degree/Src/main.cpp \
+Degree/Src/Bender.cpp \
 Degree/Src/MultiChanADC.cpp \
 Degree/Src/TouchChannel.cpp \
 Degree/Src/GlobalControl.cpp \
@@ -85,6 +86,7 @@ ok-drivers/drivers/IS31FL3739/IS31FL3739.cpp \
 ok-drivers/drivers/MPR121/MPR121.cpp \
 ok-drivers/drivers/MCP23017/MCP23017.cpp \
 ok-drivers/utils/Algorithms/Algorithms.cpp \
+ok-drivers/utils/ArrayMethods/ArrayMethods.cpp \
 ok-drivers/utils/BitwiseMethods/BitwiseMethods.cpp
 
 # ASM sources ("Assembly Language") - defines main() function
@@ -161,6 +163,7 @@ C_INCLUDES =  \
 -Iok-drivers/drivers/MPR121 \
 -Iok-drivers/drivers/MCP23017 \
 -Iok-drivers/utils/Algorithms \
+-Iok-drivers/utils/ArrayMethods \
 -Iok-drivers/utils/BitwiseMethods \
 -Iok-drivers/utils/OK_I2C \
 -ISystem/Inc
