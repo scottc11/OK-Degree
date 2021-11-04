@@ -23,8 +23,8 @@ void TouchChannel::init()
         setLED(i, LOW);
     }
 
-    triggerNote(_currDegree, _currOctave, NOTE_ON);
-    setLED(OCTAVE_LED_PINS[_currOctave], HIGH);
+    triggerNote(currDegree, currOctave, NOTE_ON);
+    setLED(OCTAVE_LED_PINS[currOctave], HIGH);
 }
 
 void TouchChannel::poll() {
@@ -36,9 +36,9 @@ void TouchChannel::onTouch(uint8_t pad)
     if (pad < 8)  // handle degree pads
     {
         pad = CHAN_TOUCH_PADS[pad]; // remap
-        switch (_mode) {
-            case MONOPHONIC:
-                triggerNote(pad, _currOctave, NOTE_ON);
+        switch (mode) {
+            case MONO:
+                triggerNote(pad, currOctave, NOTE_ON);
                 break;
             default:
                 break;
@@ -47,13 +47,7 @@ void TouchChannel::onTouch(uint8_t pad)
     else // handle octave pads
     {
         pad = CHAN_TOUCH_PADS[pad]; // remap
-        switch (_mode) {
-            case MONOPHONIC:
-                setLED(OCTAVE_LED_PINS[pad], HIGH);
-                break;
-            default:
-                break;
-        }
+        setOctave(pad);
     }
 }
 
@@ -72,17 +66,17 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
     // stack the degree, octave, and degree switch state to get an index between 0..DAC_1VO_ARR_SIZE
     int dacIndex = DEGREE_INDEX_MAP[degree] + DAC_OCTAVE_MAP[octave] + _degrees->switchStates[degree];
 
-    _prevDegree = _currDegree;
-    _prevOctave = _currOctave;
+    prevDegree = currDegree;
+    prevOctave = currOctave;
 
     switch (action) {
         case NOTE_ON:
-            if (_mode == MONOPHONIC || _mode == MONO_LOOP) {
-                setLED(DEGREE_LED_PINS[_prevDegree], LOW); // set the 'previous' active note led LOW
+            if (mode == MONO || mode == MONO_LOOP) {
+                setLED(DEGREE_LED_PINS[prevDegree], LOW); // set the 'previous' active note led LOW
                 setLED(DEGREE_LED_PINS[degree], HIGH); // new active note HIGH
             }
-            _currDegree = degree;
-            _currOctave = octave;
+            currDegree = degree;
+            currOctave = octave;
             _output.updateDAC(dacIndex, 0);
             break;
         case NOTE_OFF:
@@ -102,10 +96,10 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
 
 void TouchChannel::updateDegrees()
 {
-    switch (_mode)
+    switch (mode)
     {
-    case MONOPHONIC:
-        triggerNote(_currDegree, _currOctave, SUSTAIN);
+    case MONO:
+        triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case MONO_LOOP:
         break;
@@ -129,4 +123,37 @@ void TouchChannel::setLED(int index, LedState state)
         default:
             break;
     }
+}
+
+/**
+ * take a number between 0 - 3 and apply to currOctave
+**/
+void TouchChannel::setOctave(int octave)
+{
+    prevOctave = currOctave;
+    currOctave = octave;
+
+    switch (mode)
+    {
+    case MONO:
+        setLED(OCTAVE_LED_PINS[prevOctave], LOW);
+        setLED(OCTAVE_LED_PINS[octave], HIGH);
+        triggerNote(currDegree, currOctave, NOTE_ON);
+        break;
+    case MONO_LOOP:
+        setLED(OCTAVE_LED_PINS[prevOctave], LOW);
+        setLED(OCTAVE_LED_PINS[octave], HIGH);
+        triggerNote(currDegree, currOctave, SUSTAIN);
+        break;
+    case QUANTIZER:
+        // setActiveOctaves(octave);
+        // setActiveDegrees(activeDegrees); // update active degrees thresholds
+        break;
+    case QUANTIZER_LOOP:
+        // setActiveOctaves(octave);
+        // setActiveDegrees(activeDegrees); // update active degrees thresholds
+        break;
+    }
+
+    prevOctave = currOctave;
 }

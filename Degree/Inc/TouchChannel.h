@@ -31,7 +31,7 @@ namespace DEGREE {
         };
 
         enum TouchChannelMode {
-            MONOPHONIC,
+            MONO,
             MONO_LOOP,
             QUANTIZER,
             QUANTIZER_LOOP
@@ -47,9 +47,9 @@ namespace DEGREE {
             _touchPads = touchPads;
             _leds = leds;
             _degrees = degrees;
-            _mode = MONOPHONIC;
-            _currDegree = 0;
-            _currOctave = 0;
+            mode = MONO;
+            currDegree = 0;
+            currOctave = 0;
             _output.dac = dac;
             _output.dacChannel = dac_chan;
             pb_adc_index = pbIndex;
@@ -60,14 +60,14 @@ namespace DEGREE {
         Degrees *_degrees;
         VoltPerOctave _output;
 
-        TouchChannelMode _mode;
+        TouchChannelMode mode;
         
         int pb_adc_index;
 
-        uint8_t _currDegree;
-        uint8_t _currOctave;
-        uint8_t _prevDegree;
-        uint8_t _prevOctave;
+        uint8_t currDegree;
+        uint8_t currOctave;
+        uint8_t prevDegree;
+        uint8_t prevOctave;
 
         void init();
         void poll();
@@ -76,6 +76,8 @@ namespace DEGREE {
         void onRelease(uint8_t pad);
         void triggerNote(int degree, int octave, Action action);
         void updateDegrees();
+
+        void setOctave(int octave);
 
         void setLED(int index, LedState state);
     };
