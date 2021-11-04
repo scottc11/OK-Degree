@@ -42,7 +42,7 @@ namespace DEGREE {
             HIGH
         };
 
-        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan)
+        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, int pbIndex)
         {
             _touchPads = touchPads;
             _leds = leds;
@@ -52,6 +52,7 @@ namespace DEGREE {
             _currOctave = 0;
             _output.dac = dac;
             _output.dacChannel = dac_chan;
+            pb_adc_index = pbIndex;
         };
 
         MPR121 *_touchPads;
@@ -60,6 +61,8 @@ namespace DEGREE {
         VoltPerOctave _output;
 
         TouchChannelMode _mode;
+        
+        int pb_adc_index;
 
         uint8_t _currDegree;
         uint8_t _currOctave;

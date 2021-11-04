@@ -4,6 +4,8 @@
 #include "system_clock_config.h"
 
 #define NUM_DEGREE_CHANNELS 4
+#define ADC_DMA_BUFF_SIZE   8
+
 #define DAC_1VO_ARR_SIZE 72
 #define BENDER_CALIBRATION_SIZE 2
 #define BENDER_MIN_CAL_INDEX DAC_1VO_ARR_SIZE

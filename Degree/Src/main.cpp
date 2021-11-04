@@ -37,12 +37,14 @@ SX1509 ledsD(&i2c3, SX1509_CHAN_D_ADDR);
 
 SuperClock superClock;
 
+uint16_t FILTERED_ADC_VALUES[ADC_DMA_BUFF_SIZE];
+
 Degrees degrees(DEGREES_INT, &toggleSwitches);
 
-TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A);
-TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B);
-TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C);
-TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D);
+TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A, 4);
+TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, 5);
+TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C, 6);
+TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, 7);
 
 GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees);
 
@@ -51,7 +53,11 @@ GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees);
 */ 
 void ADC1_DMA_Callback(uint16_t values[])
 {
-  uint16_t val16 = convert12to16(values[0]);
+  for(int i=0; i < ADC_DMA_BUFF_SIZE; i++)
+  {
+    // take the raw adc values array and chuck them into a filtered adc array
+    FILTERED_ADC_VALUES[i] = (convert12to16(values[i]) * 0.1) + (FILTERED_ADC_VALUES[i] * (1 - 0.1));
+  }
 }
 
 DigitalOut led(TEMPO_LED);
