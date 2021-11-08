@@ -52,7 +52,7 @@ public:
     uint16_t maxBend = DEFAULT_MAX_BEND;          // the minimum value the ADC can achieve when Pitch Bend fully pulled
     uint16_t minBend = DEFAULT_MIN_BEND;          // the maximum value the ADC can achieve when Pitch Bend fully pressed
 
-    Bender(DAC8554 *dac_ptr, DAC8554::Channel _dacChan, int _adcIndex, bool inverted = false) : adc(_adcIndex)
+    Bender(DAC8554 *dac_ptr, DAC8554::Channel _dacChan, PinName adcPin, bool inverted = false) : adc(adcPin)
     {
         dac = dac_ptr;
         dacChan = _dacChan;

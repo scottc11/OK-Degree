@@ -41,14 +41,15 @@ SX1509 ledsD(&i2c3, SX1509_CHAN_D_ADDR);
 SuperClock superClock;
 
 uint16_t AnalogHandle::DMA_BUFFER[ADC_DMA_BUFF_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
+PinName AnalogHandle::ADC_PINS[ADC_DMA_BUFF_SIZE] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
 uint16_t FILTERED_ADC_VALUES[ADC_DMA_BUFF_SIZE];
 
 Degrees degrees(DEGREES_INT, &toggleSwitches);
 
-Bender benderA(&dac2, DAC8554::CHAN_A, 4);
-Bender benderB(&dac2, DAC8554::CHAN_B, 5);
-Bender benderC(&dac2, DAC8554::CHAN_C, 6);
-Bender benderD(&dac2, DAC8554::CHAN_D, 7);
+Bender benderA(&dac2, DAC8554::CHAN_A, PB_ADC_A);
+Bender benderB(&dac2, DAC8554::CHAN_B, PB_ADC_B);
+Bender benderC(&dac2, DAC8554::CHAN_C, PB_ADC_C);
+Bender benderD(&dac2, DAC8554::CHAN_D, PB_ADC_D);
 
 TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A, &benderA);
 TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, &benderB);
