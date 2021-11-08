@@ -50,7 +50,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
         // load default 1VO values
         for (int chan = 0; chan < 4; chan++)
         {
-            _channels[chan]->_output.resetVoltageMap();
+            _channels[chan]->output.resetVoltageMap();
         }
     }
     else
@@ -60,7 +60,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
             for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
             {
                 int index = i + CALIBRATION_ARR_SIZE * chan; // determine falshData index position based on channel
-                _channels[chan]->_output.dacVoltageMap[i] = (uint16_t)buffer[index];
+                _channels[chan]->output.dacVoltageMap[i] = (uint16_t)buffer[index];
             }
             // _channels[chan]->bender.minBend = buffer[BENDER_MIN_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
             // _channels[chan]->bender.maxBend = buffer[BENDER_MAX_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];

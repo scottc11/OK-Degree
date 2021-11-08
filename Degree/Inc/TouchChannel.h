@@ -5,6 +5,7 @@
 #include "SX1509.h"
 #include "DAC8554.h"
 #include "Degrees.h"
+#include "Bender.h"
 #include "VoltPerOctave.h"
 
 namespace DEGREE {
@@ -22,45 +23,61 @@ namespace DEGREE {
 
     class TouchChannel {
     public:
-        enum Action {
+        enum Action
+        {
             NOTE_ON,
             NOTE_OFF,
             SUSTAIN,
             PREV_NOTE,
             BEND_PITCH
         };
+        
+        enum BenderMode
+        {
+            BEND_OFF = 0,
+            PITCH_BEND = 1,
+            RATCHET = 2,
+            RATCHET_PITCH_BEND = 3,
+            INCREMENT_BENDER_MODE = 4,
+            BEND_MENU = 5
+        };
 
-        enum TouchChannelMode {
+        enum TouchChannelMode
+        {
             MONO,
             MONO_LOOP,
             QUANTIZER,
             QUANTIZER_LOOP
         };
 
-        enum LedState {
+        enum LedState
+        {
             LOW,
             HIGH
         };
 
-        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, int pbIndex)
+        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, Bender *_bender)
         {
             _touchPads = touchPads;
             _leds = leds;
             _degrees = degrees;
+            output.dac = dac;
+            output.dacChannel = dac_chan;
+            bender = _bender;
             mode = MONO;
+            benderMode = PITCH_BEND;
             currDegree = 0;
             currOctave = 0;
-            _output.dac = dac;
-            _output.dacChannel = dac_chan;
-            pb_adc_index = pbIndex;
         };
 
         MPR121 *_touchPads;
         SX1509 *_leds;
         Degrees *_degrees;
-        VoltPerOctave _output;
+        Bender *bender;
+        VoltPerOctave output;
 
         TouchChannelMode mode;
+        BenderMode benderMode;
         
         int pb_adc_index;
 
@@ -80,6 +97,9 @@ namespace DEGREE {
         void setOctave(int octave);
 
         void setLED(int index, LedState state);
+
+        // Bender Callbacks
+        void benderActiveCallback(uint16_t value);
     };
 
 

@@ -75,8 +75,10 @@ void Bender::poll()
         volatile int myOutput = calculateOutput(currBend);
         updateDAC(myOutput);
 
-        if (activeCallback)
+        if (activeCallback) {
             activeCallback(currBend);
+        }
+            
     }
 
     // handle tri-state

@@ -6,7 +6,10 @@ extern uint16_t FILTERED_ADC_VALUES[ADC_DMA_BUFF_SIZE];
 
 void TouchChannel::init()
 {
-    _output.init(); // must init this first (for the dac)
+    output.init(); // must init this first (for the dac)
+    
+    bender->init();
+    bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
 
     // initialize channel touch pads
     _touchPads->init();
@@ -29,6 +32,7 @@ void TouchChannel::init()
 
 void TouchChannel::poll() {
     _touchPads->poll();
+    bender->poll();
 }
 
 void TouchChannel::onTouch(uint8_t pad)
@@ -77,13 +81,13 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
             }
             currDegree = degree;
             currOctave = octave;
-            _output.updateDAC(dacIndex, 0);
+            output.updateDAC(dacIndex, 0);
             break;
         case NOTE_OFF:
             /* code */
             break;
         case SUSTAIN:
-            _output.updateDAC(dacIndex, 0);
+            output.updateDAC(dacIndex, 0);
             break;
         case PREV_NOTE:
             /* code */
@@ -156,4 +160,38 @@ void TouchChannel::setOctave(int octave)
     }
 
     prevOctave = currOctave;
+}
+
+/**
+ * apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
+*/
+void TouchChannel::benderActiveCallback(uint16_t value)
+{
+    switch (this->benderMode)
+    {
+    case BEND_OFF:
+        // do nothing
+        break;
+    case PITCH_BEND:
+        uint16_t bend;
+        // Pitch Bend UP
+        if (bender->currState == Bender::BEND_UP)
+        {
+            bend = output.calculatePitchBend(value, bender->zeroBend, bender->maxBend);
+            output.setPitchBend(bend); // non-inverted
+        }
+        // Pitch Bend DOWN
+        else if (bender->currState == Bender::BEND_DOWN)
+        {
+            bend = output.calculatePitchBend(value, bender->zeroBend, bender->minBend); // NOTE: inverted mapping
+            output.setPitchBend(bend * -1);                                           // inverted
+        }
+        break;
+    case RATCHET:
+        break;
+    case RATCHET_PITCH_BEND:
+        break;
+    case BEND_MENU:
+        break;
+    }
 }

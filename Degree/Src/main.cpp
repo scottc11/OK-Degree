@@ -50,10 +50,10 @@ Bender benderB(&dac2, DAC8554::CHAN_B, 5);
 Bender benderC(&dac2, DAC8554::CHAN_C, 6);
 Bender benderD(&dac2, DAC8554::CHAN_D, 7);
 
-TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A, 4);
-TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, 5);
-TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C, 6);
-TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, 7);
+TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A, &benderA);
+TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, &benderB);
+TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C, &benderC);
+TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, &benderD);
 
 GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees);
 
@@ -78,6 +78,7 @@ void ADC1_DMA_Callback(uint16_t values[])
 }
 
 DigitalOut led(TEMPO_LED);
+
 void toggleLED() {
   led = !led.read();
 }
@@ -106,20 +107,11 @@ int main(void)
     // do nothing
   }
   
-  benderA.init();
-  benderB.init();
-  benderC.init();
-  benderD.init();
-
   glblCtrl.init();
 
   while (1)
   {
     glblCtrl.poll();
-    benderA.poll();
-    benderB.poll();
-    benderC.poll();
-    benderD.poll();
   }
 }
 // ----------------------------------------
