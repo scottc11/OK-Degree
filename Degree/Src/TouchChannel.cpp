@@ -377,11 +377,11 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
             {
                 activeOctaveValues[numActiveOctaves].octave = i;
                 numActiveOctaves += 1;
-                setLED(i, HIGH);
+                setLED(OCTAVE_LED_PINS[i], HIGH);
             }
             else
             {
-                setLED(i, LOW);
+                setLED(OCTAVE_LED_PINS[i], LOW);
             }
         }
         prevActiveOctaves = currActiveOctaves;
