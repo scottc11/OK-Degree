@@ -46,7 +46,7 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
     currMode = targetMode;
 
     // start from a clean slate by setting all the LEDs LOW
-    for (int i = 0; i < DEGREE_COUNT; i++) setLED(DEGREE_LED_PINS[i], LOW);
+    for (int i = 0; i < DEGREE_COUNT; i++) setDegreeLed(i, LOW);
     setLED(CHANNEL_REC_LED, LOW);
     setLED(CHANNEL_QUANT_LED, LOW);
 
@@ -111,8 +111,8 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
     switch (action) {
         case NOTE_ON:
             if (currMode == MONO || currMode == MONO_LOOP) {
-                setLED(DEGREE_LED_PINS[prevDegree], LOW); // set the 'previous' active note led LOW
-                setLED(DEGREE_LED_PINS[degree], HIGH); // new active note HIGH
+                setDegreeLed(prevDegree, LOW); // set the 'previous' active note led LOW
+                setDegreeLed(degree, HIGH); // new active note HIGH
             }
             currDegree = degree;
             currOctave = octave;
@@ -168,17 +168,25 @@ void TouchChannel::setLED(int io_pin, LedState state)
     }
 }
 
+void TouchChannel::setDegreeLed(int degree, LedState state) {
+    setLED(DEGREE_LED_PINS[degree], state);
+}
+
+void TouchChannel::setOctaveLed(int octave, LedState state) {
+    setLED(OCTAVE_LED_PINS[octave], state);
+}
+
 void TouchChannel::updateOctaveLeds(int octave)
 {
     for (int i = 0; i < OCTAVE_COUNT; i++)
     {
         if (i == octave)
         {
-            setLED(OCTAVE_LED_PINS[i], HIGH);
+            setOctaveLed(i, HIGH);
         }
         else
         {
-            setLED(OCTAVE_LED_PINS[i], LOW);
+            setOctaveLed(i, LOW);
         }
     }
 }
@@ -321,16 +329,16 @@ void TouchChannel::handleCVInput()
                     triggerNote(currDegree, prevOctave, NOTE_OFF);
                     if (bitRead(activeDegrees, currDegree))
                     { // if prevNote still active, its led needs to be set from dimmed back fully ON
-                        setLED(DEGREE_LED_PINS[currDegree], HIGH);
+                        setDegreeLed(currDegree, HIGH);
                     }
                     triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON); // NOTE: you previously had "blink LED ON" here
-                    setLED(DEGREE_LED_PINS[activeDegreeValues[i].noteIndex], LedState::BLINK);
+                    setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK);
 
                     if (bitRead(currActiveOctaves, prevOctave))
                     {
-                        setLED(OCTAVE_LED_PINS[prevOctave], LedState::HIGH);
+                        setOctaveLed(prevOctave, LedState::HIGH);
                     }
-                    setLED(OCTAVE_LED_PINS[octave], LedState::BLINK);
+                    setOctaveLed(octave, LedState::BLINK);
                 }
                 break;
             }
@@ -359,11 +367,11 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
         {
             activeDegreeValues[numActiveDegrees].noteIndex = i;
             numActiveDegrees += 1;
-            setLED(DEGREE_LED_PINS[i], HIGH);
+            setDegreeLed(i, HIGH);
         }
         else
         {
-            setLED(DEGREE_LED_PINS[i], LOW);
+            setDegreeLed(i, LOW);
         }
     }
 
@@ -377,11 +385,11 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
             {
                 activeOctaveValues[numActiveOctaves].octave = i;
                 numActiveOctaves += 1;
-                setLED(OCTAVE_LED_PINS[i], HIGH);
+                setOctaveLed(i, HIGH);
             }
             else
             {
-                setLED(OCTAVE_LED_PINS[i], LOW);
+                setOctaveLed(i, LOW);
             }
         }
         prevActiveOctaves = currActiveOctaves;

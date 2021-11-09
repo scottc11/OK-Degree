@@ -135,8 +135,10 @@ namespace DEGREE {
 
         void setOctave(int octave);
         void updateOctaveLeds(int octave);
-        
+
         void setLED(int io_pin, LedState state);
+        void setDegreeLed(int degree, LedState state);
+        void setOctaveLed(int octave, LedState state);
 
         // Quantizer methods
         void initQuantizer();
