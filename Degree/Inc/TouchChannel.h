@@ -68,7 +68,8 @@ namespace DEGREE {
         {
             LOW,
             HIGH,
-            BLINK,
+            BLINK_ON,
+            BLINK_OFF,
             DIM_LOW,
             DIM_MED,
             DIM_HIGH

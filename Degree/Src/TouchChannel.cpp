@@ -19,7 +19,7 @@ void TouchChannel::init()
 
     // initialize LED Driver
     _leds->init();
-    _leds->setBlinkFrequency(SX1509::ULTRA_FAST);
+    _leds->setBlinkFrequency(SX1509::FAST);
 
     for (int i = 0; i < 16; i++) {
         _leds->ledConfig(i);
@@ -47,7 +47,6 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
 
     // start from a clean slate by setting all the LEDs LOW
     for (int i = 0; i < DEGREE_COUNT; i++) {
-        setDegreeLed(i, DIM_LOW);
         setDegreeLed(i, LOW);
     }
     setLED(CHANNEL_REC_LED, LOW);
@@ -164,11 +163,14 @@ void TouchChannel::setLED(int io_pin, LedState state)
             _leds->setOnTime(io_pin, 0);
             _leds->digitalWrite(io_pin, 0);
             break;
-        case BLINK:
-            _leds->blinkLED(io_pin, 1, 1, 255, 0);
+        case BLINK_ON:
+            _leds->blinkLED(io_pin, 1, 1, 127, 0);
+            break;
+        case BLINK_OFF:
+            _leds->setOnTime(io_pin, 0);
             break;
         case DIM_LOW:
-            _leds->setPWM(io_pin, 10);
+            _leds->setPWM(io_pin, 40);
             break;
         case DIM_MED:
             _leds->setPWM(io_pin, 127);
@@ -346,17 +348,22 @@ void TouchChannel::handleCVInput()
                     // re-DIM previously degree LED
                     if (bitRead(activeDegrees, prevDegree))
                     {
+                        setDegreeLed(currDegree, BLINK_OFF);
                         setDegreeLed(currDegree, DIM_LOW);
                     }
 
-                    triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON); // NOTE: you previously had "blink LED ON" here
-                    setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK);
+                    // trigger the new degree, and set its LED to blink
+                    triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON);
+                    setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK_ON);
 
+                    // re-DIM previous Octave LED
                     if (bitRead(currActiveOctaves, prevOctave))
                     {
-                        setOctaveLed(prevOctave, LedState::HIGH);
+                        setOctaveLed(prevOctave, LedState::BLINK_OFF);
+                        setOctaveLed(prevOctave, LedState::DIM_LOW);
                     }
-                    setOctaveLed(octave, LedState::BLINK);
+                    // BLINK active quantized octave
+                    setOctaveLed(octave, LedState::BLINK_ON);
                 }
                 break; // break from loop as soon as we can
             }
@@ -385,6 +392,7 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
         {
             activeDegreeValues[numActiveDegrees].noteIndex = i;
             numActiveDegrees += 1;
+            setDegreeLed(i, DIM_LOW);
             setDegreeLed(i, HIGH);
         }
         else
@@ -403,6 +411,7 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
             {
                 activeOctaveValues[numActiveOctaves].octave = i;
                 numActiveOctaves += 1;
+                setOctaveLed(i, DIM_LOW);
                 setOctaveLed(i, HIGH);
             }
             else
