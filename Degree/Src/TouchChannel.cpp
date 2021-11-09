@@ -26,12 +26,15 @@ void TouchChannel::init()
         setLED(i, LOW);
     }
 
-    setMode(MONO);
+    setMode(QUANTIZER);
 }
 
 void TouchChannel::poll() {
     _touchPads->poll();
     bender->poll();
+    if (currMode == QUANTIZER) {
+        handleCVInput();
+    }
 }
 
 /**
@@ -56,6 +59,7 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
     case MONO_LOOP:
         break;
     case QUANTIZER:
+        setLED(CHANNEL_QUANT_LED, HIGH);
         setActiveDegrees(activeDegrees);
         break;
     case QUANTIZER_LOOP:
@@ -198,8 +202,8 @@ void TouchChannel::setOctave(int octave)
         triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case QUANTIZER:
-        // setActiveOctaves(octave);
-        // setActiveDegrees(activeDegrees); // update active degrees thresholds
+        setActiveOctaves(octave);
+        setActiveDegrees(activeDegrees); // update active degrees thresholds
         break;
     case QUANTIZER_LOOP:
         // setActiveOctaves(octave);
@@ -317,7 +321,7 @@ void TouchChannel::handleCVInput()
                     triggerNote(currDegree, prevOctave, NOTE_OFF);
                     if (bitRead(activeDegrees, currDegree))
                     { // if prevNote still active, its led needs to be set from dimmed back fully ON
-                        setLED(currDegree, HIGH);
+                        setLED(DEGREE_LED_PINS[currDegree], HIGH);
                     }
                     triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON); // NOTE: you previously had "blink LED ON" here
                     setLED(DEGREE_LED_PINS[activeDegreeValues[i].noteIndex], LedState::BLINK);
@@ -342,6 +346,8 @@ void TouchChannel::handleCVInput()
 */
 void TouchChannel::setActiveDegrees(uint8_t degrees)
 {
+    // one degree must always be active
+    if (degrees == 0) return;
 
     activeDegrees = degrees;
 
