@@ -26,8 +26,7 @@ void TouchChannel::init()
         setLED(i, LOW);
     }
 
-    triggerNote(currDegree, currOctave, NOTE_ON);
-    setLED(OCTAVE_LED_PINS[currOctave], HIGH);
+    setMode(MONO);
 }
 
 void TouchChannel::poll() {
@@ -35,14 +34,46 @@ void TouchChannel::poll() {
     bender->poll();
 }
 
+/**
+ * @brief set the channels mode
+*/ 
+void TouchChannel::setMode(TouchChannelMode targetMode)
+{
+    prevMode = currMode;
+    currMode = targetMode;
+
+    // start from a clean slate by setting all the LEDs LOW
+    for (int i = 0; i < DEGREE_COUNT; i++) setLED(DEGREE_LED_PINS[i], LOW);
+    setLED(CHANNEL_REC_LED, LOW);
+    setLED(CHANNEL_QUANT_LED, LOW);
+
+    switch (currMode)
+    {
+    case MONO:
+        triggerNote(currDegree, currOctave, NOTE_ON);
+        updateOctaveLeds(currOctave);
+        break;
+    case MONO_LOOP:
+        break;
+    case QUANTIZER:
+        setActiveDegrees(activeDegrees);
+        break;
+    case QUANTIZER_LOOP:
+        break;
+    }
+}
+
 void TouchChannel::onTouch(uint8_t pad)
 {
     if (pad < 8)  // handle degree pads
     {
         pad = CHAN_TOUCH_PADS[pad]; // remap
-        switch (mode) {
+        switch (currMode) {
             case MONO:
                 triggerNote(pad, currOctave, NOTE_ON);
+                break;
+            case QUANTIZER:
+                setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
                 break;
             default:
                 break;
@@ -75,7 +106,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
 
     switch (action) {
         case NOTE_ON:
-            if (mode == MONO || mode == MONO_LOOP) {
+            if (currMode == MONO || currMode == MONO_LOOP) {
                 setLED(DEGREE_LED_PINS[prevDegree], LOW); // set the 'previous' active note led LOW
                 setLED(DEGREE_LED_PINS[degree], HIGH); // new active note HIGH
             }
@@ -100,7 +131,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
 
 void TouchChannel::updateDegrees()
 {
-    switch (mode)
+    switch (currMode)
     {
     case MONO:
         triggerNote(currDegree, currOctave, SUSTAIN);
@@ -133,6 +164,21 @@ void TouchChannel::setLED(int io_pin, LedState state)
     }
 }
 
+void TouchChannel::updateOctaveLeds(int octave)
+{
+    for (int i = 0; i < OCTAVE_COUNT; i++)
+    {
+        if (i == octave)
+        {
+            setLED(OCTAVE_LED_PINS[i], HIGH);
+        }
+        else
+        {
+            setLED(OCTAVE_LED_PINS[i], LOW);
+        }
+    }
+}
+
 /**
  * take a number between 0 - 3 and apply to currOctave
 **/
@@ -141,16 +187,14 @@ void TouchChannel::setOctave(int octave)
     prevOctave = currOctave;
     currOctave = octave;
 
-    switch (mode)
+    switch (currMode)
     {
     case MONO:
-        setLED(OCTAVE_LED_PINS[prevOctave], LOW);
-        setLED(OCTAVE_LED_PINS[octave], HIGH);
+        updateOctaveLeds(currOctave);
         triggerNote(currDegree, currOctave, NOTE_ON);
         break;
     case MONO_LOOP:
-        setLED(OCTAVE_LED_PINS[prevOctave], LOW);
-        setLED(OCTAVE_LED_PINS[octave], HIGH);
+        updateOctaveLeds(currOctave);
         triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case QUANTIZER:

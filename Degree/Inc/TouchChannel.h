@@ -81,10 +81,16 @@ namespace DEGREE {
             bender = _bender;
             globalGateOut = global_gate_ptr;
 
-            mode = MONO;
+            currMode = MONO;
+            prevMode = MONO;
             benderMode = PITCH_BEND;
             currDegree = 0;
             currOctave = 0;
+            
+            activeDegrees = 0xFF;
+            currActiveOctaves = 0xF;
+            numActiveDegrees = DEGREE_COUNT;
+            numActiveOctaves = OCTAVE_COUNT;
         };
 
         MPR121 *_touchPads;
@@ -97,7 +103,9 @@ namespace DEGREE {
         bool gateState;            // state of the gate output
         DigitalOut *globalGateOut; // global gate output
 
-        TouchChannelMode mode;
+        TouchChannelMode currMode;
+        TouchChannelMode prevMode;
+
         BenderMode benderMode;
 
         uint8_t currDegree;
@@ -118,6 +126,7 @@ namespace DEGREE {
 
         void init();
         void poll();
+        void setMode(TouchChannelMode targetMode);
 
         void onTouch(uint8_t pad);
         void onRelease(uint8_t pad);
@@ -125,7 +134,8 @@ namespace DEGREE {
         void updateDegrees();
 
         void setOctave(int octave);
-
+        void updateOctaveLeds(int octave);
+        
         void setLED(int io_pin, LedState state);
 
         // Quantizer methods
