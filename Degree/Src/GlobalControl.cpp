@@ -5,8 +5,19 @@ using namespace DEGREE;
 void GlobalControl::init() {
     this->loadCalibrationDataFromFlash();
 
-    _degrees->init();
-    _degrees->attachCallback(callback(this, &GlobalControl::handleDegreeChange));
+    switches->init();
+    switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
+
+    buttons->init();
+    buttons->setDirection(MCP23017_PORTA, 0xFF);     // set PORTA pins as inputs
+    buttons->setDirection(MCP23017_PORTB, 0xFF);     // set PORTB pins as inputs
+    buttons->setPullUp(MCP23017_PORTA, 0xFF);        // activate PORTA pin pull-ups
+    buttons->setPullUp(MCP23017_PORTB, 0xFF);        // activate PORTB pin pull-ups
+    buttons->setInputPolarity(MCP23017_PORTA, 0x00); // invert PORTA pins input polarity
+    buttons->setInputPolarity(MCP23017_PORTB, 0x00); // invert PORTB pins input polarity
+    buttons->setInterupt(MCP23017_PORTA, 0xFF);
+    buttons->setInterupt(MCP23017_PORTB, 0xFF);
+    buttons->digitalReadAB();
 
     _channels[0]->init();
     _channels[1]->init();
@@ -16,19 +27,33 @@ void GlobalControl::init() {
 
 void GlobalControl::poll()
 {
-    _degrees->poll();
+    switches->poll();
+    if (buttonChanged) {
+        handleButtonChange();
+    }
     _channels[0]->poll();
     _channels[1]->poll();
     _channels[2]->poll();
     _channels[3]->poll();
 }
 
-void GlobalControl::handleDegreeChange()
+void GlobalControl::handleSwitchChange()
 {
     _channels[0]->updateDegrees();
     _channels[1]->updateDegrees();
     _channels[2]->updateDegrees();
     _channels[3]->updateDegrees();
+}
+
+void GlobalControl::handleButtonChange() {
+    buttons->digitalReadAB();
+    recLED = !recLED.read();
+    buttonChanged = false;
+}
+
+void GlobalControl::handleButtonInterupt()
+{
+    buttonChanged = true;
 }
 
 /**

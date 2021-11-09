@@ -29,6 +29,7 @@ DAC8554 dac2(SPI2_MOSI, SPI2_SCK, DAC2_CS);
 DigitalOut globalGate(GLOBAL_GATE_OUT, 0);
 
 MCP23017 toggleSwitches(&i2c3, MCP23017_DEGREES_ADDR);
+MCP23017 buttons(&i2c1, MCP23017_CTRL_ADDR);
 
 MPR121 touchA(&i2c1, TOUCH_INT_A);
 MPR121 touchB(&i2c1, TOUCH_INT_B, MPR121::ADDR_VDD);
@@ -58,7 +59,7 @@ TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, &benderB, 
 TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C, &benderC, ADC_C, GATE_OUT_C, &globalGate);
 TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, &benderD, ADC_D, GATE_OUT_D, &globalGate);
 
-GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees);
+GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees, &buttons, BUTTONS_INT, REC_LED, FREEZE_LED);
 
 
 volatile int ADC_COUNT = 0;

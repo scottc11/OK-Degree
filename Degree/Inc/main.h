@@ -48,6 +48,8 @@
 
 #define DEGREES_INT PB_4
 
+#define BUTTONS_INT PB_5
+
 #define DAC1_CS PB_12
 #define DAC2_CS PC_8
 
@@ -63,5 +65,6 @@
 #define SX1509_CHAN_D_ADDR 0x71
 
 #define MCP23017_DEGREES_ADDR 0x20 // 0100000
+#define MCP23017_CTRL_ADDR    0x24    // 0100100
 
 #define FLASH_CONFIG_ADDR 0x08060000UL  // sector 7
