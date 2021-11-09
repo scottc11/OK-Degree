@@ -68,7 +68,10 @@ namespace DEGREE {
         {
             LOW,
             HIGH,
-            BLINK
+            BLINK,
+            DIM_LOW,
+            DIM_MED,
+            DIM_HIGH
         };
 
         TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, Bender *_bender, PinName adc_pin, PinName gatePin, DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin)

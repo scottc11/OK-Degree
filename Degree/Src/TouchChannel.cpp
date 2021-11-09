@@ -46,7 +46,10 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
     currMode = targetMode;
 
     // start from a clean slate by setting all the LEDs LOW
-    for (int i = 0; i < DEGREE_COUNT; i++) setDegreeLed(i, LOW);
+    for (int i = 0; i < DEGREE_COUNT; i++) {
+        setDegreeLed(i, DIM_LOW);
+        setDegreeLed(i, LOW);
+    }
     setLED(CHANNEL_REC_LED, LOW);
     setLED(CHANNEL_QUANT_LED, LOW);
 
@@ -114,12 +117,13 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
                 setDegreeLed(prevDegree, LOW); // set the 'previous' active note led LOW
                 setDegreeLed(degree, HIGH); // new active note HIGH
             }
+            setGate(HIGH);
             currDegree = degree;
             currOctave = octave;
             output.updateDAC(dacIndex, 0);
             break;
         case NOTE_OFF:
-            /* code */
+            setGate(LOW);
             break;
         case SUSTAIN:
             output.updateDAC(dacIndex, 0);
@@ -162,6 +166,15 @@ void TouchChannel::setLED(int io_pin, LedState state)
             break;
         case BLINK:
             _leds->blinkLED(io_pin, 1, 1, 255, 0);
+            break;
+        case DIM_LOW:
+            _leds->setPWM(io_pin, 10);
+            break;
+        case DIM_MED:
+            _leds->setPWM(io_pin, 127);
+            break;
+        case DIM_HIGH:
+            _leds->setPWM(io_pin, 255);
             break;
         default:
             break;
@@ -322,15 +335,20 @@ void TouchChannel::handleCVInput()
         // latch incoming ADC value to DAC value
         for (int i = 0; i < numActiveDegrees; i++)
         {
+            // if the calculated value is less than threshold
             if (refinedValue < activeDegreeValues[i].threshold)
-            { // break from loop as soon as we can
-                if (currDegree != activeDegreeValues[i].noteIndex || prevOctave != octave)
-                { // catch duplicate triggering of that same note.
-                    triggerNote(currDegree, prevOctave, NOTE_OFF);
-                    if (bitRead(activeDegrees, currDegree))
-                    { // if prevNote still active, its led needs to be set from dimmed back fully ON
-                        setDegreeLed(currDegree, HIGH);
+            {
+                // prevent duplicate triggering of that same degree / octave
+                if (currDegree != activeDegreeValues[i].noteIndex || currOctave != octave) // NOTE: currOctave used to be prevOctave 🤷‍♂️
+                {
+                    triggerNote(currDegree, prevOctave, NOTE_OFF);  // set previous triggered degree 
+
+                    // re-DIM previously degree LED
+                    if (bitRead(activeDegrees, prevDegree))
+                    {
+                        setDegreeLed(currDegree, DIM_LOW);
                     }
+
                     triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON); // NOTE: you previously had "blink LED ON" here
                     setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK);
 
@@ -340,7 +358,7 @@ void TouchChannel::handleCVInput()
                     }
                     setOctaveLed(octave, LedState::BLINK);
                 }
-                break;
+                break; // break from loop as soon as we can
             }
         }
     }
