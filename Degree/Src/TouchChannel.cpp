@@ -26,7 +26,7 @@ void TouchChannel::init()
         setLED(i, LOW);
     }
 
-    setMode(QUANTIZER);
+    setMode(MONO);
 }
 
 void TouchChannel::poll() {
@@ -47,6 +47,7 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
 
     // start from a clean slate by setting all the LEDs LOW
     for (int i = 0; i < DEGREE_COUNT; i++) {
+        setDegreeLed(i, DIM_MED);
         setDegreeLed(i, LOW);
     }
     setLED(CHANNEL_REC_LED, LOW);
