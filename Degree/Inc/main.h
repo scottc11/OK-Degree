@@ -12,6 +12,9 @@
 #define BENDER_MAX_CAL_INDEX (DAC_1VO_ARR_SIZE + 1)
 #define CALIBRATION_ARR_SIZE (DAC_1VO_ARR_SIZE + BENDER_CALIBRATION_SIZE)
 
+#define OCTAVE_COUNT 4
+#define DEGREE_COUNT 8
+
 #define REC_LED PC_13
 #define FREEZE_LED PB_7
 #define TEMPO_LED PA_1
@@ -25,6 +28,13 @@
 #define PB_ADC_B PA_5
 #define PB_ADC_C PB_0
 #define PB_ADC_D PB_1
+
+#define GATE_OUT_A PC_2
+#define GATE_OUT_B PC_3
+#define GATE_OUT_C PC_7
+#define GATE_OUT_D PC_6
+
+#define GLOBAL_GATE_OUT PB_10
 
 #define I2C3_SDA PC_9
 #define I2C3_SCL PA_8

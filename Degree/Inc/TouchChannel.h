@@ -8,12 +8,26 @@
 #include "Bender.h"
 #include "VoltPerOctave.h"
 
+typedef struct QuantOctave
+{
+    int threshold;
+    int octave;
+} QuantOctave;
+
+typedef struct QuantDegree
+{
+    int threshold;
+    int noteIndex;
+} QuantDegree;
+
 namespace DEGREE {
 
     #define CHANNEL_REC_LED 11
     #define CHANNEL_RATCHET_LED 10
     #define CHANNEL_PB_LED 9
     #define CHANNEL_QUANT_LED 8
+    #define CV_QUANTIZER_DEBOUNCE 1000 // used to avoid rapid re-triggering of a degree when the CV signal is noisy
+
     static const int OCTAVE_LED_PINS[4] = { 3, 2, 1, 0 };               // led driver pin map for octave LEDs
     static const int DEGREE_LED_PINS[8] = { 15, 14, 13, 12, 7, 6, 5, 4 }; // led driver pin map for channel LEDs
     static const int CHAN_TOUCH_PADS[12] = { 7, 6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0 }; // for mapping touch pads to index values
@@ -53,17 +67,20 @@ namespace DEGREE {
         enum LedState
         {
             LOW,
-            HIGH
+            HIGH,
+            BLINK
         };
 
-        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, Bender *_bender)
+        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, Bender *_bender, PinName adc_pin, PinName gatePin, DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin)
         {
             _touchPads = touchPads;
             _leds = leds;
-            _degrees = degrees;
+            degreeSwitches = degrees;
             output.dac = dac;
             output.dacChannel = dac_chan;
             bender = _bender;
+            globalGateOut = global_gate_ptr;
+
             mode = MONO;
             benderMode = PITCH_BEND;
             currDegree = 0;
@@ -72,19 +89,32 @@ namespace DEGREE {
 
         MPR121 *_touchPads;
         SX1509 *_leds;
-        Degrees *_degrees;
+        Degrees *degreeSwitches;
         Bender *bender;
         VoltPerOctave output;
 
+        DigitalOut gateOut;        // gate output
+        bool gateState;            // state of the gate output
+        DigitalOut *globalGateOut; // global gate output
+
         TouchChannelMode mode;
         BenderMode benderMode;
-        
-        int pb_adc_index;
 
         uint8_t currDegree;
         uint8_t currOctave;
         uint8_t prevDegree;
         uint8_t prevOctave;
+
+        AnalogHandle adc;                  // CV input ADC
+        uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
+        uint8_t currActiveOctaves;         // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
+        uint8_t prevActiveOctaves;         // 4-bits to represent the previous octaves external CV will get mapped to (active = 1, inactive= 0)
+        int numActiveDegrees;              // number of degrees which are active (to quantize voltage input)
+        int numActiveOctaves;              // number of active octaves for mapping CV to
+        int activeDegreeLimit;             // the max number of degrees allowed to be enabled at one time.
+        uint16_t prevCVInputValue;         // the previously handled CV input value 
+        QuantDegree activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
+        QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
         void init();
         void poll();
@@ -96,10 +126,20 @@ namespace DEGREE {
 
         void setOctave(int octave);
 
-        void setLED(int index, LedState state);
+        void setLED(int io_pin, LedState state);
+
+        // Quantizer methods
+        void initQuantizer();
+        void handleCVInput();
+        void setActiveDegreeLimit(int value);
+        void setActiveDegrees(uint8_t degrees);
+        void setActiveOctaves(int octave);
 
         // Bender Callbacks
         void benderActiveCallback(uint16_t value);
+
+        // Gate Output Methods
+        void setGate(bool state);
     };
 
 

@@ -26,6 +26,8 @@ I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
 DAC8554 dac1(SPI2_MOSI, SPI2_SCK, DAC1_CS);
 DAC8554 dac2(SPI2_MOSI, SPI2_SCK, DAC2_CS);
 
+DigitalOut globalGate(GLOBAL_GATE_OUT, 0);
+
 MCP23017 toggleSwitches(&i2c3, MCP23017_DEGREES_ADDR);
 
 MPR121 touchA(&i2c1, TOUCH_INT_A);
@@ -51,10 +53,10 @@ Bender benderB(&dac2, DAC8554::CHAN_B, PB_ADC_B);
 Bender benderC(&dac2, DAC8554::CHAN_C, PB_ADC_C);
 Bender benderD(&dac2, DAC8554::CHAN_D, PB_ADC_D);
 
-TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A, &benderA);
-TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, &benderB);
-TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C, &benderC);
-TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, &benderD);
+TouchChannel chanA(&touchA, &ledsA, &degrees, &dac1, DAC8554::CHAN_A, &benderA, ADC_A, GATE_OUT_A, &globalGate);
+TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, &benderB, ADC_B, GATE_OUT_B, &globalGate);
+TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C, &benderC, ADC_C, GATE_OUT_C, &globalGate);
+TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, &benderD, ADC_D, GATE_OUT_D, &globalGate);
 
 GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees);
 
