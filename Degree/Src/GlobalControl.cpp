@@ -9,15 +9,16 @@ void GlobalControl::init() {
     switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
 
     buttons->init();
-    buttons->setDirection(MCP23017_PORTA, 0xFF);     // set PORTA pins as inputs
-    buttons->setDirection(MCP23017_PORTB, 0xFF);     // set PORTB pins as inputs
-    buttons->setPullUp(MCP23017_PORTA, 0xFF);        // activate PORTA pin pull-ups
-    buttons->setPullUp(MCP23017_PORTB, 0xFF);        // activate PORTB pin pull-ups
-    buttons->setInputPolarity(MCP23017_PORTA, 0x00); // invert PORTA pins input polarity
-    buttons->setInputPolarity(MCP23017_PORTB, 0x00); // invert PORTB pins input polarity
-    buttons->setInterupt(MCP23017_PORTA, 0xFF);
-    buttons->setInterupt(MCP23017_PORTB, 0xFF);
+    buttons->setDirection(MCP23017_PORTA, 0xff);
+    buttons->setDirection(MCP23017_PORTB, 0xff);
+    buttons->setInterupt(MCP23017_PORTA, 0xff);
+    buttons->setInterupt(MCP23017_PORTB, 0xff);
+    buttons->setPullUp(MCP23017_PORTA, 0xff);
+    buttons->setPullUp(MCP23017_PORTB, 0xff);
+    buttons->setInputPolarity(MCP23017_PORTA, 0xff);
+    buttons->setInputPolarity(MCP23017_PORTB, 0b01111111);
     buttons->digitalReadAB();
+    
 
     _channels[0]->init();
     _channels[1]->init();
@@ -28,9 +29,7 @@ void GlobalControl::init() {
 void GlobalControl::poll()
 {
     switches->poll();
-    if (buttonChanged) {
-        handleButtonChange();
-    }
+    pollButtons();
     _channels[0]->poll();
     _channels[1]->poll();
     _channels[2]->poll();
@@ -45,15 +44,191 @@ void GlobalControl::handleSwitchChange()
     _channels[3]->updateDegrees();
 }
 
-void GlobalControl::handleButtonChange() {
-    buttons->digitalReadAB();
-    recLED = !recLED.read();
-    buttonChanged = false;
-}
-
 void GlobalControl::handleButtonInterupt()
 {
-    buttonChanged = true;
+    buttonInterupt = true;
+}
+
+/**
+ * Poll IO and see if any buttons have been either pressed or released
+*/
+void GlobalControl::pollButtons()
+{
+    if (buttonInterupt)
+    {
+        currButtonsState = buttons->digitalReadAB();
+        if (currButtonsState != prevButtonsState)
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                // if state went HIGH and was LOW before
+                if (bitRead(currButtonsState, i) && !bitRead(prevButtonsState, i))
+                {
+                    this->handleButtonPress(currButtonsState);
+                }
+                // if state went LOW and was HIGH before
+                if (!bitRead(currButtonsState, i) && bitRead(prevButtonsState, i))
+                {
+                    this->handleButtonRelease(prevButtonsState);
+                }
+            }
+        }
+
+        // reset polling
+        prevButtonsState = currButtonsState;
+        buttonInterupt = false;
+    }
+}
+
+/**
+ * Handle Button Press
+ * 
+*/
+void GlobalControl::handleButtonPress(int pad)
+{
+
+    switch (pad)
+    {
+    case CMODE:
+        // for (int i = 0; i < 4; i++)
+        // {
+        //     if (touch.padIsTouched(i, currTouched, prevTouched))
+        //     {
+        //         channels[i]->toggleQuantizerMode();
+        //     }
+        // }
+        break;
+    case SHIFT:
+        // for (int i = 0; i < 4; i++)
+        // {
+        //     if (touch.padIsTouched(i, currTouched, prevTouched))
+        //     {
+        //         calibrateChannel(i);
+        //     }
+        // }
+        break;
+    case FREEZE:
+        // handleFreeze(true);
+        break;
+
+    case RESET:
+        // handleReset();
+        break;
+
+    case Gestures::CALIBRATE_BENDER:
+        // if (this->mode == CALIBRATING_BENDER)
+        // {
+        //     this->saveCalibrationToFlash();
+        //     display->clear();
+        //     this->mode = DEFAULT;
+        // }
+        // else
+        // {
+        //     this->mode = CALIBRATING_BENDER;
+        //     display->benderCalibration();
+        // }
+        break;
+
+    case Gestures::RESET_CALIBRATION_TO_DEFAULT:
+        // display->benderCalibration();
+        // saveCalibrationToFlash(true);
+        // display->clear();
+        break;
+
+    case BEND_MODE:
+        // iterate over currTouched and setChannelBenderMode if touched
+        // for (int i = 0; i < 4; i++)
+        // {
+        //     if (touch.padIsTouched(i, currTouched, prevTouched))
+        //     {
+        //         setChannelBenderMode(i);
+        //     }
+        // }
+        break;
+
+    case CLEAR_SEQ:
+        break;
+
+    case PB_RANGE:
+        // channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
+        // channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
+        // channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
+        // channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
+        break;
+    case SEQ_LENGTH:
+        // this->display->clear();
+        // for (int chan = 0; chan < 4; chan++)
+        // {
+        //     channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
+        // }
+        break;
+    case RECORD:
+        recLED = !recLED.read();
+        // if (!recordEnabled)
+        // {
+        //     recLED.write(1);
+        //     channels[0]->enableSequenceRecording();
+        //     channels[1]->enableSequenceRecording();
+        //     channels[2]->enableSequenceRecording();
+        //     channels[3]->enableSequenceRecording();
+        //     recordEnabled = true;
+        // }
+        // else
+        // {
+        //     recLED.write(0);
+        //     channels[0]->disableSequenceRecording();
+        //     channels[1]->disableSequenceRecording();
+        //     channels[2]->disableSequenceRecording();
+        //     channels[3]->disableSequenceRecording();
+        //     recordEnabled = false;
+        // }
+        break;
+    }
+}
+
+/**
+ * Handle Button Release
+*/
+void GlobalControl::handleButtonRelease(int pad)
+{
+    switch (pad)
+    {
+    case FREEZE:
+        // handleFreeze(false);
+        break;
+    case RESET:
+        break;
+    case PB_RANGE:
+        // channels[0]->disableUIMode();
+        // channels[1]->disableUIMode();
+        // channels[2]->disableUIMode();
+        // channels[3]->disableUIMode();
+        break;
+    case CLEAR_SEQ:
+        // if (!gestureFlag)
+        // {
+        //     for (int i = 0; i < 4; i++)
+        //     {
+        //         channels[i]->clearEventSequence();
+        //         channels[i]->disableSequenceRecording();
+        //     }
+        // }
+        // gestureFlag = false;
+        break;
+    case SEQ_LENGTH:
+        // this->display->clear();
+        // for (int chan = 0; chan < 4; chan++)
+        // {
+        //     if (channels[chan]->sequenceContainsEvents)
+        //     {
+        //         display->setSequenceLEDs(chan, channels[chan]->sequence.length, 2, true);
+        //     }
+        //     channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_OFF);
+        // }
+        break;
+    case RECORD:
+        break;
+    }
 }
 
 /**
