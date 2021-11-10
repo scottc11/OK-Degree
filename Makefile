@@ -76,6 +76,7 @@ API/Src/SuperClock.cpp \
 API/Src/tim_api.cpp \
 Degree/Src/main.cpp \
 Degree/Src/Bender.cpp \
+Degree/Src/Display.cpp \
 Degree/Src/MultiChanADC.cpp \
 Degree/Src/TouchChannel.cpp \
 Degree/Src/GlobalControl.cpp \

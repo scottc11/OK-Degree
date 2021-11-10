@@ -16,6 +16,7 @@
 #include "GlobalControl.h"
 #include "Bender.h"
 #include "AnalogHandle.h"
+#include "Display.h"
 
 using namespace DEGREE;
 
@@ -38,6 +39,8 @@ MPR121 touchC(&i2c1, TOUCH_INT_C, MPR121::ADDR_SCL);
 MPR121 touchD(&i2c1, TOUCH_INT_D, MPR121::ADDR_SDA);
 
 CAP1208 globalTouch(&i2c1);
+
+Display display(&i2c3);
 
 SX1509 ledsA(&i2c3, SX1509_CHAN_A_ADDR);
 SX1509 ledsB(&i2c3, SX1509_CHAN_B_ADDR);
@@ -83,9 +86,10 @@ void ADC1_DMA_Callback(uint16_t values[])
 }
 
 DigitalOut led(TEMPO_LED);
-
+bool tick;
 void toggleLED() {
   led = !led.read();
+  tick = true;
 }
 
 // ----------------------------------------
@@ -114,9 +118,22 @@ int main(void)
   
   glblCtrl.init();
 
+  display.init();
+  display.clear();
+  int counter = 0;
   while (1)
   {
     glblCtrl.poll();
+    if (tick) {
+      display.ledMatrix.setPWM(counter, 255);
+      if (counter == 63) {
+        counter = 0;
+        display.clear();
+      } else {
+        counter++;
+      }
+      tick = false;
+    }
   }
 }
 // ----------------------------------------
