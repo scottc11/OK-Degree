@@ -420,25 +420,22 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
     }
 
     // determine the number of active octaves (required for calculating thresholds)
-    if (currActiveOctaves != prevActiveOctaves)
+    numActiveOctaves = 0;
+    for (int i = 0; i < OCTAVE_COUNT; i++)
     {
-        numActiveOctaves = 0;
-        for (int i = 0; i < OCTAVE_COUNT; i++)
+        if (bitRead(currActiveOctaves, i))
         {
-            if (bitRead(currActiveOctaves, i))
-            {
-                activeOctaveValues[numActiveOctaves].octave = i;
-                numActiveOctaves += 1;
-                setOctaveLed(i, DIM_LOW);
-                setOctaveLed(i, HIGH);
-            }
-            else
-            {
-                setOctaveLed(i, LOW);
-            }
+            activeOctaveValues[numActiveOctaves].octave = i;
+            numActiveOctaves += 1;
+            setOctaveLed(i, DIM_LOW);
+            setOctaveLed(i, HIGH);
         }
-        prevActiveOctaves = currActiveOctaves;
+        else
+        {
+            setOctaveLed(i, LOW);
+        }
     }
+    prevActiveOctaves = currActiveOctaves;
 
     int octaveThreshold = CV_MAX / numActiveOctaves;        // divide max ADC value by num octaves
     int min_threshold = octaveThreshold / numActiveDegrees; // then numActiveDegrees
