@@ -2,8 +2,6 @@
 
 using namespace DEGREE;
 
-extern uint16_t FILTERED_ADC_VALUES[ADC_DMA_BUFF_SIZE];
-
 void TouchChannel::init()
 {
     output.init(); // must init this first (for the dac)

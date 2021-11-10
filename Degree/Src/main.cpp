@@ -48,7 +48,6 @@ SuperClock superClock;
 
 uint16_t AnalogHandle::DMA_BUFFER[ADC_DMA_BUFF_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
 PinName AnalogHandle::ADC_PINS[ADC_DMA_BUFF_SIZE] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
-uint16_t FILTERED_ADC_VALUES[ADC_DMA_BUFF_SIZE];
 
 Degrees degrees(DEGREES_INT, &toggleSwitches);
 
