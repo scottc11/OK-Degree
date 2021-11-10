@@ -130,9 +130,13 @@ void SuperClock::attachInputCaptureCallback(Callback<void()> func) {
     input_capture_callback = func;
 }
 
+void SuperClock::attachPPQNCallback(Callback<void()> func) {
+    ppqnCallback = func;
+}
+
 void SuperClock::handleInputCaptureCallback()
 {
-    currTick = 0; // Reset the sequence clock to zero, so it will trigger the clock output in the period elapsed loop callback
+    counter = 0; // Reset the sequence clock to zero, so it will trigger the clock output in the period elapsed loop callback
     __HAL_TIM_SetCounter(&htim2, 0); // reset counter after each input capture
     inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
     ticksPerStep = inputCapture / PPQN;
@@ -142,23 +146,28 @@ void SuperClock::handleInputCaptureCallback()
     }
 }
 
+/**
+ * @brief this callback gets called everytime TIM1 overflows.
+ * 
+ * Use this callback to advance the sequencer position by 1 everytime counter equals the 
+ * calculated PPQN value via TIM2 Input capture callback.
+*/ 
 void SuperClock::handleTickCallback()
 {
     
-    if (currTick < ticksPerStep) { // make sure you don't loose a step by not using "<=" instead of "<"
-        if (currTick == 0) { // handle first tick in step
+    if (counter < ticksPerStep) { // make sure you don't loose a step by not using "<=" instead of "<"
+        if (counter == 0) { // handle first tick in step
             if (resetCallback) resetCallback();
         }
-        else if (currTick == ticksPerStep) // if the currTick 
-        {
-            if (ppqnCallback) ppqnCallback();
-        }
-
+        counter++;
     }
     // this block will continue the sequence when an external clock is not detected.
     else {
-        currTick = 0;
-        if (overflowCallback) overflowCallback();
+        counter = 0;
+        if (ppqnCallback)
+        {
+            ppqnCallback();
+        }
     }
 
     if (tickCallback)
@@ -211,7 +220,7 @@ extern "C" void TIM1_UP_TIM10_IRQHandler(void)
 /**
   * @brief This function handles TIM2 global interrupt.
 */
-void TIM2_IRQHandler(void)
+extern "C" void TIM2_IRQHandler(void)
 {
     HAL_TIM_IRQHandler(&htim2);
 }

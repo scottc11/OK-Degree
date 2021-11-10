@@ -86,9 +86,13 @@ void ADC1_DMA_Callback(uint16_t values[])
 }
 
 DigitalOut led(TEMPO_LED);
-bool tick;
+
 void toggleLED() {
   led = !led.read();
+}
+
+volatile bool tick;
+void ppqnTicker() {
   tick = true;
 }
 
@@ -102,6 +106,7 @@ int main(void)
   superClock.initTIM1(16, 100);
   superClock.initTIM2(1, 65535);
   superClock.attachInputCaptureCallback(callback(toggleLED));
+  superClock.attachPPQNCallback(callback(ppqnTicker));
   superClock.start();
 
   multi_chan_adc_init();
