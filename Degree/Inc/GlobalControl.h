@@ -6,6 +6,7 @@
 #include "Callback.h"
 #include "Flash.h"
 #include "MCP23017.h"
+#include "CAP1208.h"
 
 namespace DEGREE {
 
@@ -16,25 +17,28 @@ namespace DEGREE {
                       TouchChannel *chanB_ptr,
                       TouchChannel *chanC_ptr,
                       TouchChannel *chanD_ptr,
+                      CAP1208 *touch_ptr,
                       Degrees *degrees_ptr,
-                      MCP23017 *buttons_ptr,
-                      PinName io_int_pin,
-                      PinName rec_led_pin,
-                      PinName freeze_led_pin) : ioInterupt(io_int_pin), recLED(rec_led_pin, 0), freezeLED(freeze_led_pin, 0)
+                      MCP23017 *buttons_ptr
+                      ) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0)
         {
-            _channels[0] = chanA_ptr;
-            _channels[1] = chanB_ptr;
-            _channels[2] = chanC_ptr;
-            _channels[3] = chanD_ptr;
+            channels[0] = chanA_ptr;
+            channels[1] = chanB_ptr;
+            channels[2] = chanC_ptr;
+            channels[3] = chanD_ptr;
+            touchPads = touch_ptr;
             switches = degrees_ptr;
             buttons = buttons_ptr;
-            ioInterupt.fall(callback(this, &GlobalControl::handleButtonInterupt));
+            ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterupt));
+            touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
         };
 
-        TouchChannel *_channels[NUM_DEGREE_CHANNELS];
+        TouchChannel *channels[NUM_DEGREE_CHANNELS];
+        CAP1208 *touchPads;
         Degrees *switches;      // degree 3-stage toggle switches io
         MCP23017 *buttons;      // io for tactile buttons
-        InterruptIn ioInterupt; // interupt pin for buttons MCP23017 io
+        InterruptIn ioInterrupt; // interupt pin for buttons MCP23017 io
+        InterruptIn touchInterrupt; // interupt pin for touch pads
         DigitalOut recLED;
         DigitalOut freezeLED;
         
@@ -42,15 +46,23 @@ namespace DEGREE {
         uint16_t currButtonsState;
         uint16_t prevButtonsState;
 
+        bool touchDetected;
+        bool gestureFlag;
+        uint8_t currTouched;
+        uint8_t prevTouched;
+
         void init();
         void poll();
         void pollButtons();
+        void pollTouchPads();
         
         void handleButtonPress(int pad);
         void handleButtonRelease(int pad);
         
         void handleSwitchChange();
         void handleButtonInterupt();
+        void handleTouchInterupt();
+        
         void loadCalibrationDataFromFlash();
 
     private:

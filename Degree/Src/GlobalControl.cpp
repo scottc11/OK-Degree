@@ -19,34 +19,50 @@ void GlobalControl::init() {
     buttons->setInputPolarity(MCP23017_PORTB, 0b01111111);
     buttons->digitalReadAB();
     
+    touchPads->init();
 
-    _channels[0]->init();
-    _channels[1]->init();
-    _channels[2]->init();
-    _channels[3]->init();
+    channels[0]->init();
+    channels[1]->init();
+    channels[2]->init();
+    channels[3]->init();
 }
 
 void GlobalControl::poll()
 {
     switches->poll();
     pollButtons();
-    _channels[0]->poll();
-    _channels[1]->poll();
-    _channels[2]->poll();
-    _channels[3]->poll();
+    pollTouchPads();
+    channels[0]->poll();
+    channels[1]->poll();
+    channels[2]->poll();
+    channels[3]->poll();
 }
 
 void GlobalControl::handleSwitchChange()
 {
-    _channels[0]->updateDegrees();
-    _channels[1]->updateDegrees();
-    _channels[2]->updateDegrees();
-    _channels[3]->updateDegrees();
+    channels[0]->updateDegrees();
+    channels[1]->updateDegrees();
+    channels[2]->updateDegrees();
+    channels[3]->updateDegrees();
 }
 
 void GlobalControl::handleButtonInterupt()
 {
     buttonInterupt = true;
+}
+
+void GlobalControl::handleTouchInterupt() {
+    touchDetected = true;
+}
+
+void GlobalControl::pollTouchPads() {
+    if (touchDetected)
+    {
+        prevTouched = currTouched;
+        currTouched = touchPads->touched() >> 4;
+        gestureFlag = true;
+        touchDetected = false;
+    }
 }
 
 /**
@@ -90,13 +106,13 @@ void GlobalControl::handleButtonPress(int pad)
     switch (pad)
     {
     case CMODE:
-        // for (int i = 0; i < 4; i++)
-        // {
-        //     if (touch.padIsTouched(i, currTouched, prevTouched))
-        //     {
-        //         channels[i]->toggleQuantizerMode();
-        //     }
-        // }
+        for (int i = 0; i < 4; i++)
+        {
+            if (touchPads->padIsTouched(i, currTouched, prevTouched))
+            {
+                channels[i]->toggleMode();
+            }
+        }
         break;
     case SHIFT:
         // for (int i = 0; i < 4; i++)
@@ -250,7 +266,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
         // load default 1VO values
         for (int chan = 0; chan < 4; chan++)
         {
-            _channels[chan]->output.resetVoltageMap();
+            channels[chan]->output.resetVoltageMap();
         }
     }
     else
@@ -260,10 +276,10 @@ void GlobalControl::loadCalibrationDataFromFlash()
             for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
             {
                 int index = i + CALIBRATION_ARR_SIZE * chan; // determine falshData index position based on channel
-                _channels[chan]->output.dacVoltageMap[i] = (uint16_t)buffer[index];
+                channels[chan]->output.dacVoltageMap[i] = (uint16_t)buffer[index];
             }
-            // _channels[chan]->bender.minBend = buffer[BENDER_MIN_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
-            // _channels[chan]->bender.maxBend = buffer[BENDER_MAX_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
+            // channels[chan]->bender.minBend = buffer[BENDER_MIN_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
+            // channels[chan]->bender.maxBend = buffer[BENDER_MAX_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
         }
     }
 }

@@ -70,6 +70,23 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
     }
 }
 
+/**
+ * TOGGLE MODE
+ * 
+ * still needs to be written to handle 3-stage toggle switch.
+**/
+void TouchChannel::toggleMode()
+{
+    if (currMode == MONO || currMode == MONO_LOOP)
+    {
+        setMode(QUANTIZER);
+    }
+    else
+    {
+        setMode(MONO);
+    }
+}
+
 void TouchChannel::onTouch(uint8_t pad)
 {
     if (pad < 8)  // handle degree pads

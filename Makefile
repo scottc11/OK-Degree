@@ -80,6 +80,7 @@ Degree/Src/MultiChanADC.cpp \
 Degree/Src/TouchChannel.cpp \
 Degree/Src/GlobalControl.cpp \
 Degree/Src/VoltPerOctave.cpp \
+ok-drivers/drivers/CAP1208/CAP1208.cpp \
 ok-drivers/drivers/DAC8554/DAC8554.cpp \
 ok-drivers/drivers/SX1509/SX1509.cpp \
 ok-drivers/drivers/IS31FL3739/IS31FL3739.cpp \
@@ -157,11 +158,13 @@ C_INCLUDES =  \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include \
+-Iok-drivers/drivers/CAP1208 \
 -Iok-drivers/drivers/DAC8554 \
 -Iok-drivers/drivers/SX1509 \
 -Iok-drivers/drivers/IS31FL3739 \
 -Iok-drivers/drivers/MPR121 \
 -Iok-drivers/drivers/MCP23017 \
+-Iok-drivers/drivers/TCA9548A \
 -Iok-drivers/utils/Algorithms \
 -Iok-drivers/utils/ArrayMethods \
 -Iok-drivers/utils/BitwiseMethods \

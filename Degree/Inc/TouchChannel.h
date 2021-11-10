@@ -131,6 +131,7 @@ namespace DEGREE {
         void init();
         void poll();
         void setMode(TouchChannelMode targetMode);
+        void toggleMode();
 
         void onTouch(uint8_t pad);
         void onRelease(uint8_t pad);

@@ -7,6 +7,7 @@
 #include "SX1509.h"
 #include "I2C.h"
 #include "MPR121.h"
+#include "CAP1208.h"
 #include "MCP23017.h"
 #include "DAC8554.h"
 #include "Flash.h"
@@ -36,6 +37,8 @@ MPR121 touchB(&i2c1, TOUCH_INT_B, MPR121::ADDR_VDD);
 MPR121 touchC(&i2c1, TOUCH_INT_C, MPR121::ADDR_SCL);
 MPR121 touchD(&i2c1, TOUCH_INT_D, MPR121::ADDR_SDA);
 
+CAP1208 globalTouch(&i2c1);
+
 SX1509 ledsA(&i2c3, SX1509_CHAN_A_ADDR);
 SX1509 ledsB(&i2c3, SX1509_CHAN_B_ADDR);
 SX1509 ledsC(&i2c3, SX1509_CHAN_C_ADDR);
@@ -59,8 +62,7 @@ TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, &benderB, 
 TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C, &benderC, ADC_C, GATE_OUT_C, &globalGate);
 TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, &benderD, ADC_D, GATE_OUT_D, &globalGate);
 
-GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &degrees, &buttons, BUTTONS_INT, REC_LED, FREEZE_LED);
-
+GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons);
 
 volatile int ADC_COUNT = 0;
 /**
