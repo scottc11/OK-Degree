@@ -154,6 +154,7 @@ namespace DEGREE {
 
         // Bender Callbacks
         void benderActiveCallback(uint16_t value);
+        void benderIdleCallback();
 
         // Gate Output Methods
         void setGate(bool state);
