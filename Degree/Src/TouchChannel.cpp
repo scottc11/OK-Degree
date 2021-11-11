@@ -13,10 +13,10 @@ void TouchChannel::init()
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
 
     // initialize channel touch pads
-    _touchPads->init();
-    _touchPads->attachCallbackTouched(callback(this, &TouchChannel::onTouch));
-    _touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
-    _touchPads->enable();
+    touchPads->init();
+    touchPads->attachCallbackTouched(callback(this, &TouchChannel::onTouch));
+    touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
+    touchPads->enable();
 
     // initialize LED Driver
     _leds->init();
@@ -31,19 +31,27 @@ void TouchChannel::init()
     setBenderMode(PITCH_BEND);
 }
 
-void TouchChannel::poll() {
-    _touchPads->poll();
-    bender->poll();
-    if (currMode == QUANTIZER) {
-        handleCVInput();
-    }
+/** ------------------------------------------------------------------------
+ *         POLL    POLL    POLL    POLL    POLL    POLL    POLL    POLL    
+ *  ------------------------------------------------------------------------
+*/
+void TouchChannel::poll()
+{    
+    touchPads->poll();
 
-    if (sequence.flag) {
-        if (sequence.currStep != sequence.prevStep) // why?
-        {
-            display->stepSequenceLED(this->channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
+    if (tickerFlag) {
+
+        bender->poll();
+
+        if (currMode == QUANTIZER) {
+            handleCVInput();
         }
-        sequence.flag = false;
+
+        if (currMode == MONO_LOOP || currMode == QUANTIZER_LOOP) {
+            handleSequence(sequence.currPosition);
+        }
+
+        clearTickerFlag();
     }
     
 }
@@ -553,6 +561,13 @@ void TouchChannel::setActiveOctaves(int octave)
 */
 void TouchChannel::handleSequence(int position)
 {
+    // always disp;ay sequence progresion regardless if there are events or not
+    if (sequence.currStep != sequence.prevStep) // why?
+    {
+        display->stepSequenceLED(this->channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
+    }
+
+    // break out if there are no sequence events
     if (sequence.containsEvents == false) {
         return;
     }

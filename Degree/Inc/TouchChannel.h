@@ -77,11 +77,11 @@ namespace DEGREE {
             DIM_HIGH
         };
 
-        TouchChannel(int _index, Display *display_ptr, MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, Bender *_bender, PinName adc_pin, PinName gatePin, DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin)
+        TouchChannel(int _index, Display *display_ptr, MPR121 *touchPads_ptr, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, Bender *_bender, PinName adc_pin, PinName gatePin, DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin)
         {
             channelIndex = _index;
             display = display_ptr;
-            _touchPads = touchPads;
+            touchPads = touchPads_ptr;
             _leds = leds;
             degreeSwitches = degrees;
             output.dac = dac;
@@ -103,7 +103,7 @@ namespace DEGREE {
 
         int channelIndex;          // an index value used for accessing the odd array
         Display *display;
-        MPR121 *_touchPads;
+        MPR121 *touchPads;
         SX1509 *_leds;
         Degrees *degreeSwitches;
         Bender *bender;
@@ -136,6 +136,7 @@ namespace DEGREE {
         QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
         SuperSeq sequence;
+        bool tickerFlag;                   // 
 
         void init();
         void poll();
@@ -164,6 +165,8 @@ namespace DEGREE {
         // Sequencer methods
         void handleSequence(int position);
         void resetSequence();
+        void setTickerFlag()   { tickerFlag = true; };
+        void clearTickerFlag() { tickerFlag = false; };
 
         // Bender methods
         int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);

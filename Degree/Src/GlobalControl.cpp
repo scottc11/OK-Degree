@@ -297,5 +297,6 @@ void GlobalControl::advanceSequencer()
     for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
     {
         channels[i]->sequence.advance();
+        channels[i]->setTickerFlag();
     }
 }
