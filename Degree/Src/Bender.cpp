@@ -24,7 +24,7 @@ void Bender::calibrateIdle()
     // find min/max value from calibration results
     int max = arr_max(calibrationSamples, PB_CALIBRATION_RANGE);
     int min = arr_min(calibrationSamples, PB_CALIBRATION_RANGE);
-    this->idleDebounce = (max - min) + 25;
+    this->idleDebounce = (max - min) + BENDER_DEBOUNCE;
 
     // zero the sensor
     this->zeroBend = arr_average(calibrationSamples, PB_CALIBRATION_RANGE);
@@ -126,7 +126,7 @@ int Bender::calculateOutput(uint16_t value)
 void Bender::updateDAC(uint16_t value)
 {
     dacOutput = value; // copy to class member
-    dac->write(dacChan, outputFilter(PB_ZERO + dacOutput));
+    dac->write(dacChan, outputFilter(BENDER_ZERO + dacOutput));
 }
 
 bool Bender::isIdle()

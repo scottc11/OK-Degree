@@ -77,7 +77,7 @@ void SuperSeq::clearBend()
     // deactivate all events in list
     for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
     {
-        events[i].bend = PB_ZERO;
+        events[i].bend = BENDER_ZERO;
     }
 };
 
@@ -90,7 +90,7 @@ void SuperSeq::clearEvent(int position)
     events[position].noteIndex = NULL_NOTE_INDEX;
     events[position].active = false;
     events[position].gate = LOW;
-    events[position].bend = PB_ZERO;
+    events[position].bend = BENDER_ZERO;
 }
 
 /**

@@ -20,7 +20,8 @@
 #define DEFAULT_SEQ_LENGTH 32
 #define MAX_SEQ_LENGTH 32
 
-#define PB_ZERO 32767
+#define BENDER_ZERO     32767
+#define BENDER_DEBOUNCE 1000
 
 #define REC_LED PC_13
 #define FREEZE_LED PB_7
