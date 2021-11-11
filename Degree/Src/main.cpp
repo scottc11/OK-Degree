@@ -120,7 +120,7 @@ int main(void)
 
   display.init();
   display.clear();
-  int counter = 0;
+
   while (1)
   {
     glblCtrl.poll();

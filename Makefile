@@ -78,6 +78,7 @@ Degree/Src/main.cpp \
 Degree/Src/Bender.cpp \
 Degree/Src/Display.cpp \
 Degree/Src/MultiChanADC.cpp \
+Degree/Src/SuperSeq.cpp \
 Degree/Src/TouchChannel.cpp \
 Degree/Src/GlobalControl.cpp \
 Degree/Src/VoltPerOctave.cpp \
