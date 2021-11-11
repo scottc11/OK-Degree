@@ -187,25 +187,20 @@ void GlobalControl::handleButtonPress(int pad)
         // }
         break;
     case RECORD:
-        recLED = !recLED.read();
-        // if (!recordEnabled)
-        // {
-        //     recLED.write(1);
-        //     channels[0]->enableSequenceRecording();
-        //     channels[1]->enableSequenceRecording();
-        //     channels[2]->enableSequenceRecording();
-        //     channels[3]->enableSequenceRecording();
-        //     recordEnabled = true;
-        // }
-        // else
-        // {
-        //     recLED.write(0);
-        //     channels[0]->disableSequenceRecording();
-        //     channels[1]->disableSequenceRecording();
-        //     channels[2]->disableSequenceRecording();
-        //     channels[3]->disableSequenceRecording();
-        //     recordEnabled = false;
-        // }
+        if (!recordEnabled)
+        {
+            recLED.write(1);
+            for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+                channels[i]->enableSequenceRecording();
+            recordEnabled = true;
+        }
+        else
+        {
+            recLED.write(0);
+            for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+                channels[i]->disableSequenceRecording();
+            recordEnabled = false;
+        }
         break;
     }
 }

@@ -96,7 +96,7 @@ void SuperSeq::clearEvent(int position)
 /**
  * @brief Create new event at position
 */
-void SuperSeq::createEvent(int position, int noteIndex, bool gate, QuantizeAmount quant)
+void SuperSeq::createEvent(int position, int noteIndex, bool gate)
 {
     if (containsEvents == false)
     {
@@ -104,11 +104,11 @@ void SuperSeq::createEvent(int position, int noteIndex, bool gate, QuantizeAmoun
     }
 
     // handle quantization first, for overdubbing purposes
-    position = (currStep * PPQN) + quantizePosition(position, quant);
+    position = (currStep * PPQN) + quantizePosition(position, quantizeAmount);
 
     // if the previous event was a GATE HIGH event, re-position its succeeding GATE LOW event to the new events position - 1
     // NOTE: you will also have to trigger the GATE LOW, so that the new event will generate a trigger event
-    // TODO: intsead of "position - 1", do "position - (quant / 2)"
+    // TODO: intsead of "position - 1", do "position - (quantizeAmount / 2)"
     if (events[prevEventPos].gate == HIGH)
     {
         int newPosition = position == 0 ? lengthPPQN - 1 : position - 1;
@@ -123,7 +123,7 @@ void SuperSeq::createEvent(int position, int noteIndex, bool gate, QuantizeAmoun
     // If there is an existing GATE HIGH event at the next position, this new event will have to be placed right before it executes, regardless of quantization
     if (gate == LOW && events[position].active && events[position].gate == HIGH)
     {
-        position = position + (quant / 2);
+        position = position + (quantizeAmount / 2);
     }
 
     newEventPos = position; // store new events position

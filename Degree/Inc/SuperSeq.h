@@ -57,7 +57,7 @@ public:
 
     void clearEvent(int position);
 
-    void createEvent(int position, int noteIndex, bool gate, QuantizeAmount quant);
+    void createEvent(int position, int noteIndex, bool gate);
 
     void createBendEvent(int position, uint16_t bend);
 

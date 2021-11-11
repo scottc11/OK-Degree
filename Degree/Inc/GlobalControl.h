@@ -50,6 +50,8 @@ namespace DEGREE {
         DigitalOut recLED;
         DigitalOut freezeLED;
         
+        bool recordEnabled;      // global recording flag
+
         bool buttonInterupt;        // flag for handling buttons interupt
         uint16_t currButtonsState;
         uint16_t prevButtonsState;

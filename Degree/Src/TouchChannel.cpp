@@ -71,14 +71,18 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
     }
     setLED(CHANNEL_REC_LED, OFF);
     setLED(CHANNEL_QUANT_LED, OFF);
+    sequence.playbackEnabled = false;
 
     switch (currMode)
     {
     case MONO:
-        triggerNote(currDegree, currOctave, NOTE_ON);
+        triggerNote(currDegree, currOctave, SUSTAIN);
         updateOctaveLeds(currOctave);
         break;
     case MONO_LOOP:
+        setLED(CHANNEL_REC_LED, ON);
+        sequence.playbackEnabled = true;
+        triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case QUANTIZER:
         setLED(CHANNEL_QUANT_LED, ON);
@@ -115,6 +119,19 @@ void TouchChannel::onTouch(uint8_t pad)
             case MONO:
                 triggerNote(pad, currOctave, NOTE_ON);
                 break;
+            case MONO_LOOP:
+                // create a new event
+                if (sequence.recordEnabled)
+                {
+                    sequence.overdub = true;
+                    sequence.createEvent(sequence.currPosition, pad, HIGH);
+                }
+                // when record is disabled, this block will freeze the sequence and output the curr touched degree until touch is released
+                else {
+                    sequence.playbackEnabled = false;
+                }
+                triggerNote(pad, currOctave, NOTE_ON);
+                break;
             case QUANTIZER:
                 setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
                 break;
@@ -131,7 +148,37 @@ void TouchChannel::onTouch(uint8_t pad)
 
 void TouchChannel::onRelease(uint8_t pad)
 {
-
+    if (pad < 8) // handle degree pads
+    {
+        pad = CHAN_TOUCH_PADS[pad]; // remap
+        switch (currMode) {
+            case MONO:
+                triggerNote(pad, currOctave, NOTE_OFF);
+                break;
+            case MONO_LOOP:
+                if (sequence.recordEnabled)
+                {
+                    sequence.createEvent(sequence.currPosition, pad, LOW);
+                    sequence.overdub = false;
+                }
+                else
+                {
+                    sequence.playbackEnabled = true;
+                }
+                triggerNote(pad, currOctave, NOTE_OFF);
+                break;
+            case QUANTIZER:
+                break;
+            case QUANTIZER_LOOP:
+                break;
+            default:
+                break;
+        }
+    }
+    else
+    {
+        setGate(LOW);
+    }
 }
 
 /**
@@ -552,10 +599,11 @@ void TouchChannel::setActiveOctaves(int octave)
     }
 }
 
+/**
+ * ============================================ 
+ * -------------- SEQUENCING ------------------
+*/
 
-
-
-// SEQUENCER
 /**
  * Sequence Handler which gets called during polling / every clocking event
 */
@@ -569,6 +617,10 @@ void TouchChannel::handleSequence(int position)
 
     // break out if there are no sequence events
     if (sequence.containsEvents == false) {
+        return;
+    }
+
+    if (sequence.playbackEnabled == false) {
         return;
     }
 
@@ -637,5 +689,51 @@ void TouchChannel::resetSequence()
     {
         display->stepSequenceLED(channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
         handleSequence(sequence.currPosition);
+    }
+}
+
+void TouchChannel::enableSequenceRecording()
+{
+    sequence.recordEnabled = true;
+    display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
+    if (currMode == MONO)
+    {
+        setMode(MONO_LOOP);
+    }
+    else if (currMode == QUANTIZER)
+    {
+        setMode(QUANTIZER_LOOP);
+    }
+}
+
+/**
+ * NOTE: A nice feature here would be to only have the LEDs be red when REC is held down, and flash the green LEDs
+ * when a channel contains loop events, but REC is NOT held down. You would only be able to add new events to
+ * the loop when REC is held down (ie. when channel leds are RED)
+ * 
+ * NOTE: ADDITIONALLY, this would be a good place to count the amount of steps which have passed while the REC button has
+ * been held down, and if this value is greater than the current loop length, update the loop length to accomodate.
+ * the new loop length would just increase the multiplier by one
+*/
+void TouchChannel::disableSequenceRecording()
+{
+    sequence.recordEnabled = false;
+    
+    // if a touch event was recorded, remain in loop mode
+    if (sequence.containsEvents)
+    {
+        return;
+    }
+    else // if no touch event recorded, revert to previous mode
+    { 
+        display->setSequenceLEDs(channelIndex, sequence.length, 2, false);
+        if (currMode == MONO_LOOP)
+        {
+            setMode(MONO);
+        }
+        else if (currMode == QUANTIZER_LOOP)
+        {
+            setMode(QUANTIZER);
+        }
     }
 }

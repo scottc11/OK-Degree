@@ -165,6 +165,8 @@ namespace DEGREE {
         // Sequencer methods
         void handleSequence(int position);
         void resetSequence();
+        void enableSequenceRecording();
+        void disableSequenceRecording();
         void setTickerFlag()   { tickerFlag = true; };
         void clearTickerFlag() { tickerFlag = false; };
 
