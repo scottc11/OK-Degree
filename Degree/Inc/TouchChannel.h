@@ -7,6 +7,7 @@
 #include "Degrees.h"
 #include "Bender.h"
 #include "VoltPerOctave.h"
+#include "SuperSeq.h"
 
 typedef struct QuantOctave
 {
@@ -117,6 +118,7 @@ namespace DEGREE {
         uint8_t prevDegree;
         uint8_t prevOctave;
 
+        // Quantiser members
         AnalogHandle adc;                  // CV input ADC
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
         uint8_t currActiveOctaves;         // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
@@ -127,6 +129,8 @@ namespace DEGREE {
         uint16_t prevCVInputValue;         // the previously handled CV input value 
         QuantDegree activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
         QuantOctave activeOctaveValues[OCTAVE_COUNT];
+
+        SuperSeq sequence;
 
         void init();
         void poll();

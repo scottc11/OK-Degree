@@ -3,6 +3,8 @@
 #include "api.h"
 #include "system_clock_config.h"
 
+#define PPQN 96
+
 #define NUM_DEGREE_CHANNELS 4
 #define ADC_DMA_BUFF_SIZE   8
 
@@ -14,6 +16,9 @@
 
 #define OCTAVE_COUNT 4
 #define DEGREE_COUNT 8
+
+#define DEFAULT_SEQ_LENGTH 32
+#define MAX_SEQ_LENGTH 32
 
 #define REC_LED PC_13
 #define FREEZE_LED PB_7

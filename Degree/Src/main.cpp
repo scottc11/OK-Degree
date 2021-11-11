@@ -64,7 +64,8 @@ TouchChannel chanB(&touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_B, &benderB, 
 TouchChannel chanC(&touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C, &benderC, ADC_C, GATE_OUT_C, &globalGate);
 TouchChannel chanD(&touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, &benderD, ADC_D, GATE_OUT_D, &globalGate);
 
-GlobalControl glblCtrl(&chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons);
+GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons);
+
 
 volatile int ADC_COUNT = 0;
 /**
@@ -91,11 +92,6 @@ void toggleLED() {
   led = !led.read();
 }
 
-volatile bool tick;
-void ppqnTicker() {
-  tick = true;
-}
-
 // ----------------------------------------
 int main(void)
 {
@@ -106,7 +102,6 @@ int main(void)
   superClock.initTIM1(16, 100);
   superClock.initTIM2(1, 65535);
   superClock.attachInputCaptureCallback(callback(toggleLED));
-  superClock.attachPPQNCallback(callback(ppqnTicker));
   superClock.start();
 
   multi_chan_adc_init();
@@ -129,16 +124,6 @@ int main(void)
   while (1)
   {
     glblCtrl.poll();
-    if (tick) {
-      display.ledMatrix.setPWM(counter, 255);
-      if (counter == 63) {
-        counter = 0;
-        display.clear();
-      } else {
-        counter++;
-      }
-      tick = false;
-    }
   }
 }
 // ----------------------------------------

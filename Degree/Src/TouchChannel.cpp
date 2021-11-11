@@ -6,6 +6,8 @@ void TouchChannel::init()
 {
     output.init(); // must init this first (for the dac)
     
+    sequence.init();
+
     bender->init();
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));

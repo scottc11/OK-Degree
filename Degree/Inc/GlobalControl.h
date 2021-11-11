@@ -7,21 +7,24 @@
 #include "Flash.h"
 #include "MCP23017.h"
 #include "CAP1208.h"
+#include "SuperClock.h"
 
 namespace DEGREE {
 
     class GlobalControl
     {
     public:
-        GlobalControl(TouchChannel *chanA_ptr,
-                      TouchChannel *chanB_ptr,
-                      TouchChannel *chanC_ptr,
-                      TouchChannel *chanD_ptr,
-                      CAP1208 *touch_ptr,
-                      Degrees *degrees_ptr,
-                      MCP23017 *buttons_ptr
-                      ) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0)
+        GlobalControl(
+            SuperClock *clock_ptr,
+            TouchChannel *chanA_ptr,
+            TouchChannel *chanB_ptr,
+            TouchChannel *chanC_ptr,
+            TouchChannel *chanD_ptr,
+            CAP1208 *touch_ptr,
+            Degrees *degrees_ptr,
+            MCP23017 *buttons_ptr) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0)
         {
+            clock = clock_ptr;
             channels[0] = chanA_ptr;
             channels[1] = chanB_ptr;
             channels[2] = chanC_ptr;
@@ -31,8 +34,10 @@ namespace DEGREE {
             buttons = buttons_ptr;
             ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterupt));
             touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
+            clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer));
         };
 
+        SuperClock *clock;
         TouchChannel *channels[NUM_DEGREE_CHANNELS];
         CAP1208 *touchPads;
         Degrees *switches;      // degree 3-stage toggle switches io
@@ -56,6 +61,8 @@ namespace DEGREE {
         void pollButtons();
         void pollTouchPads();
         
+        void advanceSequencer();
+
         void handleButtonPress(int pad);
         void handleButtonRelease(int pad);
         
