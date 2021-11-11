@@ -483,3 +483,69 @@ void TouchChannel::setActiveOctaves(int octave)
         currActiveOctaves = bitFlip(currActiveOctaves, octave);
     }
 }
+
+
+
+
+// SEQUENCER
+/**
+ * Sequence Handler which gets called during polling / every clocking event
+*/
+void TouchChannel::handleSequence(int position)
+{
+    if (sequence.containsEvents == false) {
+        return;
+    }
+
+    switch (currMode)
+    {
+    case MONO_LOOP:
+        if (sequence.events[position].active)
+        {
+            // Handle Sequence Overdubing
+            if (sequence.overdub && position != sequence.newEventPos) // when a node is being created (touched degree has not yet been released), this flag gets set to true so that the sequence handler clears existing nodes
+            {
+                // if new event overlaps succeeding events, clear those events
+                sequence.clearEvent(position);
+            }
+            // Handle Sequence Events
+            else
+            {
+                if (sequence.events[position].gate == HIGH)
+                {
+                    sequence.prevEventPos = position;                                 // store position into variable
+                    triggerNote(sequence.events[position].noteIndex, currOctave, NOTE_ON); // trigger note ON
+                }
+                else
+                {
+                    // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
+                    if (sequence.events[sequence.prevEventPos].noteIndex != sequence.events[position].noteIndex)
+                    {
+                        sequence.clearEvent(position);
+                    }
+                    else // set event.gate LOW
+                    {
+                        sequence.prevEventPos = position;                         // store position into variable
+                        triggerNote(sequence.events[position].noteIndex, currOctave, NOTE_OFF); // trigger note OFF
+                    }
+                }
+            }
+        }
+        break;
+    case QUANTIZER_LOOP:
+        if (sequence.events[position].active)
+        {
+            if (sequence.overdub)
+            {
+                sequence.clearEvent(position);
+            }
+            else
+            {
+                setActiveDegrees(sequence.events[position].activeDegrees);
+            }
+        }
+        break;
+    }
+
+    triggerNote(currDegree, currOctave, BEND_PITCH); // always handle pitch bend value
+}

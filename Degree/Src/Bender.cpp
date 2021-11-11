@@ -126,7 +126,7 @@ int Bender::calculateOutput(uint16_t value)
 void Bender::updateDAC(uint16_t value)
 {
     dacOutput = value; // copy to class member
-    dac->write(dacChan, outputFilter(32767 + dacOutput));
+    dac->write(dacChan, outputFilter(PB_ZERO + dacOutput));
 }
 
 bool Bender::isIdle()

@@ -20,6 +20,8 @@
 #define DEFAULT_SEQ_LENGTH 32
 #define MAX_SEQ_LENGTH 32
 
+#define PB_ZERO 32767
+
 #define REC_LED PC_13
 #define FREEZE_LED PB_7
 #define TEMPO_LED PA_1

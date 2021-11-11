@@ -22,3 +22,5 @@
 
 #define HIGH 1
 #define LOW 0
+
+#define BIT_MAX_16 65535

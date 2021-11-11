@@ -156,6 +156,9 @@ namespace DEGREE {
         void setActiveDegrees(uint8_t degrees);
         void setActiveOctaves(int octave);
 
+        // Sequencer methods
+        void handleSequence(int position);
+
         // Bender Callbacks
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();
