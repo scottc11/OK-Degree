@@ -24,7 +24,7 @@ void TouchChannel::init()
 
     for (int i = 0; i < 16; i++) {
         _leds->ledConfig(i);
-        setLED(i, LOW);
+        setLED(i, OFF);
     }
 
     setMode(MONO);
@@ -49,10 +49,10 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
     // start from a clean slate by setting all the LEDs LOW
     for (int i = 0; i < DEGREE_COUNT; i++) {
         setDegreeLed(i, DIM_MED);
-        setDegreeLed(i, LOW);
+        setDegreeLed(i, OFF);
     }
-    setLED(CHANNEL_REC_LED, LOW);
-    setLED(CHANNEL_QUANT_LED, LOW);
+    setLED(CHANNEL_REC_LED, OFF);
+    setLED(CHANNEL_QUANT_LED, OFF);
 
     switch (currMode)
     {
@@ -63,7 +63,7 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
     case MONO_LOOP:
         break;
     case QUANTIZER:
-        setLED(CHANNEL_QUANT_LED, HIGH);
+        setLED(CHANNEL_QUANT_LED, ON);
         setActiveDegrees(activeDegrees);
         break;
     case QUANTIZER_LOOP:
@@ -132,8 +132,8 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
     switch (action) {
         case NOTE_ON:
             if (currMode == MONO || currMode == MONO_LOOP) {
-                setDegreeLed(prevDegree, LOW); // set the 'previous' active note led LOW
-                setDegreeLed(degree, HIGH); // new active note HIGH
+                setDegreeLed(prevDegree, OFF); // set the 'previous' active note led LOW
+                setDegreeLed(degree, ON); // new active note HIGH
             }
             setGate(HIGH);
             currDegree = degree;
@@ -174,11 +174,11 @@ void TouchChannel::updateDegrees()
 void TouchChannel::setLED(int io_pin, LedState state)
 {
     switch (state) {
-        case LOW:
+        case OFF:
             _leds->setOnTime(io_pin, 0);
             _leds->digitalWrite(io_pin, 1);
             break;
-        case HIGH:
+        case ON:
             _leds->setOnTime(io_pin, 0);
             _leds->digitalWrite(io_pin, 0);
             break;
@@ -216,11 +216,11 @@ void TouchChannel::updateOctaveLeds(int octave)
     {
         if (i == octave)
         {
-            setOctaveLed(i, HIGH);
+            setOctaveLed(i, ON);
         }
         else
         {
-            setOctaveLed(i, LOW);
+            setOctaveLed(i, OFF);
         }
     }
 }
@@ -431,11 +431,11 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
             activeDegreeValues[numActiveDegrees].noteIndex = i;
             numActiveDegrees += 1;
             setDegreeLed(i, DIM_LOW);
-            setDegreeLed(i, HIGH);
+            setDegreeLed(i, ON);
         }
         else
         {
-            setDegreeLed(i, LOW);
+            setDegreeLed(i, OFF);
         }
     }
 
@@ -448,11 +448,11 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
             activeOctaveValues[numActiveOctaves].octave = i;
             numActiveOctaves += 1;
             setOctaveLed(i, DIM_LOW);
-            setOctaveLed(i, HIGH);
+            setOctaveLed(i, ON);
         }
         else
         {
-            setOctaveLed(i, LOW);
+            setOctaveLed(i, OFF);
         }
     }
     prevActiveOctaves = currActiveOctaves;

@@ -67,8 +67,8 @@ namespace DEGREE {
 
         enum LedState
         {
-            LOW,
-            HIGH,
+            OFF,
+            ON,
             BLINK_ON,
             BLINK_OFF,
             DIM_LOW,
