@@ -27,9 +27,15 @@ public:
     Callback<void()> resetCallback;
     Callback<void()> overflowCallback;       // callback executes when all when a full step completes
 
+    /**
+     * TODO: initial inputCapture value should be the product of TIM1 and TIM2 prescaler values combined with 120 BPM
+     * so that the sequencer always gets initialized at 120 bpm, no matter the speed of the timers
+    */ 
     SuperClock()
     {
         instance = this;
+        inputCapture = 11129;
+        ticksPerStep = inputCapture / PPQN;
     };
 
     void initTIM1(uint16_t prescaler, uint16_t period);
