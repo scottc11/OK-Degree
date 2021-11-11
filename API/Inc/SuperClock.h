@@ -3,6 +3,7 @@
 #include "common.h"
 #include "tim_api.h"
 #include "Callback.h"
+#include "DigitalOut.h"
 
 #ifndef PPQN
 #define PPQN 96
@@ -17,9 +18,14 @@ extern "C" void TIM2_IRQHandler(void);
 class SuperClock {
 public:
     
-    volatile int counter;
+    DigitalOut led;
+    DigitalOut gate;
+
+    int tick;               // increments every time TIM1 overflows
+    int pulse;
+    int step;
     uint16_t inputCapture;
-    uint16_t ticksPerStep; // how many TIM2 ticks for one PPQN
+    uint16_t ticksPerPulse; // how many TIM2 ticks for one PPQN
 
     Callback<void()> tickCallback;           // this callback gets executed at a frequency equal to tim1_freq
     Callback<void()> input_capture_callback; // this callback gets executed every on the rising edge of external input
@@ -31,11 +37,11 @@ public:
      * TODO: initial inputCapture value should be the product of TIM1 and TIM2 prescaler values combined with 120 BPM
      * so that the sequencer always gets initialized at 120 bpm, no matter the speed of the timers
     */ 
-    SuperClock()
+    SuperClock(PinName _led, PinName _gate) : led(_led, 0), gate(_gate)
     {
         instance = this;
         inputCapture = 11129;
-        ticksPerStep = inputCapture / PPQN;
+        ticksPerPulse = inputCapture / PPQN;
     };
 
     void initTIM1(uint16_t prescaler, uint16_t period);
@@ -44,6 +50,7 @@ public:
     void attach_tim1_callback(Callback<void()> func);
     void attachInputCaptureCallback(Callback<void()> func);
     void attachPPQNCallback(Callback<void()> func);
+    void attachResetCallback(Callback<void()> func);
     void handleInputCaptureCallback();
     void handleTickCallback();
     static void RouteCallback(TIM_HandleTypeDef *htim);

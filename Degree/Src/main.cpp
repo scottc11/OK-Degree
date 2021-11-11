@@ -47,7 +47,7 @@ SX1509 ledsB(&i2c3, SX1509_CHAN_B_ADDR);
 SX1509 ledsC(&i2c3, SX1509_CHAN_C_ADDR);
 SX1509 ledsD(&i2c3, SX1509_CHAN_D_ADDR);
 
-SuperClock superClock;
+SuperClock superClock(TEMPO_LED, INT_CLOCK_OUTPUT);
 
 uint16_t AnalogHandle::DMA_BUFFER[ADC_DMA_BUFF_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
 PinName AnalogHandle::ADC_PINS[ADC_DMA_BUFF_SIZE] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
@@ -86,12 +86,6 @@ void ADC1_DMA_Callback(uint16_t values[])
   }
 }
 
-DigitalOut led(TEMPO_LED);
-
-void toggleLED() {
-  led = !led.read();
-}
-
 // ----------------------------------------
 int main(void)
 {
@@ -99,9 +93,8 @@ int main(void)
 
   SystemClock_Config();
 
-  superClock.initTIM1(16, 100);
+  superClock.initTIM1(16, 200);
   superClock.initTIM2(1, 65535);
-  superClock.attachInputCaptureCallback(callback(toggleLED));
   superClock.start();
 
   multi_chan_adc_init();

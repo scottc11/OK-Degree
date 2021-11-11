@@ -134,12 +134,20 @@ void SuperClock::attachPPQNCallback(Callback<void()> func) {
     ppqnCallback = func;
 }
 
+void SuperClock::attachResetCallback(Callback<void()> func) {
+    resetCallback = func;
+}
+
 void SuperClock::handleInputCaptureCallback()
 {
-    counter = 0; // Reset the sequence clock to zero, so it will trigger the clock output in the period elapsed loop callback
-    __HAL_TIM_SetCounter(&htim2, 0); // reset counter after each input capture
+    tick = 0; // Reset the clock tick zero, so it will trigger the clock output in the period elapsed loop callback
+    pulse = 0;
+    if (resetCallback)
+        resetCallback();
+
+    __HAL_TIM_SetCounter(&htim2, 0); // reset after each input capture
     inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
-    ticksPerStep = inputCapture / PPQN;
+    ticksPerPulse = (inputCapture * 2) / PPQN; // Forget why we multiply by 2
     if (input_capture_callback)
     {
         input_capture_callback();
@@ -149,24 +157,35 @@ void SuperClock::handleInputCaptureCallback()
 /**
  * @brief this callback gets called everytime TIM1 overflows.
  * 
- * Use this callback to advance the sequencer position by 1 everytime counter equals the 
+ * Use this callback to advance the sequencer position by 1 everytime tick equals the 
  * calculated PPQN value via TIM2 Input capture callback.
 */ 
 void SuperClock::handleTickCallback()
 {
     
-    if (counter < ticksPerStep) { // make sure you don't loose a step by not using "<=" instead of "<"
-        if (counter == 0) { // handle first tick in step
-            if (resetCallback) resetCallback();
+    if (tick < ticksPerPulse) { // make sure you don't loose a step by not using "<=" instead of "<"
+        if (tick == 0) { // handle first tick in step
+            if (ppqnCallback) ppqnCallback();
+            
         }
-        counter++;
+        tick++;
     }
-    // this block will continue the sequence when an external clock is not detected.
+    // this block will continue the sequence when an external clock is not detected, 
+    // otherwise input capture will reset tick back to 0
     else {
-        counter = 0;
-        if (ppqnCallback)
-        {
-            ppqnCallback();
+        tick = 0;
+
+        if (pulse < PPQN) {
+            if (pulse == 0) {
+                led.write(HIGH);
+                gate.write(HIGH);
+            } else if (pulse > 4) {
+                led.write(LOW);
+                gate.write(LOW);
+            }
+            pulse++;
+        } else {
+            pulse = 0;       
         }
     }
 
