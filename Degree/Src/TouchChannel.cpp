@@ -36,6 +36,15 @@ void TouchChannel::poll() {
     if (currMode == QUANTIZER) {
         handleCVInput();
     }
+
+    if (sequence.flag) {
+        if (sequence.currStep != sequence.prevStep) // why?
+        {
+            display->stepSequenceLED(this->channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
+        }
+        sequence.flag = false;
+    }
+    
 }
 
 /**

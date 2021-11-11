@@ -33,6 +33,7 @@ public:
     SequenceNode events[PPQN * MAX_SEQ_LENGTH];
     QuantizeAmount quantizeAmount;
 
+    bool flag;        // used to express that the sequence has advanced by 1 ppqn
     int length;       // how many steps the sequence contains
     int lengthPPQN;   // how many PPQN the sequence contains
     int currStep;     // current sequence step

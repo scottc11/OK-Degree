@@ -5,6 +5,9 @@ using namespace DEGREE;
 void GlobalControl::init() {
     this->loadCalibrationDataFromFlash();
 
+    display->init();
+    display->clear();
+
     switches->init();
     switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
 
@@ -25,6 +28,8 @@ void GlobalControl::init() {
     channels[1]->init();
     channels[2]->init();
     channels[3]->init();
+
+    clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
 }
 
 void GlobalControl::poll()

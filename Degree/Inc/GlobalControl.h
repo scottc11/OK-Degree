@@ -8,6 +8,7 @@
 #include "MCP23017.h"
 #include "CAP1208.h"
 #include "SuperClock.h"
+#include "Display.h"
 
 namespace DEGREE {
 
@@ -22,7 +23,8 @@ namespace DEGREE {
             TouchChannel *chanD_ptr,
             CAP1208 *touch_ptr,
             Degrees *degrees_ptr,
-            MCP23017 *buttons_ptr) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0)
+            MCP23017 *buttons_ptr,
+            Display *display_ptr) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0)
         {
             clock = clock_ptr;
             channels[0] = chanA_ptr;
@@ -32,9 +34,9 @@ namespace DEGREE {
             touchPads = touch_ptr;
             switches = degrees_ptr;
             buttons = buttons_ptr;
+            display = display_ptr;
             ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterupt));
             touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
-            clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer));
         };
 
         SuperClock *clock;
@@ -42,6 +44,7 @@ namespace DEGREE {
         CAP1208 *touchPads;
         Degrees *switches;      // degree 3-stage toggle switches io
         MCP23017 *buttons;      // io for tactile buttons
+        Display *display;
         InterruptIn ioInterrupt; // interupt pin for buttons MCP23017 io
         InterruptIn touchInterrupt; // interupt pin for touch pads
         DigitalOut recLED;

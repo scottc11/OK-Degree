@@ -8,6 +8,7 @@
 #include "Bender.h"
 #include "VoltPerOctave.h"
 #include "SuperSeq.h"
+#include "Display.h"
 
 typedef struct QuantOctave
 {
@@ -76,8 +77,10 @@ namespace DEGREE {
             DIM_HIGH
         };
 
-        TouchChannel(MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, Bender *_bender, PinName adc_pin, PinName gatePin, DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin)
+        TouchChannel(int _index, Display *display_ptr, MPR121 *touchPads, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, Bender *_bender, PinName adc_pin, PinName gatePin, DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin)
         {
+            channelIndex = _index;
+            display = display_ptr;
             _touchPads = touchPads;
             _leds = leds;
             degreeSwitches = degrees;
@@ -98,6 +101,8 @@ namespace DEGREE {
             numActiveOctaves = OCTAVE_COUNT;
         };
 
+        int channelIndex;          // an index value used for accessing the odd array
+        Display *display;
         MPR121 *_touchPads;
         SX1509 *_leds;
         Degrees *degreeSwitches;
