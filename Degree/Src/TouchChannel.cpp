@@ -558,3 +558,18 @@ void TouchChannel::handleSequence(int position)
 
     triggerNote(currDegree, currOctave, BEND_PITCH); // always handle pitch bend value
 }
+
+/**
+ * @brief reset the sequence
+ * @todo you should probably get the currently queued event, see if it has been triggered yet, and disable it if it has been triggered
+ * @todo you can't reset 
+*/
+void TouchChannel::resetSequence()
+{
+    sequence.reset();
+    if (sequence.containsEvents)
+    {
+        display->stepSequenceLED(channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
+        handleSequence(sequence.currPosition);
+    }
+}

@@ -163,6 +163,7 @@ namespace DEGREE {
 
         // Sequencer methods
         void handleSequence(int position);
+        void resetSequence();
 
         // Bender Callbacks
         void benderActiveCallback(uint16_t value);

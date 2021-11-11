@@ -133,7 +133,10 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case RESET:
-        // handleReset();
+        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        {
+            channels[i]->resetSequence();
+        }
         break;
 
     case Gestures::CALIBRATE_BENDER:
