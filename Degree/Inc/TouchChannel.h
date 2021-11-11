@@ -48,7 +48,7 @@ namespace DEGREE {
             BEND_PITCH
         };
         
-        enum BenderMode
+        enum BenderMode : int
         {
             BEND_OFF = 0,
             PITCH_BEND = 1,
@@ -116,7 +116,7 @@ namespace DEGREE {
         TouchChannelMode currMode;
         TouchChannelMode prevMode;
 
-        BenderMode benderMode;
+        int benderMode;
 
         uint8_t currDegree;
         uint8_t currOctave;
@@ -165,7 +165,8 @@ namespace DEGREE {
         void handleSequence(int position);
         void resetSequence();
 
-        // Bender Callbacks
+        // Bender methods
+        int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();
 

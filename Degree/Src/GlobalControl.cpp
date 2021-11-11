@@ -161,13 +161,13 @@ void GlobalControl::handleButtonPress(int pad)
 
     case BEND_MODE:
         // iterate over currTouched and setChannelBenderMode if touched
-        // for (int i = 0; i < 4; i++)
-        // {
-        //     if (touch.padIsTouched(i, currTouched, prevTouched))
-        //     {
-        //         setChannelBenderMode(i);
-        //     }
-        // }
+        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        {
+            if (touchPads->padIsTouched(i, currTouched, prevTouched))
+            {
+                channels[i]->setBenderMode();
+            }
+        }
         break;
 
     case CLEAR_SEQ:

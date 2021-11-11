@@ -28,6 +28,7 @@ void TouchChannel::init()
     }
 
     setMode(MONO);
+    setBenderMode(PITCH_BEND);
 }
 
 void TouchChannel::poll() {
@@ -273,6 +274,56 @@ void TouchChannel::setGate(bool state)
     gateState = state;
     gateOut.write(gateState);
     globalGateOut->write(gateState);
+}
+
+/**
+ * ============================================ 
+ * ------------------ BENDER ------------------
+*/
+
+/**
+ * Set Bender Mode
+ * @brief either set bender mode to the supplied target, or just incremement to the next mode
+*/
+int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
+{
+    if (targetMode != INCREMENT_BENDER_MODE)
+    {
+        benderMode = targetMode;
+    }
+    else if (benderMode < 3)
+    {
+        benderMode += 1;
+    }
+    else
+    {
+        benderMode = 0;
+    }
+    switch (benderMode)
+    {
+    case BEND_OFF:
+        setLED(CHANNEL_RATCHET_LED, OFF);
+        setLED(CHANNEL_PB_LED, OFF);
+        break;
+    case PITCH_BEND:
+        setLED(CHANNEL_RATCHET_LED, OFF);
+        setLED(CHANNEL_PB_LED, ON);
+        break;
+    case RATCHET:
+        setLED(CHANNEL_RATCHET_LED, ON);
+        setLED(CHANNEL_PB_LED, OFF);
+        break;
+    case RATCHET_PITCH_BEND:
+        setLED(CHANNEL_RATCHET_LED, ON);
+        setLED(CHANNEL_PB_LED, ON);
+        break;
+    case INCREMENT_BENDER_MODE:
+        break;
+    case BEND_MENU:
+        display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
+        break;
+    }
+    return benderMode;
 }
 
 /**
