@@ -209,6 +209,10 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
             setGate(LOW);
             break;
         case SUSTAIN:
+            if (currMode == MONO || currMode == MONO_LOOP)
+            {
+                setDegreeLed(degree, ON);      // new active note HIGH
+            }
             output.updateDAC(dacIndex, 0);
             break;
         case PREV_NOTE:
