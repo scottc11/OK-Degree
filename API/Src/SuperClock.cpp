@@ -142,8 +142,6 @@ void SuperClock::handleInputCaptureCallback()
 {
     tick = 0; // Reset the clock tick zero, so it will trigger the clock output in the period elapsed loop callback
     pulse = 0;
-    if (resetCallback)
-        resetCallback();
 
     __HAL_TIM_SetCounter(&htim2, 0); // reset after each input capture
     inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
@@ -179,6 +177,8 @@ void SuperClock::handleTickCallback()
             if (pulse == 0) {
                 led.write(HIGH);
                 gate.write(HIGH);
+                if (resetCallback) resetCallback();
+                
             } else if (pulse > 4) {
                 led.write(LOW);
                 gate.write(LOW);

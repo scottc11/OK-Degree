@@ -33,12 +33,13 @@ public:
     SequenceNode events[PPQN * MAX_SEQ_LENGTH];
     QuantizeAmount quantizeAmount;
 
-    bool flag;        // used to express that the sequence has advanced by 1 ppqn
-    int length;       // how many steps the sequence contains
-    int lengthPPQN;   // how many PPQN the sequence contains
-    int currStep;     // current sequence step
-    int prevStep;     // the previous step executed in the sequence
-    int currPosition; // current
+    bool flag;            // used to express that the sequence has advanced by 1 ppqn
+    int length;           // how many steps the sequence contains
+    int lengthPPQN;       // how many PPQN the sequence contains
+    int currStepPosition; // the number of PPQN that have passed since the last step was advanced
+    int currStep;         // current sequence step
+    int prevStep;         // the previous step executed in the sequence
+    int currPosition;     // current position of sequence (in PPQN)
     int prevPosition;
     int prevEventPos;     // represents the position of the last event which got triggered (either HIGH or LOW)
     int newEventPos;      // when a new event is created, we store the position in this variable in case we need it for something (ie. sequence overdubing)
@@ -50,6 +51,8 @@ public:
     void init();
 
     void reset();
+
+    void resetStep();
 
     void clear();
 
@@ -74,6 +77,8 @@ public:
     int getNextPosition(int position);
 
     void advance();
+
+    void advanceStep();
 
     /**
      * @brief advance the sequencer to a specific step

@@ -67,6 +67,7 @@ namespace DEGREE {
         void pollTouchPads();
         
         void advanceSequencer();
+        void resetSequencer();
 
         void handleButtonPress(int pad);
         void handleButtonRelease(int pad);

@@ -30,11 +30,13 @@ void SuperSeq::advance()
 {
     prevPosition = currPosition;
     currPosition += 1;
+    currStepPosition += 1;
 
     if (currPosition % PPQN == 0)
     {
         prevStep = currStep;
         currStep += 1;
+        currStepPosition = 0;
     }
 
     if (currPosition > lengthPPQN - 1)
@@ -43,6 +45,11 @@ void SuperSeq::advance()
         currStep = 0;
     }
     flag = true;
+}
+
+void SuperSeq::advanceStep()
+{
+    currPosition = (currPosition - (currPosition % (PPQN - 1))) + (PPQN - 1);
 }
 
 /**
@@ -55,6 +62,14 @@ void SuperSeq::reset()
     prevStep = currStep;
     currStep = 0;
 };
+
+/**
+ * @brief reset the current position to the position equal to the last step
+*/ 
+void SuperSeq::resetStep()
+{
+    currPosition = (currPosition - (currPosition % (PPQN - 1))) - (PPQN - 1);
+}
 
 /**
  * @brief Deactivate all events in event array and set empty flag

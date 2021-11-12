@@ -29,6 +29,7 @@ void GlobalControl::init() {
     channels[2]->init();
     channels[3]->init();
 
+    // clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
 }
 
@@ -287,6 +288,10 @@ void GlobalControl::loadCalibrationDataFromFlash()
     }
 }
 
+/**
+ * Method gets called once every PPQN
+ * 
+*/ 
 void GlobalControl::advanceSequencer()
 {
     for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
@@ -294,4 +299,23 @@ void GlobalControl::advanceSequencer()
         channels[i]->sequence.advance();
         channels[i]->setTickerFlag();
     }
+}
+
+void GlobalControl::resetSequencer()
+{
+    for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+    {
+
+        // try just setting the sequence to 0, set any potential gates low. You may miss a note but 🤷‍♂️
+
+        // if sequence is not on its final PPQN of its step, then trigger all remaining PPQNs in current step until currPPQN == 0
+        // if (channels[i]->sequence.currStepPosition != 0) {
+        //     while (channels[i]->sequence.currStepPosition != 0)
+        //     {
+        //         channels[i]->handleSequence(channels[i]->sequence.currPosition);
+        //         channels[i]->sequence.advance();
+        //     }
+        // }
+    }
+    
 }
