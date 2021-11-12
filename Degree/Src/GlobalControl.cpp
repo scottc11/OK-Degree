@@ -225,15 +225,27 @@ void GlobalControl::handleButtonRelease(int pad)
         // channels[3]->disableUIMode();
         break;
     case CLEAR_SEQ:
-        // if (!gestureFlag)
-        // {
-        //     for (int i = 0; i < 4; i++)
-        //     {
-        //         channels[i]->clearEventSequence();
-        //         channels[i]->disableSequenceRecording();
-        //     }
-        // }
-        // gestureFlag = false;
+        if (!gestureFlag)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                channels[i]->sequence.clear();
+                channels[i]->disableSequenceRecording();
+            }
+        }
+        else // clear only curr touched channels sequences
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                if (touchPads->padIsTouched(i, currTouched, prevTouched))
+                {
+                    channels[i]->sequence.clear();
+                    channels[i]->disableSequenceRecording();
+                }
+            }
+            gestureFlag = false;
+        }
+
         break;
     case SEQ_LENGTH:
         // this->display->clear();
