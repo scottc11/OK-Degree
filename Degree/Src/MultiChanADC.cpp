@@ -38,6 +38,7 @@ void MX_ADC1_Init(void)
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**ADC1 GPIO Configuration
+  PA2     ------> ADC1_IN2
   PA4     ------> ADC1_IN4
   PA5     ------> ADC1_IN5
   PA6     ------> ADC1_IN6
@@ -47,7 +48,7 @@ void MX_ADC1_Init(void)
   PB0     ------> ADC1_IN8
   PB1     ------> ADC1_IN9
   */
-    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -97,7 +98,7 @@ void MX_ADC1_Init(void)
     hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
     hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T3_TRGO;
     hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-    hadc1.Init.NbrOfConversion = 8;
+    hadc1.Init.NbrOfConversion = 9;
     hadc1.Init.DMAContinuousRequests = ENABLE;
     hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
     HAL_ADC_Init(&hadc1);
@@ -149,6 +150,12 @@ void MX_ADC1_Init(void)
 */
     sConfig.Channel = ADC_CHANNEL_9;
     sConfig.Rank = 8;
+    HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+
+    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+*/
+    sConfig.Channel = ADC_CHANNEL_2;
+    sConfig.Rank = 9;
     HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 }
 

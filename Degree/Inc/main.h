@@ -6,7 +6,7 @@
 #define PPQN 96
 
 #define NUM_DEGREE_CHANNELS 4
-#define ADC_DMA_BUFF_SIZE   8
+#define ADC_DMA_BUFF_SIZE   9
 
 #define DAC_1VO_ARR_SIZE 72
 #define BENDER_CALIBRATION_SIZE 2

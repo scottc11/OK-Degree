@@ -4,6 +4,7 @@
 #include "tim_api.h"
 #include "Callback.h"
 #include "DigitalOut.h"
+#include "AnalogHandle.h"
 
 #ifndef PPQN
 #define PPQN 96
@@ -20,6 +21,7 @@ public:
     
     DigitalOut led;
     DigitalOut gate;
+    AnalogHandle pot;
 
     int tick;               // increments every time TIM1 overflows
     int pulse;
@@ -36,8 +38,8 @@ public:
     /**
      * TODO: initial inputCapture value should be the product of TIM1 and TIM2 prescaler values combined with 120 BPM
      * so that the sequencer always gets initialized at 120 bpm, no matter the speed of the timers
-    */ 
-    SuperClock(PinName _led, PinName _gate) : led(_led, 0), gate(_gate)
+    */
+    SuperClock(PinName led_pin, PinName gate_pin, PinName pot_pin) : led(led_pin, 0), gate(gate_pin), pot(pot_pin)
     {
         instance = this;
         inputCapture = 11129;

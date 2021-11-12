@@ -47,10 +47,10 @@ SX1509 ledsB(&i2c3, SX1509_CHAN_B_ADDR);
 SX1509 ledsC(&i2c3, SX1509_CHAN_C_ADDR);
 SX1509 ledsD(&i2c3, SX1509_CHAN_D_ADDR);
 
-SuperClock superClock(TEMPO_LED, INT_CLOCK_OUTPUT);
+SuperClock superClock(TEMPO_LED, INT_CLOCK_OUTPUT, TEMPO_POT);
 
-uint16_t AnalogHandle::DMA_BUFFER[ADC_DMA_BUFF_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
-PinName AnalogHandle::ADC_PINS[ADC_DMA_BUFF_SIZE] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
+uint16_t AnalogHandle::DMA_BUFFER[ADC_DMA_BUFF_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+PinName AnalogHandle::ADC_PINS[ADC_DMA_BUFF_SIZE] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D, TEMPO_POT};
 
 Degrees degrees(DEGREES_INT, &toggleSwitches);
 
