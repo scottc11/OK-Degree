@@ -138,14 +138,27 @@ void SuperClock::attachResetCallback(Callback<void()> func) {
     resetCallback = func;
 }
 
+void SuperClock::setFrequency(uint16_t freq) {
+    if (freq < MAX_CLOCK_FREQ) {
+        ticksPerStep = MAX_CLOCK_FREQ;
+    } else if (freq > MIN_CLOCK_FREQ) {
+        ticksPerStep = MIN_CLOCK_FREQ;
+    } else {
+        ticksPerStep = freq;
+    }
+    
+    ticksPerPulse = (ticksPerStep * 2) / PPQN; // Forget why we multiply by 2
+}
+
 void SuperClock::handleInputCaptureCallback()
 {
     tick = 0; // Reset the clock tick zero, so it will trigger the clock output in the period elapsed loop callback
     pulse = 0;
 
     __HAL_TIM_SetCounter(&htim2, 0); // reset after each input capture
-    inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
-    ticksPerPulse = (inputCapture * 2) / PPQN; // Forget why we multiply by 2
+    uint16_t inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
+    setFrequency(inputCapture);
+
     if (input_capture_callback)
     {
         input_capture_callback();
@@ -178,7 +191,7 @@ void SuperClock::handleTickCallback()
                 led.write(HIGH);
                 gate.write(HIGH);
                 if (resetCallback) resetCallback();
-                
+
             } else if (pulse > 4) {
                 led.write(LOW);
                 gate.write(LOW);
