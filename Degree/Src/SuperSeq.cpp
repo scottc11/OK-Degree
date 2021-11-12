@@ -3,7 +3,7 @@
 void SuperSeq::init()
 {
     this->setLength(DEFAULT_SEQ_LENGTH);
-    this->setQuantizeAmount(QUANT_16th);
+    this->setQuantizeAmount(QUANT_32nd);
     this->clear();
 };
 

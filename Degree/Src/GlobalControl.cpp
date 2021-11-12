@@ -61,6 +61,16 @@ void GlobalControl::handleTouchInterupt() {
     touchDetected = true;
 }
 
+void GlobalControl::pollTempoPot()
+{
+    currTempoPotValue = tempoPot.read_u16();
+    if (currTempoPotValue > prevTempoPotValue + 50 || currTempoPotValue < prevTempoPotValue - 50) {
+        clock->setFrequency(currTempoPotValue);
+        prevTempoPotValue = currTempoPotValue;
+    }
+    
+}
+
 void GlobalControl::pollTouchPads() {
     if (touchDetected)
     {
@@ -306,6 +316,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
 */ 
 void GlobalControl::advanceSequencer()
 {
+    pollTempoPot();
     for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
     {
         channels[i]->sequence.advance();

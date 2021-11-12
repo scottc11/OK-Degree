@@ -47,7 +47,7 @@ SX1509 ledsB(&i2c3, SX1509_CHAN_B_ADDR);
 SX1509 ledsC(&i2c3, SX1509_CHAN_C_ADDR);
 SX1509 ledsD(&i2c3, SX1509_CHAN_D_ADDR);
 
-SuperClock superClock(TEMPO_LED, INT_CLOCK_OUTPUT, TEMPO_POT);
+SuperClock superClock(TEMPO_LED, INT_CLOCK_OUTPUT);
 
 uint16_t AnalogHandle::DMA_BUFFER[ADC_DMA_BUFF_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 PinName AnalogHandle::ADC_PINS[ADC_DMA_BUFF_SIZE] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D, TEMPO_POT};
@@ -64,8 +64,7 @@ TouchChannel chanB(1, &display, &touchB, &ledsB, &degrees, &dac1, DAC8554::CHAN_
 TouchChannel chanC(2, &display, &touchC, &ledsC, &degrees, &dac1, DAC8554::CHAN_C, &benderC, ADC_C, GATE_OUT_C, &globalGate);
 TouchChannel chanD(3, &display, &touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_D, &benderD, ADC_D, GATE_OUT_D, &globalGate);
 
-GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display);
-
+GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display, TEMPO_POT);
 
 volatile int ADC_COUNT = 0;
 /**

@@ -9,6 +9,7 @@
 #include "CAP1208.h"
 #include "SuperClock.h"
 #include "Display.h"
+#include "AnalogHandle.h"
 
 namespace DEGREE {
 
@@ -24,7 +25,8 @@ namespace DEGREE {
             CAP1208 *touch_ptr,
             Degrees *degrees_ptr,
             MCP23017 *buttons_ptr,
-            Display *display_ptr) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0)
+            Display *display_ptr,
+            PinName _tempoPot) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0), tempoPot(_tempoPot)
         {
             clock = clock_ptr;
             channels[0] = chanA_ptr;
@@ -49,12 +51,16 @@ namespace DEGREE {
         InterruptIn touchInterrupt; // interupt pin for touch pads
         DigitalOut recLED;
         DigitalOut freezeLED;
-        
+        AnalogHandle tempoPot;
+
         bool recordEnabled;      // global recording flag
 
         bool buttonInterupt;        // flag for handling buttons interupt
         uint16_t currButtonsState;
         uint16_t prevButtonsState;
+
+        uint16_t currTempoPotValue;
+        uint16_t prevTempoPotValue;
 
         bool touchDetected;
         bool gestureFlag;
@@ -65,6 +71,7 @@ namespace DEGREE {
         void poll();
         void pollButtons();
         void pollTouchPads();
+        void pollTempoPot();
         
         void advanceSequencer();
         void resetSequencer();
