@@ -36,24 +36,29 @@ void TouchChannel::init()
  *  ------------------------------------------------------------------------
 */
 void TouchChannel::poll()
-{    
-    touchPads->poll();
+{
+    if (!freezeChannel)
+    {
+        touchPads->poll();
 
-    if (tickerFlag) {
+        if (tickerFlag)
+        {
 
-        bender->poll();
+            bender->poll();
 
-        if (currMode == QUANTIZER || currMode == QUANTIZER_LOOP) {
-            handleCVInput();
+            if (currMode == QUANTIZER || currMode == QUANTIZER_LOOP)
+            {
+                handleCVInput();
+            }
+
+            if (currMode == MONO_LOOP || currMode == QUANTIZER_LOOP)
+            {
+                handleSequence(sequence.currPosition);
+            }
+
+            clearTickerFlag();
         }
-
-        if (currMode == MONO_LOOP || currMode == QUANTIZER_LOOP) {
-            handleSequence(sequence.currPosition);
-        }
-
-        clearTickerFlag();
     }
-    
 }
 
 /**
@@ -234,6 +239,16 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
         case BEND_PITCH:
             /* code */
             break;
+    }
+}
+
+void TouchChannel::freeze(bool state)
+{
+    freezeChannel = state;
+    if (freezeChannel == true) {
+        // log the last sequence led to be illuminated
+    } else {
+        // turn off the last led in sequence before freeze
     }
 }
 

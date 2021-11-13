@@ -140,7 +140,12 @@ void GlobalControl::handleButtonPress(int pad)
         // }
         break;
     case FREEZE:
-        // handleFreeze(true);
+        freezeLED.write(HIGH);
+        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        {
+            channels[i]->freeze(true);
+        }
+        
         break;
 
     case RESET:
@@ -224,7 +229,11 @@ void GlobalControl::handleButtonRelease(int pad)
     switch (pad)
     {
     case FREEZE:
-        // handleFreeze(false);
+        freezeLED.write(LOW);
+        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        {
+            channels[i]->freeze(false);
+        }
         break;
     case RESET:
         break;

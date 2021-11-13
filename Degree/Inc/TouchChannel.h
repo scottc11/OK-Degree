@@ -123,6 +123,8 @@ namespace DEGREE {
         uint8_t prevDegree;
         uint8_t prevOctave;
 
+        bool freezeChannel;
+
         // Quantiser members
         AnalogHandle adc;                  // CV input ADC
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
@@ -146,6 +148,7 @@ namespace DEGREE {
         void onTouch(uint8_t pad);
         void onRelease(uint8_t pad);
         void triggerNote(int degree, int octave, Action action);
+        void freeze(bool state);
         void updateDegrees();
 
         void setOctave(int octave);
