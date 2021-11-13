@@ -3,7 +3,7 @@
 void SuperSeq::init()
 {
     this->setLength(DEFAULT_SEQ_LENGTH);
-    this->setQuantizeAmount(QUANT_32nd);
+    this->setQuantizeAmount(QUANT_NONE);
     this->clear();
 };
 
@@ -119,14 +119,22 @@ void SuperSeq::createEvent(int position, int noteIndex, bool gate)
     }
 
     // handle quantization first, for overdubbing purposes
-    position = (currStep * PPQN) + quantizePosition(position, quantizeAmount);
+    // int quantizedPosition = (currStep * PPQN) + quantizePosition(position, quantizeAmount);
+    int quantizedPosition = position;
+
+    if (quantizedPosition > position) {
+        // flag the sequence handler to not trigger this event, as it has already been triggered manually
+        // one way to do this: disable ALL new events until the sequence has come back around.
+        // or... just don't quantize on the fly
+    }
+    
 
     // if the previous event was a GATE HIGH event, re-position its succeeding GATE LOW event to the new events position - 1
     // NOTE: you will also have to trigger the GATE LOW, so that the new event will generate a trigger event
     // TODO: intsead of "position - 1", do "position - (quantizeAmount / 2)"
     if (events[prevEventPos].gate == HIGH)
     {
-        int newPosition = position == 0 ? lengthPPQN - 1 : position - 1;
+        int newPosition = quantizedPosition == 0 ? lengthPPQN - 1 : quantizedPosition - 1;
         events[newPosition].noteIndex = events[prevEventPos].noteIndex;
         events[newPosition].gate = LOW;
         events[newPosition].active = true;
@@ -136,16 +144,17 @@ void SuperSeq::createEvent(int position, int noteIndex, bool gate)
     // if this new event is a GATE LOW event, and after quantization there exists an event at the same position in the sequence,
     // move this new event to the next available position @ the curr quantize level divided by 2 (to not interfere with next event), which will also have to be checked for any existing events.
     // If there is an existing GATE HIGH event at the next position, this new event will have to be placed right before it executes, regardless of quantization
-    if (gate == LOW && events[position].active && events[position].gate == HIGH)
+    if (gate == LOW && events[quantizedPosition].active && events[quantizedPosition].gate == HIGH)
     {
-        position = position + (quantizeAmount / 2);
+        int move = quantizeAmount == 0 ? PPQN / 2 : quantizeAmount / 2;
+        quantizedPosition = quantizedPosition + (move);
     }
 
-    newEventPos = position; // store new events position
+    newEventPos = quantizedPosition; // store new events position
 
-    events[position].noteIndex = noteIndex;
-    events[position].gate = gate;
-    events[position].active = true;
+    events[quantizedPosition].noteIndex = noteIndex;
+    events[quantizedPosition].gate = gate;
+    events[quantizedPosition].active = true;
 };
 
 void SuperSeq::createBendEvent(int position, uint16_t bend)
@@ -202,22 +211,33 @@ const int Q_ONE_28TH_NOTE[33] = {0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36,
 */
 int SuperSeq::quantizePosition(int pos, QuantizeAmount target)
 {
+    int newPosition;
     switch (target)
     {
     case QUANT_NONE:
-        return pos;
+        newPosition = pos;
+        break;
     case QUANT_Quarter:
-        return arr_find_closest_int((int *)Q_QUARTER_NOTE, 2, pos);
+        newPosition = arr_find_closest_int((int *)Q_QUARTER_NOTE, 2, pos);
+        break;
     case QUANT_8th:
-        return arr_find_closest_int((int *)Q_EIGTH_NOTE, 3, pos);
+        newPosition = arr_find_closest_int((int *)Q_EIGTH_NOTE, 3, pos);
+        break;
     case QUANT_16th:
-        return arr_find_closest_int((int *)Q_SIXTEENTH_NOTE, 4, pos);
+        newPosition = arr_find_closest_int((int *)Q_SIXTEENTH_NOTE, 4, pos);
+        break;
     case QUANT_32nd:
-        return arr_find_closest_int((int *)Q_THIRTY_SECOND_NOTE, 9, pos);
+        newPosition = arr_find_closest_int((int *)Q_THIRTY_SECOND_NOTE, 9, pos);
+        break;
     case QUANT_64th:
-        return arr_find_closest_int((int *)Q_SIXTY_FOURTH_NOTE, 12, pos);
+        newPosition = arr_find_closest_int((int *)Q_SIXTY_FOURTH_NOTE, 12, pos);
+        break;
     case QUANT_128th:
-        return arr_find_closest_int((int *)Q_ONE_28TH_NOTE, 33, pos);
+        newPosition = arr_find_closest_int((int *)Q_ONE_28TH_NOTE, 33, pos);
+        break;
+    default:
+        newPosition = pos;
+        break;
     }
-    return pos;
+    return newPosition;
 };

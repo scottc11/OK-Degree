@@ -177,7 +177,6 @@ void SuperClock::handleTickCallback()
     if (tick < ticksPerPulse) { // make sure you don't loose a step by not using "<=" instead of "<"
         if (tick == 0) { // handle first tick in step
             if (ppqnCallback) ppqnCallback();
-            
         }
         tick++;
     }
@@ -188,13 +187,7 @@ void SuperClock::handleTickCallback()
 
         if (pulse < PPQN) {
             if (pulse == 0) {
-                led.write(HIGH);
-                gate.write(HIGH);
                 if (resetCallback) resetCallback();
-
-            } else if (pulse > 4) {
-                led.write(LOW);
-                gate.write(LOW);
             }
             pulse++;
         } else {

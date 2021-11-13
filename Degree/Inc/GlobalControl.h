@@ -25,8 +25,7 @@ namespace DEGREE {
             CAP1208 *touch_ptr,
             Degrees *degrees_ptr,
             MCP23017 *buttons_ptr,
-            Display *display_ptr,
-            PinName _tempoPot) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0), tempoPot(_tempoPot)
+            Display *display_ptr) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0), tempoPot(TEMPO_POT), tempoLED(TEMPO_LED), tempoGate(INT_CLOCK_OUTPUT)
         {
             clock = clock_ptr;
             channels[0] = chanA_ptr;
@@ -51,7 +50,11 @@ namespace DEGREE {
         InterruptIn touchInterrupt; // interupt pin for touch pads
         DigitalOut recLED;
         DigitalOut freezeLED;
+        DigitalOut tempoLED;
+        DigitalOut tempoGate;
         AnalogHandle tempoPot;
+
+        int currPulse;
 
         bool recordEnabled;      // global recording flag
 

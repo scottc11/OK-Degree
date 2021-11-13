@@ -3,8 +3,6 @@
 #include "common.h"
 #include "tim_api.h"
 #include "Callback.h"
-#include "DigitalOut.h"
-#include "AnalogHandle.h"
 
 #ifndef PPQN
 #define PPQN 96
@@ -26,9 +24,6 @@ extern "C" void TIM2_IRQHandler(void);
 
 class SuperClock {
 public:
-    
-    DigitalOut led;
-    DigitalOut gate;
 
     int tick;               // increments every time TIM1 overflows
     int pulse;
@@ -46,7 +41,7 @@ public:
      * TODO: initial inputCapture value should be the product of TIM1 and TIM2 prescaler values combined with 120 BPM
      * so that the sequencer always gets initialized at 120 bpm, no matter the speed of the timers
     */
-    SuperClock(PinName led_pin, PinName gate_pin) : led(led_pin, 0), gate(gate_pin)
+    SuperClock()
     {
         instance = this;
         ticksPerStep = 11129;

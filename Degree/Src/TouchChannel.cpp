@@ -37,17 +37,21 @@ void TouchChannel::init()
 */
 void TouchChannel::poll()
 {    
-    touchPads->poll();
+    if (currMode == MONO) {
+        touchPads->poll();
+    }
 
     if (tickerFlag) {
 
         bender->poll();
 
         if (currMode == QUANTIZER) {
+            touchPads->poll();
             handleCVInput();
         }
 
         if (currMode == MONO_LOOP || currMode == QUANTIZER_LOOP) {
+            touchPads->poll();
             handleSequence(sequence.currPosition);
         }
 

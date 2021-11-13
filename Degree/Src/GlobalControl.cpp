@@ -316,12 +316,29 @@ void GlobalControl::loadCalibrationDataFromFlash()
 */ 
 void GlobalControl::advanceSequencer()
 {
-    pollTempoPot();
+    __disable_irq();
+    // pollTempoPot();
+    // set tempo output high and low
+    if (currPulse == 0) {
+        tempoLED.write(HIGH);
+        tempoGate.write(HIGH);
+    } else if (currPulse == 4) {
+        tempoLED.write(LOW);
+        tempoGate.write(LOW);
+    }
+
     for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
     {
         channels[i]->sequence.advance();
         channels[i]->setTickerFlag();
     }
+
+    if (currPulse < PPQN - 1) {
+        currPulse += 1;
+    } else {
+        currPulse = 0;
+    }
+    __enable_irq();
 }
 
 void GlobalControl::resetSequencer()
