@@ -37,21 +37,17 @@ void TouchChannel::init()
 */
 void TouchChannel::poll()
 {    
-    if (currMode == MONO) {
-        touchPads->poll();
-    }
+    touchPads->poll();
 
     if (tickerFlag) {
 
         bender->poll();
 
-        if (currMode == QUANTIZER) {
-            touchPads->poll();
+        if (currMode == QUANTIZER || currMode == QUANTIZER_LOOP) {
             handleCVInput();
         }
 
         if (currMode == MONO_LOOP || currMode == QUANTIZER_LOOP) {
-            touchPads->poll();
             handleSequence(sequence.currPosition);
         }
 
@@ -84,15 +80,20 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
         updateOctaveLeds(currOctave);
         break;
     case MONO_LOOP:
-        setLED(CHANNEL_REC_LED, ON);
         sequence.playbackEnabled = true;
+        setLED(CHANNEL_REC_LED, ON);
         triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case QUANTIZER:
         setLED(CHANNEL_QUANT_LED, ON);
         setActiveDegrees(activeDegrees);
+        triggerNote(currDegree, currOctave, NOTE_OFF);
         break;
     case QUANTIZER_LOOP:
+        sequence.playbackEnabled = true;
+        setLED(CHANNEL_REC_LED, ON);
+        setActiveDegrees(activeDegrees);
+        triggerNote(currDegree, currOctave, NOTE_OFF);
         break;
     }
 }
@@ -114,6 +115,9 @@ void TouchChannel::toggleMode()
     }
 }
 
+/**
+ * TODO: Is this function getting called inside an interrupt?
+*/ 
 void TouchChannel::onTouch(uint8_t pad)
 {
     if (pad < 8)  // handle degree pads
@@ -138,6 +142,11 @@ void TouchChannel::onTouch(uint8_t pad)
                 break;
             case QUANTIZER:
                 setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
+                break;
+            case QUANTIZER_LOOP:
+                // every touch detected, take a snapshot of all active degree values and apply them to the sequence
+                setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
+                sequence.createChordEvent(sequence.currPosition, activeDegrees);
                 break;
             default:
                 break;

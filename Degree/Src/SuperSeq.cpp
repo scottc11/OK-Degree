@@ -169,7 +169,6 @@ void SuperSeq::createBendEvent(int position, uint16_t bend)
 
 void SuperSeq::createChordEvent(int position, uint8_t degrees)
 {
-
     if (containsEvents == false)
     {
         containsEvents = true;
