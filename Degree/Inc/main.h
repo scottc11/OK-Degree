@@ -29,7 +29,7 @@
 #define TEMPO_POT PA_2
 
 #define EXT_CLOCK_INPUT PA_3
-#define INT_CLOCK_OUTPUT PB_2
+#define INT_CLOCK_OUTPUT PA_0
 
 #define ADC_A PA_6
 #define ADC_B PA_7
@@ -64,7 +64,7 @@
 #define GLBL_TOUCH_INT PB_6
 
 #define DAC1_CS PB_12
-#define DAC2_CS PC_8
+#define DAC2_CS PC_12
 
 #define SPI2_MOSI PB_15
 #define SPI2_MISO PB_14
