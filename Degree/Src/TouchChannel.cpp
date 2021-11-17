@@ -364,6 +364,47 @@ void TouchChannel::setGate(bool state)
 }
 
 /**
+ * @brief Take a 16-bit value and map it to one of the preset Ratchet Rates
+*/
+uint8_t TouchChannel::calculateRatchet(uint16_t bend, uint16_t bendZero, uint16_t bendMax)
+{
+    // maxBend - zeroBend / 4
+    if (bend < (bendZero + ((bendMax - bendZero) / 4)) )
+    {
+        return 96;
+    }
+    // maxBend - zeroBend / 3
+    else if (bend < (bendZero + ((bendMax - bendZero) / 3)) )
+    {
+        return 48;
+    }
+    // maxBend - zeroBend / 2
+    else if (bend < (bendZero + ((bendMax - bendZero) / 2)) )
+    {
+        return 24;
+    }
+    // maxBend - zeroBend / 1
+    else if (bend < (bendZero + (bendMax - bendZero)) )
+    {
+        return 12;
+    }
+}
+
+/**
+ * @brief based on the current position of the sequencer clock, toggle gate on / off
+*/
+void TouchChannel::handleRatchet(int position, uint8_t rate)
+{
+    if (position % rate == 0) {
+        setGate(HIGH);
+        setLED(CHANNEL_RATCHET_LED, ON);
+    } else {
+        setGate(LOW);
+        setLED(CHANNEL_RATCHET_LED, OFF);
+    }
+}
+
+/**
  * ============================================ 
  * ------------------ BENDER ------------------
 */
@@ -439,6 +480,8 @@ void TouchChannel::benderActiveCallback(uint16_t value)
         }
         break;
     case RATCHET:
+        currRatchetRate = calculateRatchet(value, bender->zeroBend, bender->maxBend);
+        handleRatchet(sequence.currStepPosition, currRatchetRate);
         break;
     case RATCHET_PITCH_BEND:
         break;
@@ -457,6 +500,7 @@ void TouchChannel::benderIdleCallback()
         output.setPitchBend(0);
         break;
     case RATCHET:
+        setLED(CHANNEL_RATCHET_LED, ON);
         break;
     case RATCHET_PITCH_BEND:
         break;
