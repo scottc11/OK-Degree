@@ -237,7 +237,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
             /* code */
             break;
         case BEND_PITCH:
-            /* code */
+            // if 
             break;
     }
 }
@@ -409,6 +409,45 @@ void TouchChannel::handleRatchet(int position, uint8_t rate)
  * ------------------ BENDER ------------------
 */
 
+void TouchChannel::handleBend(uint16_t bend, bool benderIsIdle)
+{
+    switch (benderMode)
+    {
+    case BEND_OFF:
+        break;
+    case PITCH_BEND:
+        if (benderIsIdle) {
+            output.setPitchBend(0);
+        } else {
+            // Pitch Bend UP
+            if (bend > bender->zeroBend && bend < bender->maxBend)
+            {
+                bend = output.calculatePitchBend(bend, bender->zeroBend, bender->maxBend);
+                output.setPitchBend(bend); // non-inverted
+            }
+            // Pitch Bend DOWN
+            else if (bend < bender->zeroBend && bend > bender->minBend)
+            {
+                bend = output.calculatePitchBend(bend, bender->zeroBend, bender->minBend); // NOTE: inverted mapping
+                output.setPitchBend(bend * -1);                                            // inverted
+            }
+        }
+        break;
+    case RATCHET:
+        if (benderIsIdle) {
+            setLED(CHANNEL_RATCHET_LED, ON);
+        } else {
+            currRatchetRate = calculateRatchet(bend, bender->zeroBend, bender->maxBend);
+            handleRatchet(sequence.currStepPosition, currRatchetRate);
+        }
+        break;
+    case RATCHET_PITCH_BEND:
+        break;
+    default:
+        break;
+    }
+}
+
 /**
  * Set Bender Mode
  * @brief either set bender mode to the supplied target, or just incremement to the next mode
@@ -459,55 +498,18 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
 */
 void TouchChannel::benderActiveCallback(uint16_t value)
 {
-    switch (this->benderMode)
+    if (sequence.recordEnabled) {
+        sequence.createBendEvent(sequence.currPosition, value);
+    }
+    else
     {
-    case BEND_OFF:
-        // do nothing
-        break;
-    case PITCH_BEND:
-        uint16_t bend;
-        // Pitch Bend UP
-        if (bender->currState == Bender::BEND_UP)
-        {
-            bend = output.calculatePitchBend(value, bender->zeroBend, bender->maxBend);
-            output.setPitchBend(bend); // non-inverted
-        }
-        // Pitch Bend DOWN
-        else if (bender->currState == Bender::BEND_DOWN)
-        {
-            bend = output.calculatePitchBend(value, bender->zeroBend, bender->minBend); // NOTE: inverted mapping
-            output.setPitchBend(bend * -1);                                           // inverted
-        }
-        break;
-    case RATCHET:
-        currRatchetRate = calculateRatchet(value, bender->zeroBend, bender->maxBend);
-        handleRatchet(sequence.currStepPosition, currRatchetRate);
-        break;
-    case RATCHET_PITCH_BEND:
-        break;
-    case BEND_MENU:
-        break;
+        handleBend(value, false);
     }
 }
 
 void TouchChannel::benderIdleCallback()
 {
-    switch (this->benderMode)
-    {
-    case BEND_OFF:
-        break;
-    case PITCH_BEND:
-        output.setPitchBend(0);
-        break;
-    case RATCHET:
-        setLED(CHANNEL_RATCHET_LED, ON);
-        break;
-    case RATCHET_PITCH_BEND:
-        break;
-    case BEND_MENU:
-        // set var to no longer active?
-        break;
-    }
+    handleBend(bender->currBend, true);
 }
 
 /**
@@ -749,8 +751,9 @@ void TouchChannel::handleSequence(int position)
         }
         break;
     }
-
-    triggerNote(currDegree, currOctave, BEND_PITCH); // always handle pitch bend value
+    
+    // always handle pitch bend value
+    handleBend(sequence.events[position].bend, bender->isIdle(sequence.events[position].bend));
 }
 
 /**

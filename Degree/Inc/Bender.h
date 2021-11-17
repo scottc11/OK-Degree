@@ -65,7 +65,7 @@ public:
     void calibrateIdle();
     void calibrateMinMax();
     void updateDAC(uint16_t value);
-    bool isIdle();
+    bool isIdle(uint16_t bend);
     int setMode(int targetMode = 0);
     int calculateOutput(uint16_t value);
     void attachIdleCallback(Callback<void()> func);

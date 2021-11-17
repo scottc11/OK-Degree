@@ -112,7 +112,7 @@ namespace DEGREE {
         DigitalOut gateOut;        // gate output
         bool gateState;            // state of the gate output
         DigitalOut *globalGateOut; // global gate output
-        uint8_t currRatchetRate;      // 
+        uint8_t currRatchetRate;   // TODO: you don't need to store this
 
         TouchChannelMode currMode;
         TouchChannelMode prevMode;
@@ -175,6 +175,7 @@ namespace DEGREE {
         void clearTickerFlag() { tickerFlag = false; };
 
         // Bender methods
+        void handleBend(uint16_t bend, bool benderIsIdle);
         int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();

@@ -62,7 +62,7 @@ void Bender::poll()
 {
     currBend = this->read();
 
-    if (this->isIdle())
+    if (this->isIdle(currBend))
     {
         updateDAC(0);
         currState = BEND_IDLE;
@@ -129,9 +129,9 @@ void Bender::updateDAC(uint16_t value)
     dac->write(dacChan, outputFilter(BENDER_ZERO + dacOutput));
 }
 
-bool Bender::isIdle()
+bool Bender::isIdle(uint16_t bend)
 {
-    if (currBend > zeroBend + idleDebounce || currBend < zeroBend - idleDebounce)
+    if (bend > zeroBend + idleDebounce || bend < zeroBend - idleDebounce)
     {
         return false;
     }
