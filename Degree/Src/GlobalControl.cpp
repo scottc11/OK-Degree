@@ -89,6 +89,7 @@ void GlobalControl::pollButtons()
     if (buttonInterupt)
     {
         currButtonsState = buttons->digitalReadAB();
+        currButtonsState = bitClear(currButtonsState, 10); // temporary
         if (currButtonsState != prevButtonsState)
         {
             for (int i = 0; i < 16; i++)

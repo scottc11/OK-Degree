@@ -97,7 +97,7 @@ namespace DEGREE {
             RESET = 0x1000,
             CMODE = 0x0800,
             CLEAR_BEND = 0x0400,
-            CLEAR_SEQ = 0x0600,
+            CLEAR_SEQ = 0x0200,
             BEND_MODE = 0x0100,
             QUANTIZE_AMOUNT = 0x0080,
             SEQ_LENGTH = 0x0020,
