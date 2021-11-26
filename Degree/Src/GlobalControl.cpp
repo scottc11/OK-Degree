@@ -35,6 +35,7 @@ void GlobalControl::init() {
 
 void GlobalControl::poll()
 {
+    pollTempoPot();
     switches->poll();
     pollButtons();
     pollTouchPads();
@@ -89,7 +90,6 @@ void GlobalControl::pollButtons()
     if (buttonInterupt)
     {
         currButtonsState = buttons->digitalReadAB();
-        currButtonsState = bitClear(currButtonsState, 10); // temporary
         if (currButtonsState != prevButtonsState)
         {
             for (int i = 0; i < 16; i++)
