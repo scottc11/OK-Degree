@@ -277,4 +277,9 @@ program:
 		-c "program ./$(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 
-# *** EOF ***
+DFU_INTERFACE_NUMBER = 0
+DFU_ALT_SETTING = 0
+DFU_FUSE_ADDRESS = $(FLASH_ADDRESS)
+
+usb-upload:
+	dfu-util --alt $(DFU_ALT_SETTING) --intf $(DFU_INTERFACE_NUMBER) -s $(DFU_FUSE_ADDRESS):leave -D $(BUILD_DIR)/$(TARGET).dfu
