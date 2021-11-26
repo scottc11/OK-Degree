@@ -11,6 +11,7 @@ void TouchChannel::init()
     bender->init();
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
+    bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
 
     // initialize channel touch pads
     touchPads->init();
@@ -506,6 +507,34 @@ void TouchChannel::benderIdleCallback()
         break;
     case BEND_MENU:
         // set var to no longer active?
+        break;
+    }
+}
+
+void TouchChannel::benderTriStateCallback(Bender::BendState state)
+{
+    switch (this->benderMode)
+    {
+    case BEND_OFF:
+        break;
+    case PITCH_BEND:
+        break;
+    case RATCHET:
+        break;
+    case RATCHET_PITCH_BEND:
+        break;
+    case BEND_MENU:
+        if (state == Bender::BendState::BEND_UP)
+        {
+            sequence.setLength(sequence.length + 1);
+            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
+        }
+        else if (state == Bender::BendState::BEND_DOWN)
+        {
+            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, false);
+            sequence.setLength(sequence.length - 1);
+            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
+        }
         break;
     }
 }

@@ -197,11 +197,11 @@ void GlobalControl::handleButtonPress(int pad)
         // channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
         break;
     case SEQ_LENGTH:
-        // this->display->clear();
-        // for (int chan = 0; chan < 4; chan++)
-        // {
-        //     channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
-        // }
+        this->display->clear();
+        for (int chan = 0; chan < NUM_DEGREE_CHANNELS; chan++)
+        {
+            channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
+        }
         break;
     case RECORD:
         if (!recordEnabled)
@@ -268,15 +268,15 @@ void GlobalControl::handleButtonRelease(int pad)
 
         break;
     case SEQ_LENGTH:
-        // this->display->clear();
-        // for (int chan = 0; chan < 4; chan++)
-        // {
-        //     if (channels[chan]->sequenceContainsEvents)
-        //     {
-        //         display->setSequenceLEDs(chan, channels[chan]->sequence.length, 2, true);
-        //     }
-        //     channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_OFF);
-        // }
+        this->display->clear();
+        for (int chan = 0; chan < NUM_DEGREE_CHANNELS; chan++)
+        {
+            if (channels[chan]->sequence.containsEvents)
+            {
+                display->setSequenceLEDs(chan, channels[chan]->sequence.length, 2, true);
+            }
+            channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_OFF);
+        }
         break;
     case RECORD:
         break;

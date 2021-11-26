@@ -178,6 +178,7 @@ namespace DEGREE {
         int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();
+        void benderTriStateCallback(Bender::BendState state);
 
         // Gate Output Methods
         void setGate(bool state);
