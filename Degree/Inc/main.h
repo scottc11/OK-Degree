@@ -3,6 +3,8 @@
 #include "api.h"
 #include "system_clock_config.h"
 
+// #define BOARD_REV_V38
+
 #define PPQN 96
 
 #define NUM_DEGREE_CHANNELS 4
@@ -29,7 +31,12 @@
 #define TEMPO_POT PA_2
 
 #define EXT_CLOCK_INPUT PA_3
+
+#ifdef BOARD_REV_V38
+#define INT_CLOCK_OUTPUT PB_2
+#else
 #define INT_CLOCK_OUTPUT PA_0
+#endif
 
 #define ADC_A PA_6
 #define ADC_B PA_7
