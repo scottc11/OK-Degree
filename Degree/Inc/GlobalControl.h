@@ -92,6 +92,7 @@ namespace DEGREE {
     private:
         enum PadNames : uint16_t
         { // integers correlate to 8-bit index position
+#ifdef BOARD_REV_V38
             FREEZE = 0x4000,
             RECORD = 0x2000,
             RESET = 0x1000,
@@ -107,6 +108,23 @@ namespace DEGREE {
             CTRL_B = 0x0004,
             CTRL_C = 0x0002,
             CTRL_D = 0x0001
+#else
+            FREEZE = 0x4000,
+            RECORD = 0x2000,
+            RESET = 0x1000,
+            CMODE = 0x0080,
+            CLEAR_BEND = 0x0400,
+            CLEAR_SEQ = 0x0200,
+            BEND_MODE = 0x0040,
+            QUANTIZE_AMOUNT = 0x0800,
+            SEQ_LENGTH = 0x0100,
+            PB_RANGE = 0x0020,
+            SHIFT = 0x0010,
+            CTRL_A = 0x0008,
+            CTRL_B = 0x0004,
+            CTRL_C = 0x0002,
+            CTRL_D = 0x0001
+#endif
         };
 
         enum Gestures : uint16_t
