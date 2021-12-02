@@ -182,7 +182,7 @@ namespace DEGREE {
 
         // Gate Output Methods
         void setGate(bool state);
-        uint8_t calculateRatchet(uint16_t bend, uint16_t bendZero, uint16_t bendMax);
+        uint8_t calculateRatchet(uint16_t bend);
         void handleRatchet(int position, uint8_t rate);
     };
 

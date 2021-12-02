@@ -6,6 +6,7 @@ void Bender::init()
     outputFilter.setAlpha(0.05);
     outputFilter.setInitial(this->dacOutputRange); // set initial value to middle of DAC (0V)
     calibrateIdle();
+    setRatchetThresholds();
     updateDAC(0);
 }
 
@@ -159,4 +160,16 @@ void Bender::attachTriStateCallback(Callback<void(BendState state)> func)
 uint16_t Bender::read()
 {
     return adc.read_u16();
+}
+
+void Bender::setRatchetThresholds()
+{    
+    ratchetThresholds[3] = zeroBend + ((maxBend - zeroBend) / 4);
+    ratchetThresholds[2] = zeroBend + ((maxBend - zeroBend) / 3);
+    ratchetThresholds[1] = zeroBend + ((maxBend - zeroBend) / 2);
+    ratchetThresholds[0] = zeroBend + (maxBend - zeroBend);
+    ratchetThresholds[7] = zeroBend - ((zeroBend - minBend) / 4);
+    ratchetThresholds[6] = zeroBend - ((zeroBend - minBend) / 3);
+    ratchetThresholds[5] = zeroBend - ((zeroBend - minBend) / 2);
+    ratchetThresholds[4] = zeroBend - (zeroBend - minBend);
 }

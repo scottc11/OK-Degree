@@ -46,6 +46,7 @@ public:
     int dacOutput;                                // the amount of Control Voltage to apply Pitch Bend DAC
     bool outputInverted;                          // whether to invert the output of the DAC based on how the ADC reads the direction of the bender
     int calibrationSamples[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
+    uint16_t ratchetThresholds[8];
 
     uint16_t zeroBend;                            // the average ADC value when pitch bend is idle
     uint16_t idleDebounce;                        // for debouncing the ADC when Pitch Bend is idle
@@ -64,6 +65,7 @@ public:
     uint16_t read();
     void calibrateIdle();
     void calibrateMinMax();
+    void setRatchetThresholds();
     void updateDAC(uint16_t value);
     bool isIdle();
     int setMode(int targetMode = 0);
