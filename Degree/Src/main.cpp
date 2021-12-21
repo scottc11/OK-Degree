@@ -66,23 +66,12 @@ TouchChannel chanD(3, &display, &touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_
 
 GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display);
 
-volatile int ADC_COUNT = 0;
 /**
  * @brief handle all ADC inputs here
 */ 
 void ADC1_DMA_Callback(uint16_t values[])
 {
-  // take the raw adc values array and chuck them into a filtered adc array
-  for(int i=0; i < ADC_DMA_BUFF_SIZE; i++)
-  {
-    uint16_t value = convert12to16(values[i]);
-    if (ADC_COUNT < 100) {
-      AnalogHandle::DMA_BUFFER[i] = value;
-      ADC_COUNT++;
-    } else {
-      AnalogHandle::DMA_BUFFER[i] = (value * 0.1) + (AnalogHandle::DMA_BUFFER[i] * (1 - 0.1));
-    }
-  }
+
 }
 
 // ----------------------------------------
@@ -92,17 +81,12 @@ int main(void)
 
   SystemClock_Config();
 
+  
   multi_chan_adc_init();
   multi_chan_adc_start();
 
   i2c1.init();
   i2c3.init();
-
-  // wait a few cycles while the ADCs get read a few times
-  while (ADC_COUNT < 100)
-  {
-    // do nothing
-  }
   
   glblCtrl.init();
 

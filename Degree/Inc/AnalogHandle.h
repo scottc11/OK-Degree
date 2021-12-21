@@ -25,9 +25,35 @@ public:
     int index;
 
     uint16_t read_u16() {
-        return DMA_BUFFER[index];
+        prevValue = currValue;
+        currValue = convert12to16(DMA_BUFFER[index]);
+        
+        if (filter) {
+            currValue = (currValue * filterAmount) + (prevValue * (1 - filterAmount));
+        }
+
+        return currValue;
+    }
+
+    void setFilter(float value) {
+        if (value == 0) {
+            filter = false;
+        } else if (value > (float)1) {
+            // raise error
+            filter = false;
+        }
+        else {
+            filterAmount = value;
+            filter = true;
+        }
     }
 
     static uint16_t DMA_BUFFER[ADC_DMA_BUFF_SIZE];
     static PinName ADC_PINS[ADC_DMA_BUFF_SIZE];
+
+private:
+    uint16_t currValue;
+    uint16_t prevValue;
+    bool filter = false;
+    float filterAmount = 0.1;
 };

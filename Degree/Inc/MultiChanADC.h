@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main.h"
+#include "AnalogHandle.h"
 
 #ifndef ADC_DMA_BUFF_SIZE
 #define ADC_DMA_BUFF_SIZE 8

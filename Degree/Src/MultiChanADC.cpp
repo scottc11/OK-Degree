@@ -4,8 +4,6 @@ ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 TIM_HandleTypeDef htim3;
 
-uint16_t DMA_ADC_BUFFER[ADC_DMA_BUFF_SIZE];
-
 void multi_chan_adc_init()
 {
     MX_DMA_Init();
@@ -16,7 +14,7 @@ void multi_chan_adc_init()
 void multi_chan_adc_start()
 {
     HAL_TIM_Base_Start(&htim3);
-    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)DMA_ADC_BUFFER, ADC_DMA_BUFF_SIZE);
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)AnalogHandle::DMA_BUFFER, ADC_DMA_BUFF_SIZE);
 }
 
 /**
@@ -230,6 +228,6 @@ extern "C" void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
     if (hadc->Instance == ADC1)
     {
-        ADC1_DMA_Callback(DMA_ADC_BUFFER);
+        ADC1_DMA_Callback(AnalogHandle::DMA_BUFFER);
     }
 }
