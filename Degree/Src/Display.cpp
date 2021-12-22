@@ -15,12 +15,23 @@ void Display::init()
     ledMatrix.setPWM(63, 0);
 }
 
+/**
+ * @brief set all 64 leds low / off
+*/ 
 void Display::clear()
 {
     for (int i = 0; i < 64; i++)
     {
         ledMatrix.setPWM(i, 0);
     }
+}
+
+/**
+ * @brief set a channels LED
+*/ 
+void Display::setChannelLED(int chan, int index, bool on)
+{
+    ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][index], on ? OK_PWM_HIGH : 0);
 }
 
 /**
@@ -84,5 +95,14 @@ void Display::benderCalibration()
                 ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][i], OK_PWM_MID);
             }
         }
+    }
+}
+
+void Display::drawSquare(int chan)
+{
+    for (int i = 0; i < DISPLAY_SQUARE_LENGTH; i++)
+    {
+        this->setChannelLED(chan, DISPLAY_SQUARE_LED_MAP[i], true);
+        HAL_Delay(50);
     }
 }

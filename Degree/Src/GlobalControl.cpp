@@ -35,14 +35,25 @@ void GlobalControl::init() {
 
 void GlobalControl::poll()
 {
-    pollTempoPot();
-    switches->poll();
-    pollButtons();
-    pollTouchPads();
-    channels[0]->poll();
-    channels[1]->poll();
-    channels[2]->poll();
-    channels[3]->poll();
+    switch (mode)
+    {
+    case DEFAULT:
+        pollTempoPot();
+        switches->poll();
+        pollButtons();
+        pollTouchPads();
+        channels[0]->poll();
+        channels[1]->poll();
+        channels[2]->poll();
+        channels[3]->poll();
+        break;
+    case CALIBRATING_1VO:
+        // dooo
+        pollButtons();
+        break;
+    default:
+        break;
+    }
 }
 
 void GlobalControl::handleSwitchChange()
@@ -77,7 +88,12 @@ void GlobalControl::pollTouchPads() {
     {
         prevTouched = currTouched;
         currTouched = touchPads->touched() >> 4;
-        gestureFlag = true;
+        if (currTouched == 0x00) {
+            gestureFlag = false;
+        } else {
+            gestureFlag = true;
+        }
+        
         touchDetected = false;
     }
 }
@@ -87,7 +103,7 @@ void GlobalControl::pollTouchPads() {
 */
 void GlobalControl::pollButtons()
 {
-    if (buttonInterupt)
+    if (ioInterrupt.read() == 0)
     {
         currButtonsState = buttons->digitalReadAB();
         if (currButtonsState != prevButtonsState)
@@ -111,11 +127,11 @@ void GlobalControl::pollButtons()
         prevButtonsState = currButtonsState;
         buttonInterupt = false;
     }
+    buttonInterupt = false;
 }
 
 /**
  * Handle Button Press
- * 
 */
 void GlobalControl::handleButtonPress(int pad)
 {
@@ -174,6 +190,25 @@ void GlobalControl::handleButtonPress(int pad)
         // display->benderCalibration();
         // saveCalibrationToFlash(true);
         // display->clear();
+        break;
+
+    case Gestures::CALIBRATE_1VO:
+        if (gestureFlag) {
+            for (int i = 0; i < 4; i++)
+            {
+                if (touchPads->padIsTouched(i, currTouched, prevTouched))
+                {
+                    selectedChannel = i;
+                    break;
+                }
+            }
+            gestureFlag = false;
+            channels[selectedChannel]->enableCalibration();
+            this->mode = CALIBRATING_1VO;
+        } else {
+            channels[selectedChannel]->disableCalibration();
+            this->mode = DEFAULT;
+        }
         break;
 
     case BEND_MODE:

@@ -16,6 +16,15 @@ namespace DEGREE {
     class GlobalControl
     {
     public:
+        
+        enum Mode
+        {
+            DEFAULT,
+            CALIBRATING_1VO,
+            CALIBRATING_BENDER,
+            SET_SEQUENCE_LENGTH
+        };
+
         GlobalControl(
             SuperClock *clock_ptr,
             TouchChannel *chanA_ptr,
@@ -25,8 +34,9 @@ namespace DEGREE {
             CAP1208 *touch_ptr,
             Degrees *degrees_ptr,
             MCP23017 *buttons_ptr,
-            Display *display_ptr) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0), tempoPot(TEMPO_POT), tempoLED(TEMPO_LED), tempoGate(INT_CLOCK_OUTPUT)
+            Display *display_ptr) : ioInterrupt(BUTTONS_INT, PullUp), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0), tempoPot(TEMPO_POT), tempoLED(TEMPO_LED), tempoGate(INT_CLOCK_OUTPUT)
         {
+            mode = DEFAULT;
             clock = clock_ptr;
             channels[0] = chanA_ptr;
             channels[1] = chanB_ptr;
@@ -40,6 +50,7 @@ namespace DEGREE {
             touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
         };
 
+        Mode mode;
         SuperClock *clock;
         TouchChannel *channels[NUM_DEGREE_CHANNELS];
         CAP1208 *touchPads;
@@ -54,9 +65,12 @@ namespace DEGREE {
         DigitalOut tempoGate;
         AnalogHandle tempoPot;
 
+        int selectedChannel;
+
         int currPulse;
 
         bool recordEnabled;      // global recording flag
+        bool sampleVCO;          // global flag for calibration routine
 
         bool buttonInterupt;        // flag for handling buttons interupt
         uint16_t currButtonsState;
@@ -66,7 +80,7 @@ namespace DEGREE {
         uint16_t prevTempoPotValue;
 
         bool touchDetected;
-        bool gestureFlag;
+        volatile bool gestureFlag;
         uint8_t currTouched;
         uint8_t prevTouched;
 
@@ -131,6 +145,7 @@ namespace DEGREE {
         {
             CALIBRATE_BENDER = SHIFT | BEND_MODE,                      // SHIFT + BEND_MODE
             RESET_CALIBRATION_TO_DEFAULT = SHIFT | RECORD | BEND_MODE, // SHIFT + REC + BEND_MODE
+            CALIBRATE_1VO = SHIFT | CMODE,
             CLEAR_SEQ_A = CLEAR_SEQ | CTRL_A,
             CLEAR_SEQ_B = CLEAR_SEQ | CTRL_B,
             CLEAR_SEQ_C = CLEAR_SEQ | CTRL_C,

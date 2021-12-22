@@ -193,6 +193,10 @@ namespace DEGREE {
         void setGate(bool state);
         uint8_t calculateRatchet(uint16_t bend);
         void handleRatchet(int position, uint8_t rate);
+
+        // Calibration Methods
+        void enableCalibration();
+        void disableCalibration();
     };
 
 

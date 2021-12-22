@@ -13,6 +13,9 @@ static const int CHAN_DISPLAY_LED_MAP[4][16]{
     {8, 9, 10, 11, 24, 25, 26, 27, 40, 41, 42, 43, 56, 57, 58, 59},
     {12, 13, 14, 15, 28, 29, 30, 31, 44, 45, 46, 47, 60, 61, 62, 63}};
 
+#define DISPLAY_SQUARE_LENGTH 12
+static const int DISPLAY_SQUARE_LED_MAP[DISPLAY_SQUARE_LENGTH] = {0, 1, 2, 3, 7, 11, 15, 14, 13, 12, 8, 4};
+
 class Display
 {
 public:
@@ -24,7 +27,10 @@ public:
 
     void init();
     void clear();
+    void setChannelLED(int chan, int index, bool on);
     void setSequenceLEDs(int chan, int length, int diviser, bool on);
     void stepSequenceLED(int chan, int currStep, int prevStep, int length);
     void benderCalibration();
+
+    void drawSquare(int chan);
 };
