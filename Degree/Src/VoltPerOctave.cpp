@@ -2,6 +2,15 @@
 
 using namespace DEGREE;
 
+bool VoltPerOctave::obtainSample = false;
+uint32_t VoltPerOctave::numSamplesTaken = 0;
+bool VoltPerOctave::slopeIsPositive = false;
+float VoltPerOctave::vcoFrequency = 0;
+float VoltPerOctave::freqSamples[MAX_FREQ_SAMPLES] = {};
+int VoltPerOctave::freqSampleIndex = 0;
+uint16_t VoltPerOctave::currVCOInputVal = 0;
+uint16_t VoltPerOctave::prevVCOInputVal = 0;
+
 void VoltPerOctave::init()
 {
     dac->init();
@@ -70,4 +79,52 @@ void VoltPerOctave::resetVoltageMap()
     {
         dacVoltageMap[i] = floor + (semitone * i);
     }
+}
+
+/**
+ * @brief Calibrate the voltage map based on external frequency detection of VCO
+*/ 
+void VoltPerOctave::calibrate()
+{
+    // if (!samplingVCO)
+    // {
+    //     int currIndex = 0;
+    //     this->adc->setFilter(0);
+
+    //     // set the dac output to the start of voltage map array
+    //     this->updateDAC(currIndex, 0);
+
+    //     // wait x amount of time
+    // }
+}
+
+void VoltPerOctave::sampleVCO(uint16_t adc_sample)
+{   
+    // NEGATIVE SLOPE
+    if (adc_sample >= (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal < (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && slopeIsPositive)
+    {
+        slopeIsPositive = false;
+    }
+    // POSITIVE SLOPE
+    else if (adc_sample <= (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal > (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && !slopeIsPositive)
+    {
+        float vcoPeriod = numSamplesTaken;           // how many samples have occurred between positive zero crossings
+        vcoFrequency = 8000.f / vcoPeriod;           // sample rate divided by period of input signal
+        freqSamples[freqSampleIndex] = vcoFrequency; // store sample in array
+        numSamplesTaken = 0;                         // reset sample count to zero for the next sampling routine
+
+        if (freqSampleIndex < MAX_FREQ_SAMPLES - 1)
+        {
+            freqSampleIndex += 1;
+        }
+        else
+        {
+            freqSampleIndex = 0;
+            obtainSample = false;
+        }
+        slopeIsPositive = true;
+    }
+
+    prevVCOInputVal = adc_sample;
+    numSamplesTaken++;
 }

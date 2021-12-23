@@ -879,6 +879,8 @@ void TouchChannel::enableCalibration()
     // cycle the sequencer leds
     display->clear();
     display->drawSquare(this->channelIndex);
+    adc.setFilter(0);
+    output.obtainSample = true;
 }
 
 void TouchChannel::disableCalibration()

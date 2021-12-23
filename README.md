@@ -35,8 +35,10 @@ First, `cd` into the submodule directory and checkout a new branch with `git che
 You can now commit changes and push to the remote
 
 ## Bootloader
-* No external pull-up resistor is required
+No external pull-up resistor is required
+
 Bootloader ID: 0x90
+
 Memory location: 0x1FFF76DE
 
 ### Install [dfu-util](http://dfu-util.sourceforge.net/)
@@ -61,7 +63,7 @@ Found DFU: [0483:df11] ver=2200, devnum=2, cfg=1, intf=0, path="64-1.2", alt=1, 
 Found DFU: [0483:df11] ver=2200, devnum=2, cfg=1, intf=0, path="64-1.2", alt=0, name="@Internal Flash  /0x08000000/04*016Kg,01*064Kg,03*128Kg", serial="STM32FxSTM32"
 ```
 
-### Using 'dfuse-pack.py`
+### Using `dfuse-pack.py`
 This file was pulled from the `dfu-util` repo, and is meant to convert `.hex` files into `.dfu` files.
 Note: Make sure you have the `IntelHex` python module installed.
 
