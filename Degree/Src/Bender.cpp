@@ -10,6 +10,7 @@ void Bender::init()
     updateDAC(0);
 }
 
+// TODO: this calibration no longer works when sample the ADC with a timer
 void Bender::calibrateIdle()
 {
     // must set initial value for digital filter
