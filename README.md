@@ -6,6 +6,31 @@
 - why is my intellisense not detecting errors prior to building?
     google "gcc arm problem matcher vscode"
 
+## FreeRTOS Configuration
+Could all this not be done just using a timer? Or is that what an RTOS essential is?
+```
+ * Task 1:
+ * - executes at a frequency of 1 quarter note
+ * - updates tempo / timer to match external clock
+ * 
+ * Task 2:
+ * - executes at a frequency of PPQN
+ * - advances the sequencer
+ * - handles any interface changes (ie. touch, bend, UI buttons)
+ * - updates LEDs
+ * - updates DACs
+ * 
+ * Task 3:
+ * - executes at a frequency of PPQN * 8? 🤷‍♂️
+ * - reads and filters ADCs
+ * 
+ * Task 4:
+ * - low priority for printf()
+ * 
+ * State Struct:
+ * - is shared globally between tasks
+ * - holds a series of "flags" for which to tell each task which code it should execute
+```
 
 ## Toolchain
 
