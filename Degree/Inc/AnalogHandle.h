@@ -24,36 +24,29 @@ public:
 
     int index;
 
-    uint16_t read_u16() {
-        prevValue = currValue;
-        currValue = convert12to16(DMA_BUFFER[index]);
-        
-        if (filter) {
-            currValue = (currValue * filterAmount) + (prevValue * (1 - filterAmount));
-        }
+    uint16_t read_u16();
+    void setFilter(float value);
 
-        return currValue;
-    }
+    uint16_t samplePeakToPeak(int numSamples);
+    uint16_t getZeroCrossing();
+    uint16_t getMax();
+    uint16_t getMin();
 
-    void setFilter(float value) {
-        if (value == 0) {
-            filter = false;
-        } else if (value > (float)1) {
-            // raise error
-            filter = false;
-        }
-        else {
-            filterAmount = value;
-            filter = true;
-        }
-    }
+    uint16_t getSampleFrequency();
 
     static uint16_t DMA_BUFFER[ADC_DMA_BUFF_SIZE];
     static PinName ADC_PINS[ADC_DMA_BUFF_SIZE];
+    static uint16_t tim_prescaler;
+    static uint16_t tim_period;
+    static bool sample_ready;
 
 private:
     uint16_t currValue;
     uint16_t prevValue;
     bool filter = false;
     float filterAmount = 0.1;
+    uint32_t sampleCounter;
+    uint16_t min;
+    uint16_t max;
+    uint16_t zeroCrossing;
 };

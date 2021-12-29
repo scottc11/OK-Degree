@@ -83,23 +83,18 @@ void VoltPerOctave::resetVoltageMap()
 
 /**
  * @brief Calibrate the voltage map based on external frequency detection of VCO
-*/ 
-void VoltPerOctave::calibrate()
+*/
+void VoltPerOctave::initCalibration()
 {
-    // if (!samplingVCO)
-    // {
-    //     int currIndex = 0;
-    //     this->adc->setFilter(0);
-
-    //     // set the dac output to the start of voltage map array
-    //     this->updateDAC(currIndex, 0);
-
-    //     // wait x amount of time
-    // }
+    
 }
 
 void VoltPerOctave::sampleVCO(uint16_t adc_sample)
 {   
+    // you need to first determine the "range" of the signal going into the ADC, so that you can determine a mid-point
+    // for detecting zero crossings
+
+    
     // NEGATIVE SLOPE
     if (adc_sample >= (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal < (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && slopeIsPositive)
     {

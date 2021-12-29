@@ -59,7 +59,7 @@ namespace DEGREE {
         void bend(uint16_t value);
         uint16_t calculatePitchBend(int input, int min, int max);
         void resetVoltageMap();
-        void calibrate();
+        void initCalibration();
 
         void sampleVCO(uint16_t adc_sample);
 
