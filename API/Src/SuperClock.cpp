@@ -75,7 +75,7 @@ void SuperClock::initTIM2(uint16_t prescaler, uint16_t period)
 
     __HAL_RCC_TIM2_CLK_ENABLE(); // turn on timer clock
 
-    gpio_config_input_capture(PA_3);  // config PA3 in input capture mode
+    gpio_config_input_capture(EXT_CLOCK_INPUT); // config PA3 in input capture mode
 
     /* TIM2 interrupt Init */
     HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);

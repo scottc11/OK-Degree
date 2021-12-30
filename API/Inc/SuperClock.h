@@ -8,6 +8,10 @@
 #define PPQN 96
 #endif
 
+#ifndef EXT_CLOCK_INPUT
+#define EXT_CLOCK_INPUT PA_2
+#endif
+
 #ifndef MAX_CLOCK_FREQ
 #define MAX_CLOCK_FREQ 500
 #endif
