@@ -9,7 +9,7 @@
 #endif
 
 #ifndef EXT_CLOCK_INPUT
-#define EXT_CLOCK_INPUT PA_2
+#define EXT_CLOCK_INPUT PA_3
 #endif
 
 #ifndef MAX_CLOCK_FREQ
