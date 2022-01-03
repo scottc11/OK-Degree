@@ -3,7 +3,7 @@
 #include "api.h"
 #include "system_clock_config.h"
 
-// #define BOARD_REV_V38
+#define BOARD_REV_V38
 
 #define PPQN 96
 
