@@ -130,7 +130,8 @@ void SuperClock::attachInputCaptureCallback(Callback<void()> func) {
     input_capture_callback = func;
 }
 
-void SuperClock::attachPPQNCallback(Callback<void()> func) {
+void SuperClock::attachPPQNCallback(Callback<void(uint8_t pulse)> func)
+{
     ppqnCallback = func;
 }
 
@@ -152,6 +153,11 @@ void SuperClock::setFrequency(uint16_t freq) {
 
 void SuperClock::handleInputCaptureCallback()
 {
+    // if pulse != 0, 
+    // while (pulse != 0)
+    //   ppqnCallback(pulse);
+    //   pulse++;
+
     tick = 0; // Reset the clock tick zero, so it will trigger the clock output in the period elapsed loop callback
     pulse = 0;
 
@@ -159,10 +165,10 @@ void SuperClock::handleInputCaptureCallback()
     uint16_t inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
     setFrequency(inputCapture);
 
-    if (input_capture_callback)
-    {
-        input_capture_callback();
-    }
+    // if (input_capture_callback)
+    // {
+    //     input_capture_callback();
+    // }
 }
 
 /**
@@ -173,10 +179,15 @@ void SuperClock::handleInputCaptureCallback()
 */ 
 void SuperClock::handleTickCallback()
 {
-    
+
     if (tick < ticksPerPulse) { // make sure you don't loose a step by not using "<=" instead of "<"
         if (tick == 0) { // handle first tick in step
-            if (ppqnCallback) ppqnCallback();
+            if (ppqnCallback) ppqnCallback(pulse);
+            if (pulse == 0)
+            {
+                if (resetCallback)
+                    resetCallback();
+            }
         }
         tick++;
     }
@@ -185,13 +196,10 @@ void SuperClock::handleTickCallback()
     else {
         tick = 0;
 
-        if (pulse < PPQN) {
-            if (pulse == 0) {
-                if (resetCallback) resetCallback();
-            }
+        if (pulse < PPQN - 1) {
             pulse++;
         } else {
-            pulse = 0;       
+            pulse = 0;
         }
     }
 

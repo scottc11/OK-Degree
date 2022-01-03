@@ -71,12 +71,12 @@ GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch
 */ 
 void ADC1_DMA_Callback(uint16_t values[])
 {
-  if (glblCtrl.mode == GlobalControl::Mode::CALIBRATING_1VO)
-  {
-    if (glblCtrl.channels[glblCtrl.selectedChannel]->output.obtainSample) {
-      glblCtrl.channels[glblCtrl.selectedChannel]->output.sampleVCO(glblCtrl.channels[glblCtrl.selectedChannel]->adc.read_u16());
-    }
-  }
+  // if (glblCtrl.mode == GlobalControl::Mode::CALIBRATING_1VO)
+  // {
+  //   if (glblCtrl.channels[glblCtrl.selectedChannel]->output.obtainSample) {
+  //     glblCtrl.channels[glblCtrl.selectedChannel]->output.sampleVCO(glblCtrl.channels[glblCtrl.selectedChannel]->adc.read_u16());
+  //   }
+  // }
 }
 
 // ----------------------------------------
