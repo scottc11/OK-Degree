@@ -58,6 +58,7 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
 System/Src/stm32f4xx_hal_msp.c \
 System/Src/stm32f4xx_it.c \
 System/Src/system_stm32f4xx.c \
@@ -73,6 +74,7 @@ API/Src/InterruptIn.cpp \
 API/Src/SPI.cpp \
 API/Src/DigitalOut.cpp \
 API/Src/SuperClock.cpp \
+API/Src/SerialPrint.cpp \
 API/Src/tim_api.cpp \
 Degree/Src/main.cpp \
 Degree/Src/Bender.cpp \

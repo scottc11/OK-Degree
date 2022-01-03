@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include "stm32f4xx_hal.h"
 #include "system_clock_config.h"
 #include "PinNames.h"
@@ -9,6 +10,9 @@
 #include "error_handler.h"
 
 #define FLASH_SIZE (uint32_t)0x80000
+
+#define UART3_RX PC_11
+#define UART3_TX PC_10
 
 /* Base address of the Flash sectors Bank 1 */
 #define ADDR_FLASH_SECTOR_0 ((uint32_t)0x08000000) /* Base @ of Sector 0, 16 Kbytes */
