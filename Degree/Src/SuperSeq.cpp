@@ -44,7 +44,6 @@ void SuperSeq::advance()
         currPosition = 0;
         currStep = 0;
     }
-    flag = true;
 }
 
 void SuperSeq::advanceStep()
