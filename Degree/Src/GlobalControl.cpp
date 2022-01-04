@@ -392,7 +392,10 @@ void GlobalControl::resetSequencer()
         if (channels[i]->sequence.currStepPosition != 0) {
             while (channels[i]->sequence.currStepPosition != 0)
             {
-                channels[i]->handleSequence(channels[i]->sequence.currPosition);
+                // you can't be calling i2c / spi functions here, meaning you can't execute unexecuted sequence events until you first abstract
+                // the DAC and LED components of an event out into a seperate thread.
+                
+                // incrementing the clock will at least keep the sequence in sync with an external clock
                 channels[i]->sequence.advance();
             }
         }
