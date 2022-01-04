@@ -30,6 +30,11 @@ Could all this not be done just using a timer? Or is that what an RTOS essential
  * State Struct:
  * - is shared globally between tasks
  * - holds a series of "flags" for which to tell each task which code it should execute
+ * 
+ * Software Timers:
+    - this is what MBED must have used to create timed events. 
+    - if the RTOS is clocked by the sequencer clock, this could be very usefull
+ * 
 ```
 
 ## Toolchain
