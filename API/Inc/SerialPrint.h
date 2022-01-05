@@ -10,7 +10,13 @@
 class SerialPrint
 {
 public:
-    SerialPrint(){};
+    SerialPrint(PinName rx, PinName tx) {
+        rx_pin = rx;
+        tx_pin = tx;
+    };
+
+    PinName rx_pin;
+    PinName tx_pin;
 
     void init();
     void transmit(char *data);

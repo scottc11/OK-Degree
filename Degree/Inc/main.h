@@ -79,6 +79,9 @@
 #define SPI2_MISO PB_14
 #define SPI2_SCK  PB_13
 
+#define UART_RX PC_11
+#define UART_TX PC_10
+
 #define MCP23017_CTRL_ADDR 0x24 // 0100100
 
 #define SX1509_CHAN_A_ADDR 0x3E

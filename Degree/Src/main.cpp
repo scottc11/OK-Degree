@@ -17,10 +17,9 @@
 #include "Bender.h"
 #include "AnalogHandle.h"
 #include "Display.h"
+#include "SerialPrint.h"
 
 using namespace DEGREE;
-
-PinName adcPins[8] = {ADC_A, ADC_B, ADC_C, ADC_D, PB_ADC_A, PB_ADC_B, PB_ADC_C, PB_ADC_D};
 
 I2C i2c1(I2C1_SDA, I2C1_SCL, I2C::Instance::I2C_1);
 I2C i2c3(I2C3_SDA, I2C3_SCL, I2C::Instance::I2C_3);
@@ -66,6 +65,8 @@ TouchChannel chanD(3, &display, &touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_
 
 GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display);
 
+SerialPrint serial(UART_RX, UART_TX);
+
 /**
  * @brief handle all ADC inputs here
 */ 
@@ -86,7 +87,8 @@ int main(void)
 
   SystemClock_Config();
 
-  
+  serial.init();
+
   multi_chan_adc_init();
   multi_chan_adc_start();
 
@@ -100,7 +102,7 @@ int main(void)
   superClock.start();
 
   while (1)
-  {
+  {  
     glblCtrl.poll();
   }
 }

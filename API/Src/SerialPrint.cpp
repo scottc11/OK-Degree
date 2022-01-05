@@ -10,15 +10,23 @@ void SerialPrint::init() {
     /* Peripheral clock enable */
     __HAL_RCC_USART3_CLK_ENABLE();
 
-    gpio_enable_clock(PC_11);
-    gpio_enable_clock(PC_10);
+    gpio_enable_clock(rx_pin);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11;
+    GPIO_InitStruct.Pin = gpio_get_pin(rx_pin);
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF7_USART3;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(gpio_get_port(rx_pin), &GPIO_InitStruct);
+
+    gpio_enable_clock(tx_pin);
+
+    GPIO_InitStruct.Pin = gpio_get_pin(tx_pin);
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF7_USART3;
+    HAL_GPIO_Init(gpio_get_port(tx_pin), &GPIO_InitStruct);
 
     _huart.Instance = USART3;
     _huart.Init.BaudRate = 115200;
