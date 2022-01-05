@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdlib.h>
 #include "common.h"
 #include "gpio_api.h"
 
@@ -20,6 +21,7 @@ public:
 
     void init();
     void transmit(char *data);
+    void transmit(int data);
 
 private:
     UART_HandleTypeDef _huart;
