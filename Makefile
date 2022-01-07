@@ -284,4 +284,4 @@ DFU_ALT_SETTING = 0
 DFU_FUSE_ADDRESS = $(FLASH_ADDRESS)
 
 usb-upload:
-	dfu-util --alt $(DFU_ALT_SETTING) --intf $(DFU_INTERFACE_NUMBER) -s $(DFU_FUSE_ADDRESS):leave -D $(BUILD_DIR)/$(TARGET).dfu
+	dfu-util -a $(DFU_ALT_SETTING) -s $(DFU_FUSE_ADDRESS):leave -D $(BUILD_DIR)/$(TARGET).bin

@@ -63,8 +63,35 @@ Found DFU: [0483:df11] ver=2200, devnum=2, cfg=1, intf=0, path="64-1.2", alt=1, 
 Found DFU: [0483:df11] ver=2200, devnum=2, cfg=1, intf=0, path="64-1.2", alt=0, name="@Internal Flash  /0x08000000/04*016Kg,01*064Kg,03*128Kg", serial="STM32FxSTM32"
 ```
 
-### Using `dfuse-pack.py`
+### Using `dfuse-pack.py` (not yet tested)
 This file was pulled from the `dfu-util` repo, and is meant to convert `.hex` files into `.dfu` files.
 Note: Make sure you have the `IntelHex` python module installed.
 
-See make file for usage.
+### Using a `.bin` file (tested and working)
+
+`dfu-util -a 0 -s 0x08000000:leave -D ./path/to/file.bin`
+
+
+# FreeRTOS
+
+### Task States
+
+#### Suspended:
+- will not execute
+#### READY:
+- A task in the ready state can move to the running state. It is not executing, it is waiting for the scheduler to execute it
+- there is no function which moves a task from READY to RUNNING, the task scheduler does all of that.
+#### RUNNING:
+Task has the processor, and is currently executing its `while` loop
+#### BLOCK:
+- When a task is waiting for a particular event to occur such as a semephor or a delay
+- task must move to `ready` state before it can be put back into a `running` state
+
+`TaskHandle_t` A struct which holds the configuration / access to a specific task. Used as an argument when modifying a task.
+
+- `vTaskSuspend()` Suspend a Task
+- `vTaskResume()`
+- `vTaskPrioritySet()` Set the priority of a task at run-time
+
+### Terminating a Task
+By default, the functions required to do this are not enabled and need to be configured in `FreeRTOSConfig.h`
