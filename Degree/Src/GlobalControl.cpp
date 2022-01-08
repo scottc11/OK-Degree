@@ -5,6 +5,9 @@ using namespace DEGREE;
 void GlobalControl::init() {
     this->loadCalibrationDataFromFlash();
 
+    serial.init();
+    serial.transmit("initialized");
+
     display->init();
     display->clear();
 
@@ -360,18 +363,17 @@ void GlobalControl::loadCalibrationDataFromFlash()
  * 
 */
 void GlobalControl::advanceSequencer(uint8_t pulse)
-{
-    __disable_irq();
-    // pollTempoPot();
-    // set tempo output high and low
+{    
+    serial.transmit(pulse);
+    serial.transmit("\n");
+
+    // channels[0]->setGate(pulse % 2);
     if (pulse == 0) {
         tempoLED.write(HIGH);
         tempoGate.write(HIGH);
-        channels[0]->setGate(true);
     } else if (pulse == 4) {
         tempoLED.write(LOW);
         tempoGate.write(LOW);
-        channels[0]->setGate(false);
     }
 
     for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
@@ -379,9 +381,32 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         channels[i]->sequence.advance();
         channels[i]->setTickerFlag();
     }
-    __enable_irq();
+
+#ifdef CLOCK_DEBUG
+    if (pulse == PPQN - 2) {
+        tempoGate.write(HIGH);
+    }
+
+    if (pulse == PPQN - 1)
+    {
+        tempoGate.write(LOW);
+    }
+#endif
 }
 
+/**
+ * @brief reset all sequencers PPQN position to 0
+ * 
+ * The issue might be that the sequence is not always running too slow, but running to fast. In other words, the
+ * pulse count overtakes the external clocks rising edge. To avoid this scenario, you need to halt further execution of the sequence should it reach PPQN - 1 
+ * prior to the ext clock rising edge. Thing is, the sequence would first need to know that it is being externally clocked...
+ * 
+ * TODO: external clock is ignored unless the CLOCK knob is set to its minimum value and tap tempo is reset.
+ * 
+ * Currently, your clock division is very off. The higher the ext clock signal is, you lose an increasing amount of pulses.
+ * Ex. @ 120bpm sequence will reset on pulse 84 (ie. missing 12 PPQNs)
+ * Ex. @ 132bpm sequence missing 20 PPQNs
+ */
 void GlobalControl::resetSequencer()
 {
     for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
@@ -394,10 +419,11 @@ void GlobalControl::resetSequencer()
             {
                 // you can't be calling i2c / spi functions here, meaning you can't execute unexecuted sequence events until you first abstract
                 // the DAC and LED components of an event out into a seperate thread.
-                
+
                 // incrementing the clock will at least keep the sequence in sync with an external clock
                 channels[i]->sequence.advance();
             }
+            channels[i]->setTickerFlag();
         }
     }
 }
