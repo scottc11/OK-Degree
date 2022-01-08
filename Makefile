@@ -21,6 +21,9 @@ TARGET = ok-dev-board
 ######################################
 # debug build?
 DEBUG = 1
+
+SERIAL_DEBUG ?= 0
+
 # optimization
 OPT = -Og
 
@@ -185,6 +188,9 @@ ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
 endif
 
+ifeq ($(SERIAL_DEBUG), 1)
+CFLAGS += -DSERIAL_DEBUG=1
+endif
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
