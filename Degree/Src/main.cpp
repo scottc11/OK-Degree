@@ -93,8 +93,8 @@ int main(void)
   
   glblCtrl.init();
 
-  superClock.initTIM2(48, 0xFFFFFFFF - 1); // precaler value handles BPM range 20..240
-  superClock.initTIM4(48, 10000 - 1);
+  superClock.initTIM2(40, 0xFFFFFFFF - 1); // precaler value handles BPM range 40..240
+  superClock.initTIM4(40, 10000 - 1);
   superClock.start();
 
   while (1)

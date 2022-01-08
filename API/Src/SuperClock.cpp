@@ -125,9 +125,11 @@ void SuperClock::handleInputCaptureCallback()
 {
     pulse = 0;
     __HAL_TIM_SetCounter(&htim2, 0); // reset after each input capture
+    __HAL_TIM_SetCounter(&htim4, 0); // reset after each input capture
     uint32_t inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
     uint16_t pulse = inputCapture / PPQN;
     __HAL_TIM_SetAutoreload(&htim4, pulse);
+    this->handleOverflowCallback();
     // setFrequency(inputCapture);
 
     if (input_capture_callback) input_capture_callback();
@@ -139,11 +141,11 @@ void SuperClock::handleInputCaptureCallback()
 */ 
 void SuperClock::handleOverflowCallback()
 {
-    if (pulse == 0)
-    {
+    if (ppqnCallback) ppqnCallback(pulse);
+
+    if (pulse == 0) {
         if (resetCallback) resetCallback();
     }
-    if (ppqnCallback) ppqnCallback(pulse);
 
     if (pulse < PPQN - 1) {
         pulse++;
