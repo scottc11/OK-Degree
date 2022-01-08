@@ -64,8 +64,8 @@ public:
     
     // Low Level HAL interupt handlers
     void handleInputCaptureCallback();
-    void handleTickCallback();
-    static void RouteCallback(TIM_HandleTypeDef *htim);
+    void handleOverflowCallback();
+    static void RouteOverflowCallback(TIM_HandleTypeDef *htim);
     static void RouteCaptureCallback(TIM_HandleTypeDef *htim);
 
 private:

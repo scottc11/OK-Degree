@@ -134,21 +134,22 @@ void SuperClock::handleInputCaptureCallback()
 }
 
 /**
- * @brief this callback gets called everytime TIM1 overflows.
- * 
- * Use this callback to advance the sequencer position by 1 everytime tick equals the 
- * calculated PPQN value via TIM2 Input capture callback.
+ * @brief this callback gets called everytime TIM4 overflows.
+ * Increments pulse counter
 */ 
-void SuperClock::handleTickCallback()
+void SuperClock::handleOverflowCallback()
 {
+    if (pulse == 0)
+    {
+        if (resetCallback) resetCallback();
+    }
+    if (ppqnCallback) ppqnCallback(pulse);
+
     if (pulse < PPQN - 1) {
         pulse++;
     } else {
         pulse = 0;
-        if (resetCallback) resetCallback();
     }
-
-    if (ppqnCallback) ppqnCallback(pulse);
 }
 
 void SuperClock::attachInputCaptureCallback(Callback<void()> func)
@@ -166,11 +167,11 @@ void SuperClock::attachResetCallback(Callback<void()> func)
     resetCallback = func;
 }
 
-void SuperClock::RouteCallback(TIM_HandleTypeDef *htim)
+void SuperClock::RouteOverflowCallback(TIM_HandleTypeDef *htim)
 {
     if (htim == &htim4)
     {
-        instance->handleTickCallback();
+        instance->handleOverflowCallback();
     }
 }
 
@@ -204,7 +205,7 @@ extern "C" void TIM4_IRQHandler(void)
  * to handle events at a lower frequency.
 */
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    SuperClock::RouteCallback(htim);
+    SuperClock::RouteOverflowCallback(htim);
 }
 
 /**
