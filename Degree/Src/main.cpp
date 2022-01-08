@@ -65,8 +65,6 @@ TouchChannel chanD(3, &display, &touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_
 
 GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display);
 
-SerialPrint serial(UART_RX, UART_TX);
-
 /**
  * @brief handle all ADC inputs here
 */ 
@@ -87,8 +85,6 @@ int main(void)
 
   SystemClock_Config();
 
-  serial.init();
-
   multi_chan_adc_init();
   multi_chan_adc_start();
 
@@ -97,8 +93,8 @@ int main(void)
   
   glblCtrl.init();
 
-  superClock.initTIM1(16, 200);
-  superClock.initTIM2(1, 65535);
+  superClock.initTIM2(48, 0xFFFFFFFF - 1); // precaler value handles BPM range 20..240
+  superClock.initTIM4(48, 10000 - 1);
   superClock.start();
 
   while (1)

@@ -20,18 +20,16 @@
 #define MIN_CLOCK_FREQ 65535
 #endif
 
-extern TIM_HandleTypeDef htim1; // 16-bit timer
 extern TIM_HandleTypeDef htim2; // 32-bit timer
+extern TIM_HandleTypeDef htim4; // 16-bit timer
 
-extern "C" void TIM1_UP_TIM10_IRQHandler(void);
 extern "C" void TIM2_IRQHandler(void);
+extern "C" void TIM4_IRQHandler(void);
 
 class SuperClock {
 public:
 
-    int tick;               // increments every time TIM1 overflows
-    int pulse;
-    int step;
+    int pulse;              // the current PPQN
     uint16_t ticksPerStep;  // how many TIM2 ticks per one step / quarter note
     uint16_t ticksPerPulse; // how many TIM2 ticks for one PPQN
 
@@ -53,14 +51,13 @@ public:
     };
 
 
-    void initTIM1(uint16_t prescaler, uint16_t period);
-    void initTIM2(uint16_t prescaler, uint16_t period);
+    void initTIM2(uint16_t prescaler, uint32_t period);
+    void initTIM4(uint16_t prescaler, uint16_t period);
     void start();
 
-    void setFrequency(uint16_t freq);
+    void setFrequency(uint32_t freq);
 
     // Callback Setters
-    void attach_tim1_callback(Callback<void()> func);
     void attachInputCaptureCallback(Callback<void()> func);
     void attachPPQNCallback(Callback<void(uint8_t pulse)> func);
     void attachResetCallback(Callback<void()> func);
@@ -73,6 +70,4 @@ public:
 
 private:
     static SuperClock *instance;
-    uint32_t tim1_freq;
-    uint32_t tim2_freq;
 };
