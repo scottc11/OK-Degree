@@ -78,6 +78,14 @@ void ADC1_DMA_Callback(uint16_t values[])
   // }
 }
 
+void vTask1(void *pvParameters)
+{
+  while (1)
+  {
+    glblCtrl.poll();
+  }
+}
+
 // ----------------------------------------
 int main(void)
 {
@@ -97,9 +105,13 @@ int main(void)
   superClock.initTIM4(40, 10000 - 1);
   superClock.start();
 
+  xTaskCreate(vTask1, "Task 1", 100, NULL, 1, NULL);
+
+  vTaskStartScheduler();
+
   while (1)
   {  
-    glblCtrl.poll();
+    
   }
 }
 // ----------------------------------------
