@@ -92,6 +92,36 @@ Task has the processor, and is currently executing its `while` loop
 - `vTaskSuspend()` Suspend a Task
 - `vTaskResume()`
 - `vTaskPrioritySet()` Set the priority of a task at run-time
+- `vTaskDelayUntil()` use this to execute a thread periodically / at a set frequency
+
+### Idle Hook Function
+Use this task to execute clean up code
+
+### Tick Hook
+Function that is called by the kernel during each tick interupt.
+You are best off not even using it as it could / will cause jitter in your RTOS system
+
+### extern void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed portCHAR *pcTaskName);
+If the function is defined, FreeRTOS will invoke it when it detects that it has overrun a stack limit. This allows the application designer to decide what should be done about it. You might, for example, want to flash a special red LED to indicate program failure.
+
+## Queues
+
+Queues are used as FIFO buffers, where data is inserted at the back and removed from the front. You can insert data into the queue by passing values or references (pointers), the latter being the most optimal for speed and large data
+
+A task can be placed in a blocked state in order to wait for data to be available from the queue - as soon as data is available the task is automatically moved into the ready state.
+
+Task can be placed in a blocked state if queue is full, and as soon as the space becomes available the queue task is moved to the ready state.
+
+Uses: transfer data from one stask to another, or a task to an ISR, or an ISR to a task.
+
+### Common Queue APIs -> `xQueueSend()`, `xQueueSendToFront()`, `xQueueSendToBack()`
+
+### Queuesets
+Allow a task to recieve data from more than one queue without the task polling each queue in turn to determine which, if any, contains data
 
 ### Terminating a Task
 By default, the functions required to do this are not enabled and need to be configured in `FreeRTOSConfig.h`
+
+# GCC Reference:
+
+The `__attribute((unused))` is a gcc attribute to indicate to the compiler that the argument args is unused, and it prevents warnings about it.
