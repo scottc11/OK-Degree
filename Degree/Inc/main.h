@@ -2,8 +2,9 @@
 
 #include "api.h"
 #include "system_clock_config.h"
+#include "cmsis_os.h"
 
-#define BOARD_REV_V38
+// #define BOARD_REV_V38
 
 #define PPQN 96
 

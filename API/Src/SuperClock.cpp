@@ -202,12 +202,20 @@ extern "C" void TIM4_IRQHandler(void)
 }
 
 /**
- * @brief This callback handles all TIMx overflow interupts (if TIMx was configured in interupt mode)
- * Ideally, you would use this to manage a global / system tick value, which then gets devided down
- * to handle events at a lower frequency.
-*/
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM5 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @note   Function addionally calls SuperClock static function for instance specific code
+  * @param  htim : TIM handle
+  * @retval None
+  */
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     SuperClock::RouteOverflowCallback(htim);
+    if (htim->Instance == TIM5)
+    {
+        HAL_IncTick();
+    }
 }
 
 /**
