@@ -20,8 +20,8 @@ public:
     PinName tx_pin;
 
     void init();
-    void transmit(char *data);
-    void transmit(int data);
+    void transmit(char const *data);
+    void transmit(int const data);
 
 private:
     UART_HandleTypeDef _huart;

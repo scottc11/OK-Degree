@@ -39,12 +39,12 @@ void SerialPrint::init() {
     HAL_UART_Init(&_huart);
 }
 
-void SerialPrint::transmit(char data[])
+void SerialPrint::transmit(char const data[])
 {
     HAL_UART_Transmit(&_huart, (uint8_t *)data, strlen(data), HAL_MAX_DELAY);
 }
 
-void SerialPrint::transmit(int data)
+void SerialPrint::transmit(int const data)
 {
     char tmp[33];
     itoa(data, tmp, 10);
