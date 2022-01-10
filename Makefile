@@ -87,6 +87,7 @@ API/Src/Flash.cpp \
 API/Src/I2C.cpp \
 API/Src/InterruptIn.cpp \
 API/Src/SPI.cpp \
+API/Src/DigitalIn.cpp \
 API/Src/DigitalOut.cpp \
 API/Src/SuperClock.cpp \
 API/Src/SerialPrint.cpp \
