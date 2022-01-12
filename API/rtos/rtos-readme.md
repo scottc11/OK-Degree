@@ -39,3 +39,36 @@ Only the gatekeeper task is allowed to access teh resource directly. Any other t
 - Event groups unblock all the tasks that were waiting for the same event, or combination of events, when the event occurs.
 
 Practical uses for event groups:
+
+
+# Interupts
+ISR Queue Example:
+```
+void myInteruptRoutine() {
+  const uint8_t val = 2; // value to pass to queue
+  xQueueSendFromISR(touchQueue, &val, pdFALSE); // pdFALSE because we don't want to wake the highest priority task when we exit (not sure what this means)
+  portYIELD_FROM_ISR(pdFALSE); // this is optional at this point, not sure what it does. Will work without this call
+}
+```
+
+
+# [Hooks](https://www.freertos.org/a00016.html)
+
+### Malloc Failed Hook Function
+
+The memory allocation schemes implemented by heap_1.c, heap_2.c, heap_3.c, heap_4.c and heap_5.c can optionally include a malloc() failure hook (or callback) function that can be configured to get called if pvPortMalloc() ever returns NULL.
+
+Defining the `malloc()` failure hook will help identify problems caused by lack of heap memory - especially when a call to pvPortMalloc() fails within an API function.
+
+The malloc failed hook will only get called if `configUSE_MALLOC_FAILED_HOOK` is set to 1 within FreeRTOSConfig.h. When this is set the application must provide the hook function with the following prototype:
+
+`void vApplicationMallocFailedHook( void );`
+
+### Daemon Task Startup Hook
+
+The RTOS daemon task is the same as the Timer Service Task. Sometimes it is referred to as the daemon task because the task is now used for more than just servicing timers.
+If `configUSE_DAEMON_TASK_STARTUP_HOOK` is set to 1 in FreeRTOSConfig.h then the Daemon Task Startup Hook will be called as soon as the Daemon Task starts executing for the first time. This is useful if the application includes initialisation code that would benefit from executing after the scheduler has been started, which allows the initialisation code to make use of the RTOS functionality.
+
+If `configUSE_DAEMON_TASK_STARTUP_HOOK` is set to 1 then the application writer must provide an implementation of the Daemon Task startup hook function with the following name an prototype.
+
+`void vApplicationDaemonTaskStartupHook( void );`
