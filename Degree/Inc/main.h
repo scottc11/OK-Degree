@@ -1,8 +1,9 @@
 #pragma once
 
-#include "api.h"
 #include "system_clock_config.h"
 #include "cmsis_os.h"
+
+#include "common.h"
 
 // #define BOARD_REV_V38
 

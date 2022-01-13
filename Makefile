@@ -81,7 +81,6 @@ System/Src/system_clock_config.c
 
 CPP_SOURCES = \
 API/Src/gpio_api.cpp \
-API/Src/dma_api.cpp \
 API/Src/error_handler.cpp \
 API/Src/Flash.cpp \
 API/Src/I2C.cpp \
