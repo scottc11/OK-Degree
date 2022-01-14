@@ -42,6 +42,17 @@ void logger_log(char *str)
     uart_transmit(str);
 }
 
+void logger_log(int const num) {
+    uart_transmit(num);
+}
+
+void logger_log(float const f) {
+    char str[33];
+    utoa(f, str, 10);
+    // snprintf(str, sizeof(str), "%f", f);
+    HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), HAL_MAX_DELAY);
+}
+
 void logger_log_err(char *str)
 {
     uart_transmit(str);
