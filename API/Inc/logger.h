@@ -41,3 +41,5 @@ void logger_log_arr(T arr[], int length)
     }
     logger_log(" ]\n");
 }
+
+void logger_log_system_config();

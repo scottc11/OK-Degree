@@ -75,3 +75,18 @@ void uart_transmit(int const data)
     itoa(data, tmp, 10);
     HAL_UART_Transmit(&huart3, (uint8_t *)tmp, strlen(tmp), HAL_MAX_DELAY);
 }
+
+void logger_log_system_config()
+{
+    logger_log("SYSCLK: ");
+    logger_log(HAL_RCC_GetSysClockFreq());
+    logger_log("\n");
+    logger_log("HCLK: ");
+    logger_log(HAL_RCC_GetHCLKFreq());
+    logger_log("\n");
+    logger_log("PCLK1: ");
+    logger_log(HAL_RCC_GetPCLK1Freq());
+    logger_log("\n");
+    logger_log("PCLK2: ");
+    logger_log(HAL_RCC_GetPCLK2Freq());
+}
