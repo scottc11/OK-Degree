@@ -46,6 +46,12 @@ void logger_log(int const num) {
     uart_transmit(num);
 }
 
+void logger_log(uint32_t const num) {
+    char tmp[33];
+    itoa(num, tmp, 10);
+    HAL_UART_Transmit(&huart3, (uint8_t *)tmp, strlen(tmp), HAL_MAX_DELAY);
+}
+
 void logger_log(float const f) {
     char str[33];
     utoa(f, str, 10);

@@ -16,6 +16,8 @@ void logger_log(char *str);
 
 void logger_log(int const num);
 
+void logger_log(uint32_t const num);
+
 void logger_log(float const f);
 
 void logger_log_arr(int arr[]);
