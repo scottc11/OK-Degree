@@ -48,6 +48,9 @@ public:
         }
     }
 
+    void enableFilter() { filter = true; }
+    void disableFilter() { filter = false; }
+
     static uint16_t DMA_BUFFER[ADC_DMA_BUFF_SIZE];
     static PinName ADC_PINS[ADC_DMA_BUFF_SIZE];
 
