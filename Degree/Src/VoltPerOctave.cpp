@@ -86,7 +86,7 @@ void VoltPerOctave::resetVoltageMap()
 void VoltPerOctave::calibrate()
 {
     // set the dac output to the start of voltage map array
-    this->updateDAC(currIndex, 0);
+    // this->updateDAC(currIndex, 0);
 }
 
 void VoltPerOctave::sampleVCO(uint16_t adc_sample)
