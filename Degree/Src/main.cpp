@@ -1,4 +1,6 @@
 #include "main.h"
+#include "tim_api.h"
+#include "logger.h"
 #include "SuperClock.h"
 #include "DigitalOut.h"
 #include "InterruptIn.h"
@@ -17,7 +19,6 @@
 #include "Bender.h"
 #include "AnalogHandle.h"
 #include "Display.h"
-#include "SerialPrint.h"
 
 using namespace DEGREE;
 
@@ -65,17 +66,36 @@ TouchChannel chanD(3, &display, &touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_
 
 GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display);
 
+SemaphoreHandle_t calibrationSemaphore;
+QueueHandle_t adcQueue;
+
 /**
  * @brief handle all ADC inputs here
 */ 
 void ADC1_DMA_Callback(uint16_t values[])
 {
-  // if (glblCtrl.mode == GlobalControl::Mode::CALIBRATING_1VO)
-  // {
-  //   if (glblCtrl.channels[glblCtrl.selectedChannel]->output.obtainSample) {
-  //     glblCtrl.channels[glblCtrl.selectedChannel]->output.sampleVCO(glblCtrl.channels[glblCtrl.selectedChannel]->adc.read_u16());
-  //   }
-  // }
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  xQueueSendFromISR(adcQueue, &values[0], &xHigherPriorityTaskWoken);
+  
+  // if 'xHigherPriorityTaskWoken' gets set to 'true', then a higher priority task has been unblocked during the exectution of this ISR
+  // in which case the RTOS Scheduler needs to yield the lower priotity task to the new higher priority task
+  // once this ISR exits.
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+
+
+void taskCalibrateVCO(void *params) {
+  uint16_t buffer;
+  chanA.adc.disableFilter();
+
+  multi_chan_adc_set_sample_rate(&hadc1, &htim3, 16000); // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
+
+  while (1)
+  {
+    xQueueReceive(adcQueue, &buffer, portMAX_DELAY);
+    chanA.output.sampleVCO(chanA.adc.read_u16());
+  }  
 }
 
 void vTask1(void *pvParameters)
@@ -93,8 +113,17 @@ int main(void)
 
   SystemClock_Config();
 
+  logger_init();
+  logger_log("Logger Initialized \n");
+  logger_log_system_config();  
+
+  adcQueue = xQueueCreate(1, sizeof(uint16_t));
+
   multi_chan_adc_init();
   multi_chan_adc_start();
+
+  logger_log("\n");
+  logger_log(tim_get_overflow_freq(&htim3));
 
   i2c1.init();
   i2c3.init();
@@ -105,7 +134,8 @@ int main(void)
   superClock.initTIM4(40, 10000 - 1);
   superClock.start();
 
-  xTaskCreate(vTask1, "Task 1", 100, NULL, 1, NULL);
+  xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
+  // xTaskCreate(vTask1, "vTask1", 100, NULL, 2, NULL);
 
   vTaskStartScheduler();
 

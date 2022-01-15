@@ -2,7 +2,6 @@
 
 using namespace DEGREE;
 
-bool VoltPerOctave::obtainSample = false;
 uint32_t VoltPerOctave::numSamplesTaken = 0;
 bool VoltPerOctave::slopeIsPositive = false;
 float VoltPerOctave::vcoFrequency = 0;
@@ -86,16 +85,8 @@ void VoltPerOctave::resetVoltageMap()
 */ 
 void VoltPerOctave::calibrate()
 {
-    // if (!samplingVCO)
-    // {
-    //     int currIndex = 0;
-    //     this->adc->setFilter(0);
-
-    //     // set the dac output to the start of voltage map array
-    //     this->updateDAC(currIndex, 0);
-
-    //     // wait x amount of time
-    // }
+    // set the dac output to the start of voltage map array
+    this->updateDAC(currIndex, 0);
 }
 
 void VoltPerOctave::sampleVCO(uint16_t adc_sample)
@@ -109,10 +100,13 @@ void VoltPerOctave::sampleVCO(uint16_t adc_sample)
     else if (adc_sample <= (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal > (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && !slopeIsPositive)
     {
         float vcoPeriod = numSamplesTaken;           // how many samples have occurred between positive zero crossings
-        vcoFrequency = 8000.f / vcoPeriod;           // sample rate divided by period of input signal
+        vcoFrequency = (float)multi_chan_adc_get_sample_rate(&hadc1, &htim3) / vcoPeriod;           // sample rate divided by period of input signal
         freqSamples[freqSampleIndex] = vcoFrequency; // store sample in array
         numSamplesTaken = 0;                         // reset sample count to zero for the next sampling routine
 
+        // NOTE: you could illiminate the freqSamples array by first, ignoring the first iteration of sampling, and then just adding
+        // each newly sampled frequency to a sum. This way you could increase the MAX_FREQ_SAMPLES as high as you want without requiring the
+        // initialization of a massive array to hold all the samples.
         if (freqSampleIndex < MAX_FREQ_SAMPLES - 1)
         {
             freqSampleIndex += 1;
@@ -120,11 +114,28 @@ void VoltPerOctave::sampleVCO(uint16_t adc_sample)
         else
         {
             freqSampleIndex = 0;
-            obtainSample = false;
+            logger_log("\n");
+            logger_log(calculateAverageFreq());
+            // give semapohore to calibrate task
         }
         slopeIsPositive = true;
     }
 
     prevVCOInputVal = adc_sample;
     numSamplesTaken++;
+}
+
+/**
+ * @brief Calculate Average frequency
+ * NOTE: skipping the first sample is hard to explain but its important...
+ * @return float
+ */
+float VoltPerOctave::calculateAverageFreq()
+{
+    float sum = 0;
+    for (int i = 1; i < MAX_FREQ_SAMPLES; i++)
+    {
+        sum += this->freqSamples[i];
+    }
+    return (float)(sum / (MAX_FREQ_SAMPLES - 1));
 }

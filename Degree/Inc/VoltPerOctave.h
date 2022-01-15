@@ -1,10 +1,12 @@
 #pragma once
 
 #include "main.h"
+#include "logger.h"
 #include "DAC8554.h"
 #include "Algorithms.h"
 #include "PitchFrequencies.h"
 #include "AnalogHandle.h"
+#include "MultiChanADC.h"
 
 #ifndef DAC_1VO_ARR_SIZE
 #define DAC_1VO_ARR_SIZE 64
@@ -62,8 +64,8 @@ namespace DEGREE {
         void calibrate();
 
         void sampleVCO(uint16_t adc_sample);
+        float calculateAverageFreq();
 
-        static bool obtainSample;
         static uint32_t numSamplesTaken;
         static bool slopeIsPositive;
         static float vcoFrequency;
