@@ -1,3 +1,6 @@
 [submodule "ok-drivers"]
 	path = ok-drivers
 	url = https://github.com/scottc11/ok-drivers.git
+[submodule "etl"]
+	path = etl
+	url = https://github.com/ETLCPP/etl.git
