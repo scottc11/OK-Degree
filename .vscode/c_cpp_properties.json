@@ -20,6 +20,7 @@
                 "${workspaceFolder}/middleware/FreeRTOS/Source/portable/MemMang/*",
                 "${workspaceFolder}/middleware/FreeRTOS/Source/CMSIS_RTOS_V2/*",
                 "${workspaceFolder}/middleware/FreeRTOS/Source/include/*",
+                "${workspaceFolder}/etl/include/**",
                 "${workspaceFolder}/ok-drivers/**",
                 "${workspaceFolder}/System/*",
                 "${workspaceFolder}/System/Inc/*",

@@ -5,9 +5,6 @@
 # ------------------------------------------------
 # Generic Makefile (based on gcc)
 #
-# ChangeLog :
-#	2017-02-10 - Several enhancements + project update mode
-#   2015-07-22 - first version
 # ------------------------------------------------
 
 ######################################
@@ -143,13 +140,14 @@ BIN = $(CP) -O binary -S
 #######################################
 # CFLAGS
 #######################################
-# cpu
+
+# Specify the name of the target CPU.
 CPU = -mcpu=cortex-m4
 
-# fpu
+# Specify the name of the target floating point hardware/format.
 FPU = -mfpu=fpv4-sp-d16
 
-# float-abi
+# Specify if floating point hardware should be used.
 FLOAT-ABI = -mfloat-abi=hard
 
 # mcu
@@ -170,6 +168,7 @@ AS_INCLUDES =
 
 # C includes
 C_INCLUDES =  \
+-IAPI \
 -IAPI/Inc \
 -IAPI/cxxsupport \
 -IDegree/Inc \
@@ -193,11 +192,23 @@ C_INCLUDES =  \
 -Iok-drivers/utils/OK_I2C \
 -ISystem/Inc
 
+###########
+
+# -Og                   
+# -Wall	Recommended compiler warnings
+# -fdata-sections
+# -ffunction-sections
+# -g    Generate debugging information
+# -gdwarf-2
+# -MMD
+# -MP
+# -c                       Compile and assemble, but do not link.
+###########
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
-CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections 
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
