@@ -80,15 +80,35 @@ void VoltPerOctave::resetVoltageMap()
     }
 }
 
+
+
 /**
  * @brief Calibrate the voltage map based on external frequency detection of VCO
 */ 
 void VoltPerOctave::calibrate()
 {
-    // set the dac output to the start of voltage map array
-    // this->updateDAC(currIndex, 0);
+    int attempts;
+    float currFreq;
+    
+    // handle first iteration of calibrating by finding the frequency in PITCH_FREQ array closest to the currently sampled frequency
+    // if (i == 0)
+    // {
+    //     // set the dac output to the start of voltage map array
+    //     this->dac->write(dacChannel, dacVoltageMap[0]);
+    //     HAL_Delay(10); // settle DAC
+    //     // sample the signal frequency
+    //     // determine which pitch freq to target in PITCH_FREQ array
+    //     // int initialPitchIndex = arr_find_closest_float(const_cast<float *>(PITCH_FREQ), NUM_PITCH_FREQENCIES, currFreq);
+    // }
 }
 
+
+
+/**
+ * @brief 
+ * 
+ * @param adc_sample 
+ */
 void VoltPerOctave::sampleVCO(uint16_t adc_sample)
 {   
     // NEGATIVE SLOPE
@@ -116,7 +136,9 @@ void VoltPerOctave::sampleVCO(uint16_t adc_sample)
             freqSampleIndex = 0;
             logger_log("\n");
             logger_log(calculateAverageFreq());
-            // give semapohore to calibrate task
+            // multi_chan_adc_disable_irq(); // disable adc dma interrupt
+            // give semaphore to calibrate task
+
         }
         slopeIsPositive = true;
     }

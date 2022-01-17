@@ -880,7 +880,6 @@ void TouchChannel::enableCalibration()
     display->clear();
     display->drawSquare(this->channelIndex);
     adc.setFilter(0);
-    output.obtainSample = true;
 }
 
 void TouchChannel::disableCalibration()
