@@ -74,13 +74,13 @@ QueueHandle_t adcQueue;
 */ 
 void ADC1_DMA_Callback(uint16_t values[])
 {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  xQueueSendFromISR(adcQueue, &values[0], &xHigherPriorityTaskWoken);
+  // BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  // xQueueSendFromISR(adcQueue, &values[0], &xHigherPriorityTaskWoken);
   
-  // if 'xHigherPriorityTaskWoken' gets set to 'true', then a higher priority task has been unblocked during the exectution of this ISR
-  // in which case the RTOS Scheduler needs to yield the lower priotity task to the new higher priority task
-  // once this ISR exits.
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  // // if 'xHigherPriorityTaskWoken' gets set to 'true', then a higher priority task has been unblocked during the exectution of this ISR
+  // // in which case the RTOS Scheduler needs to yield the lower priotity task to the new higher priority task
+  // // once this ISR exits.
+  // portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 
@@ -117,7 +117,7 @@ int main(void)
   logger_log("Logger Initialized \n");
   logger_log_system_config();  
 
-  adcQueue = xQueueCreate(1, sizeof(uint16_t));
+  // adcQueue = xQueueCreate(1, sizeof(uint16_t));
 
   multi_chan_adc_init();
   multi_chan_adc_start();
@@ -134,14 +134,14 @@ int main(void)
   superClock.initTIM4(40, 10000 - 1);
   superClock.start();
 
-  xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
-  // xTaskCreate(vTask1, "vTask1", 100, NULL, 2, NULL);
+  // xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
+  xTaskCreate(vTask1, "vTask1", 100, NULL, 2, NULL);
 
   vTaskStartScheduler();
 
   while (1)
   {  
-    
+    // glblCtrl.poll();
   }
 }
 // ----------------------------------------
