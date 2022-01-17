@@ -198,7 +198,62 @@ namespace DEGREE {
         void enableCalibration();
         void disableCalibration();
     };
-
-
 } // end namespace
 
+/**
+ * TODO: create a static member of a mutex type for each shared resource multiple channels instances might use.
+ * ie. for the SPI / I2C peripherals
+ *
+ * An alternative to using mutexes would be to create a single "gatekeeper" task for each peripheral which listens for data entering a queue.
+ * Each touch channel instance would post data to the queue
+ *
+ * MPR121 gatekeeper:
+ *  - uses a queue which holds an 8-bit data. when a touch interupt occurs it loads the queue with a bit corrosponding to a channel, then the gatekeeper
+ *    reads the corrosponding MPR121 IC
+ *  - Might best use the Event Groups API of FreeRTOS ie. xEventGroupSetBitsFromISR()
+ *
+ * Sequencer Queue + Task:
+ *  - Inside the SuperClock ISR function that increments the PPQN by 1, you would additionally flag the "Sequencer Task" to execute its code. This way the scheduler is
+ *  somewhat synced to the Timer.
+ *
+ * Tasks:
+ * 1) Touch Read
+ * 2) Sequencer
+ * 3) Quantizer
+ * 4) VCO Calibrator
+ * 5) Bender Calibrator
+ */
+
+/*
+QueueHandle_t touchQueue;
+TaskHandle_t touch_handle;
+
+void taskHandleTouch(void *params)
+{
+  uint8_t value_received;
+  BaseType_t status;
+  while (1)
+  {
+    status = xQueueReceive(touchQueue, &value_received, portMAX_DELAY);
+
+    if (status != pdPASS)
+    {
+      serial.transmit("Could not recieive data from queue\n");
+    }
+    else
+    {
+      uint16_t touched = touchA.readPads();
+      serial.transmit("Recieived value from queue: ");
+      serial.transmit(touched);
+      serial.transmit("\n");
+    }
+  }
+}
+
+void touchInterupt()
+{
+  const uint8_t val = 2;
+  xQueueSendFromISR(touchQueue, &val, pdFALSE);
+  portYIELD_FROM_ISR(pdFALSE);
+}
+*/

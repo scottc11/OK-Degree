@@ -10,7 +10,6 @@
 #include "SuperClock.h"
 #include "Display.h"
 #include "AnalogHandle.h"
-#include "SerialPrint.h"
 
 namespace DEGREE {
 
@@ -35,7 +34,7 @@ namespace DEGREE {
             CAP1208 *touch_ptr,
             Degrees *degrees_ptr,
             MCP23017 *buttons_ptr,
-            Display *display_ptr) : ioInterrupt(BUTTONS_INT, PullUp), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0), tempoPot(TEMPO_POT), tempoLED(TEMPO_LED), tempoGate(INT_CLOCK_OUTPUT), serial(UART_RX, UART_TX)
+            Display *display_ptr) : ioInterrupt(BUTTONS_INT, PullUp), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0), tempoPot(TEMPO_POT), tempoLED(TEMPO_LED), tempoGate(INT_CLOCK_OUTPUT)
         {
             mode = DEFAULT;
             clock = clock_ptr;
@@ -65,7 +64,6 @@ namespace DEGREE {
         DigitalOut tempoLED;
         DigitalOut tempoGate;
         AnalogHandle tempoPot;
-        SerialPrint serial;
 
         int selectedChannel;
 

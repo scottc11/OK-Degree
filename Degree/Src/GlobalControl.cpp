@@ -5,9 +5,6 @@ using namespace DEGREE;
 void GlobalControl::init() {
     this->loadCalibrationDataFromFlash();
 
-    serial.init();
-    serial.transmit("initialized");
-
     display->init();
     display->clear();
 
@@ -363,11 +360,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
  * 
 */
 void GlobalControl::advanceSequencer(uint8_t pulse)
-{    
-    serial.transmit(pulse);
-    serial.transmit("\n");
-
-    // channels[0]->setGate(pulse % 2);
+{
     if (pulse == 0) {
         tempoLED.write(HIGH);
         tempoGate.write(HIGH);
