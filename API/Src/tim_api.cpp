@@ -22,6 +22,8 @@ uint32_t tim_get_APBx_freq(TIM_HandleTypeDef *htim) {
 /**
  * @brief Get the freqeuncy of TIMx
  * OverflowEvent = APBx / ((period + 1) * (prescaler + 1))
+ * NOTE: return math is off... not sure how to properly calculate
+ * 
  * @param TIM_HandleTypeDef
  * @return uint32_t frequency
  */
