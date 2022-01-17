@@ -17,6 +17,16 @@ void multi_chan_adc_start()
     HAL_ADC_Start_DMA(&hadc1, (uint32_t *)AnalogHandle::DMA_BUFFER, ADC_DMA_BUFF_SIZE);
 }
 
+void multi_chan_adc_enable_irq()
+{
+    HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+}
+
+void multi_chan_adc_disable_irq()
+{
+    HAL_NVIC_DisableIRQ(DMA2_Stream0_IRQn);
+}
+
 uint32_t multi_chan_adc_get_sample_rate(ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim)
 {
     uint32_t tim_overflow_freq = tim_get_overflow_freq(htim);

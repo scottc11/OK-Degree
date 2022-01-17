@@ -24,8 +24,13 @@ extern TIM_HandleTypeDef htim3;
 
 void multi_chan_adc_init();
 void multi_chan_adc_start();
+
 uint32_t multi_chan_adc_get_sample_rate(ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim);
 void multi_chan_adc_set_sample_rate(ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim, uint32_t sample_rate_hz);
+
+void multi_chan_adc_enable_irq();
+void multi_chan_adc_disable_irq();
+
 void MX_ADC1_Init(void);
 void MX_TIM3_Init(void);
 void MX_DMA_Init(void);
