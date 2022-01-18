@@ -32,7 +32,7 @@ public:
             currValue = (currValue * filterAmount) + (prevValue * (1 - filterAmount));
         }
 
-        return currValue;
+        return invert ? BIT_MAX_16 - currValue : currValue;
     }
 
     void setFilter(float value) {
@@ -51,6 +51,10 @@ public:
     void enableFilter() { filter = true; }
     void disableFilter() { filter = false; }
 
+    void invertReadings() {
+        this->invert = !this->invert;
+    }
+
     static uint16_t DMA_BUFFER[ADC_DMA_BUFF_SIZE];
     static PinName ADC_PINS[ADC_DMA_BUFF_SIZE];
 
@@ -59,4 +63,5 @@ private:
     uint16_t prevValue;
     bool filter = false;
     float filterAmount = 0.1;
+    bool invert = false;
 };
