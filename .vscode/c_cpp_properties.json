@@ -5,6 +5,8 @@
             "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
             "includePath": [
                 "${workspaceFolder}/API/*",
+                "${workspaceFolder}/API/rtos/*",
+                "${workspaceFolder}/API/rtos/Inc/*",
                 "${workspaceFolder}/API/cxxsupport/*",
                 "${workspaceFolder}/API/Inc/*",
                 "${workspaceFolder}/API/Src/*",                

@@ -170,6 +170,7 @@ AS_INCLUDES =
 # C includes
 C_INCLUDES =  \
 -IAPI \
+-IAPI/rtos/Inc \
 -IAPI/Inc \
 -IAPI/cxxsupport \
 -IDegree/Inc \
@@ -192,6 +193,8 @@ C_INCLUDES =  \
 -Iok-drivers/utils/BitwiseMethods \
 -Iok-drivers/utils/OK_I2C \
 -ISystem/Inc
+
+CPP_INCLUDES = \
 
 ###########
 
@@ -223,7 +226,7 @@ endif
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
 # C++ Flags
-CPPFLAGS = $(CFLAGS)
+CPPFLAGS = $(CFLAGS) $(CPP_INCLUDES)
 CPPFLAGS += \
 -fno-exceptions \
 -fno-rtti 
