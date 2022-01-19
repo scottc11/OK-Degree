@@ -66,25 +66,6 @@ TouchChannel chanD(3, &display, &touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_
 
 GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display);
 
-SemaphoreHandle_t calibrationSemaphore;
-QueueHandle_t adcQueue;
-
-/**
- * @brief handle all ADC inputs here
-*/ 
-void ADC1_DMA_Callback(uint16_t values[])
-{
-  // BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  // xQueueSendFromISR(adcQueue, &values[0], &xHigherPriorityTaskWoken);
-  
-  // // if 'xHigherPriorityTaskWoken' gets set to 'true', then a higher priority task has been unblocked during the exectution of this ISR
-  // // in which case the RTOS Scheduler needs to yield the lower priotity task to the new higher priority task
-  // // once this ISR exits.
-  // portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-
-
 void taskCalibrateVCO(void *params) {
   uint16_t buffer;
   chanA.adc.disableFilter();
@@ -93,8 +74,8 @@ void taskCalibrateVCO(void *params) {
 
   while (1)
   {
-    xQueueReceive(adcQueue, &buffer, portMAX_DELAY);
-    chanA.output.sampleVCO(chanA.adc.read_u16());
+    // xQueueReceive(adcQueue, &buffer, portMAX_DELAY);
+    // chanA.output.sampleVCO(chanA.adc.read_u16());
   }  
 }
 
@@ -115,15 +96,10 @@ int main(void)
 
   logger_init();
   logger_log("Logger Initialized \n");
-  logger_log_system_config();  
-
-  // adcQueue = xQueueCreate(1, sizeof(uint16_t));
+  logger_log_system_config();
 
   multi_chan_adc_init();
   multi_chan_adc_start();
-
-  logger_log("\n");
-  logger_log(tim_get_overflow_freq(&htim3));
 
   i2c1.init();
   i2c3.init();
@@ -135,7 +111,7 @@ int main(void)
   superClock.start();
 
   // xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
-  xTaskCreate(vTask1, "vTask1", 100, NULL, 2, NULL);
+  xTaskCreate(vTask1, "vTask1", RTOS_MAX_STACK_SIZE, NULL, 1, NULL);
 
   vTaskStartScheduler();
 

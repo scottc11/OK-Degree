@@ -9,6 +9,9 @@ void multi_chan_adc_init()
     MX_DMA_Init();
     MX_ADC1_Init();
     MX_TIM3_Init();
+
+    AnalogHandle::semaphore = xSemaphoreCreateBinary();
+    xTaskCreate(AnalogHandle::sampleReadyTask, "ADC Sample Ready Task", 100, NULL, 3, NULL);
 }
 
 void multi_chan_adc_start()
@@ -252,14 +255,6 @@ void MX_DMA_Init(void)
 }
 
 /**
- * @brief Overload this function in 
-*/
-__WEAK void ADC1_DMA_Callback(uint16_t values[])
-{
-    // function to be overloaded in main program
-}
-
-/**
   * @brief This function handles DMA2 stream0 global interrupt.
   * NOTE: This must be declared when using an interupt peripheral.
   * When there is an interrupt for which no handler exists, "Default_Handler" will be called and put the system in an inifinite loop
@@ -279,6 +274,6 @@ extern "C" void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
     if (hadc->Instance == ADC1)
     {
-        ADC1_DMA_Callback(AnalogHandle::DMA_BUFFER);
+        AnalogHandle::RouteConversionCompleteCallback();
     }
 }
