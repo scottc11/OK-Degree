@@ -33,7 +33,6 @@ public:
     DAC8554 *dac;              // pointer to Pitch Bends DAC
     DAC8554::Channel dacChan;  // which dac channel to address
     AnalogHandle adc;              // CV input via Instrumentation Amplifier
-    ExpoFilter inputFilter;    //
     ExpoFilter outputFilter;
     Callback<void()> idleCallback;                    // MBED Callback which gets called when the Bender is idle / not-active
     Callback<void(uint16_t bend)> activeCallback;     // MBED Callback which gets called when the Bender is active / being bent

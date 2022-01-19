@@ -79,8 +79,22 @@ void taskCalibrateVCO(void *params) {
   }  
 }
 
+
+/**
+ * @brief
+ * NOTE: The stack used by a task will grow and shrink as the task executes and interrupts are processed.
+ * @param pvParameters
+ */
 void vTask1(void *pvParameters)
 {
+  i2c1.init();
+  i2c3.init();
+
+  glblCtrl.init();
+
+  superClock.initTIM2(40, 0xFFFFFFFF - 1); // precaler value handles BPM range 40..240
+  superClock.initTIM4(40, 10000 - 1);
+  superClock.start();
   while (1)
   {
     glblCtrl.poll();
@@ -100,15 +114,6 @@ int main(void)
 
   multi_chan_adc_init();
   multi_chan_adc_start();
-
-  i2c1.init();
-  i2c3.init();
-  
-  glblCtrl.init();
-
-  superClock.initTIM2(40, 0xFFFFFFFF - 1); // precaler value handles BPM range 40..240
-  superClock.initTIM4(40, 10000 - 1);
-  superClock.start();
 
   // xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
   xTaskCreate(vTask1, "vTask1", RTOS_MAX_STACK_SIZE, NULL, 1, NULL);

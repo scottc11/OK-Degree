@@ -92,16 +92,26 @@ void SuperClock::initTIM4(uint16_t prescaler, uint16_t period)
     HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig);
 }
 
-void SuperClock::setFrequency(uint32_t freq) {
-    if (freq < MAX_CLOCK_FREQ) {
-        ticksPerStep = MAX_CLOCK_FREQ;
-    } else if (freq > MIN_CLOCK_FREQ) {
-        ticksPerStep = MIN_CLOCK_FREQ;
-    } else {
-        ticksPerStep = freq;
-    }
+/**
+ * @brief Take a 16-bit ADC read and map it between the min ticksPerPulse and max ticksPerPulse
+ * 
+ * @param min the minimum ADC input value
+ * @param max the maximum ADC input value
+ * @param value 
+ */
+uint16_t SuperClock::convertADCReadToTicks(uint16_t min, uint16_t max, uint16_t value)
+{
+    return (uint16_t)scaleIntToRange(value, min, max, MIN_TICKS_PER_PULSE, MAX_TICKS_PER_PULSE);
+}
 
-    ticksPerPulse = ticksPerStep / (PPQN - 1); // Forget why we multiply by 2
+/**
+ * @brief Set the TIM4 overflow frequency
+ * 
+ * @param ticks 
+ */
+void SuperClock::setPulseFrequency(uint32_t ticks)
+{
+    __HAL_TIM_SetAutoreload(&htim4, ticks);
 }
 
 /**
@@ -128,11 +138,25 @@ void SuperClock::handleInputCaptureCallback()
     __HAL_TIM_SetCounter(&htim4, 0); // reset after each input capture
     uint32_t inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
     uint16_t pulse = inputCapture / PPQN;
-    __HAL_TIM_SetAutoreload(&htim4, pulse);
+    this->setPulseFrequency(pulse);
     this->handleOverflowCallback();
     // setFrequency(inputCapture);
 
     if (input_capture_callback) input_capture_callback();
+}
+
+void SuperClock::enableInputCaptureISR()
+{
+    externalInputMode = true;
+    // HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
+    HAL_NVIC_EnableIRQ(TIM2_IRQn);
+}
+
+void SuperClock::disableInputCaptureISR()
+{
+    externalInputMode = false;
+    // HAL_TIM_IC_Stop(&htim2, TIM_CHANNEL_4);
+    HAL_NVIC_DisableIRQ(TIM2_IRQn);
 }
 
 /**

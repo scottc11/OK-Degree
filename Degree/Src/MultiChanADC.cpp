@@ -11,7 +11,7 @@ void multi_chan_adc_init()
     MX_TIM3_Init();
 
     AnalogHandle::semaphore = xSemaphoreCreateBinary();
-    xTaskCreate(AnalogHandle::sampleReadyTask, "ADC Sample Ready Task", 100, NULL, 3, NULL);
+    xTaskCreate(AnalogHandle::sampleReadyTask, "ADC Sample Ready Task", 1024, NULL, 3, NULL);
 }
 
 void multi_chan_adc_start()

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main.h"
+#include "okSemaphore.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"

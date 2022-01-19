@@ -2,6 +2,7 @@
 
 void Bender::init()
 {
+    adc.setFilter(0.1);
     dac->init();
     outputFilter.setAlpha(0.05);
     outputFilter.setInitial(this->dacOutputRange); // set initial value to middle of DAC (0V)
@@ -13,9 +14,6 @@ void Bender::init()
 // TODO: this calibration no longer works when sample the ADC with a timer
 void Bender::calibrateIdle()
 {
-    // must set initial value for digital filter
-    inputFilter.setInitial(adc.read_u16());
-
     // populate calibration array
     for (int i = 0; i < PB_CALIBRATION_RANGE; i++)
     {

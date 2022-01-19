@@ -1,8 +1,9 @@
 #pragma once
 
 #include "main.h"
+#include "okSemaphore.h"
 #include "logger.h"
-#define ADC_SAMPLE_COUNTER_LIMIT 100
+#define ADC_SAMPLE_COUNTER_LIMIT 500
 
 /**
  * @brief Simple class that pulls the data from a DMA buffer into an object
@@ -49,6 +50,11 @@ public:
         }
     }
 
+    SemaphoreHandle_t denoiseSemaphore;
+    uint16_t idleNoiseThreshold; // how much noise an idle input signal contains
+    uint16_t noiseCeiling;
+    uint16_t noiseFloor;
+
     void enableFilter() { filter = true; }
     void disableFilter() { filter = false; }
 
@@ -56,6 +62,7 @@ public:
         this->invert = !this->invert;
     }
 
+    SemaphoreHandle_t* initDenoising();
     void calculateSignalNoise(uint16_t sample);
 
     void sampleReadyCallback(uint16_t sample);
@@ -75,11 +82,7 @@ private:
     bool filter = false;
     float filterAmount = 0.1;
     bool invert = false;
-    
-    uint16_t sampleCounter;        // basic counter for DSP
 
+    uint16_t sampleCounter;        // basic counter for DSP
     bool denoising;                // flag to tell handle whether to use the incloming data in the DMA_BUFFER for denoising an idle input signal
-    uint16_t idleNoiseThreshold;   // how much noise an idle input signal contains
-    uint16_t prevMaxNoiseSample;
-    uint16_t prevMinNoiseSample;
 };
