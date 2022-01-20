@@ -32,9 +32,7 @@ void GlobalControl::init() {
     SemaphoreHandle_t *sem_ptr = tempoPot.initDenoising();
     xSemaphoreTake(*sem_ptr, portMAX_DELAY);
     vSemaphoreDelete(*sem_ptr);
-    logger_log("Tempo Pot ADC Noise: ");
-    logger_log(tempoPot.idleNoiseThreshold);
-    logger_log("\n");
+    tempoPot.log_noise_threshold_to_console("Tempo Pot");
 
     clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
