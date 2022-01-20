@@ -2,33 +2,20 @@
 
 void Bender::init()
 {
-    adc.setFilter(0.1);
+    adc.setFilter(0.05);
+    okSemaphore *sem = adc.initDenoising();
+    sem->wait();
+    adc.log_noise_threshold_to_console("Bender");
+
+    // zero the sensor
+    this->zeroBend = adc.avgValueWhenIdle;
+
     dac->init();
     outputFilter.setAlpha(0.05);
     outputFilter.setInitial(this->dacOutputRange); // set initial value to middle of DAC (0V)
-    calibrateIdle();
+    
     setRatchetThresholds();
     updateDAC(0);
-}
-
-// TODO: this calibration no longer works when sample the ADC with a timer
-void Bender::calibrateIdle()
-{
-    // populate calibration array
-    for (int i = 0; i < PB_CALIBRATION_RANGE; i++)
-    {
-        calibrationSamples[i] = this->read();
-        HAL_Delay(1);
-    }
-
-    // find min/max value from calibration results
-    int max = arr_max(calibrationSamples, PB_CALIBRATION_RANGE);
-    int min = arr_min(calibrationSamples, PB_CALIBRATION_RANGE);
-    this->idleDebounce = (max - min) + BENDER_DEBOUNCE;
-
-    // zero the sensor
-    this->zeroBend = arr_average(calibrationSamples, PB_CALIBRATION_RANGE);
-    return;
 }
 
 /**
@@ -131,7 +118,7 @@ void Bender::updateDAC(uint16_t value)
 
 bool Bender::isIdle()
 {
-    if (currBend > zeroBend + idleDebounce || currBend < zeroBend - idleDebounce)
+    if (currBend > zeroBend + adc.idleNoiseThreshold || currBend < zeroBend - adc.idleNoiseThreshold)
     {
         return false;
     }

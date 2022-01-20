@@ -61,10 +61,9 @@ void AnalogHandle::setFilter(float value)
  * @return okSemaphore* 
  */
 okSemaphore* AnalogHandle::initDenoising() {
-    this->disableFilter();
     this->denoising = true;
-    denoiseSemaphore.take(); // create a semaphore
-    return &denoiseSemaphore;
+    denoisingSemaphore.take(); // create a semaphore
+    return &denoisingSemaphore;
 }
 
 // set this as a task so that in the main loop you block with a semaphore until this task gives the semaphore back (once it has completed)
@@ -93,7 +92,8 @@ void AnalogHandle::calculateSignalNoise(uint16_t sample)
         denoising = false;
         sampleCounter = 0; // reset back to 0 for later use
         idleNoiseThreshold = (noiseCeiling - noiseFloor) / 2;
-        denoiseSemaphore.give();
+        avgValueWhenIdle = noiseFloor + idleNoiseThreshold;
+        denoisingSemaphore.give();
     }
 }
 
@@ -101,11 +101,12 @@ void AnalogHandle::sampleReadyCallback(uint16_t sample)
 {
     prevValue = currValue;
     currValue = convert12to16(sample);
-    if (this->denoising) {
-        this->calculateSignalNoise(currValue);
-    }
     if (filter) {
         currValue = (currValue * filterAmount) + (prevValue * (1 - filterAmount));
+    }
+    if (this->denoising)
+    {
+        this->calculateSignalNoise(currValue);
     }
     // set value
 }
@@ -136,5 +137,7 @@ void AnalogHandle::log_noise_threshold_to_console(char const *source_id)
     logger_log(source_id);
     logger_log(" ADC Noise: ");
     logger_log(this->idleNoiseThreshold);
+    logger_log(", Idle: ");
+    logger_log(this->avgValueWhenIdle);
     logger_log("\n");
 }
