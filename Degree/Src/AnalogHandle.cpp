@@ -3,6 +3,57 @@
 SemaphoreHandle_t AnalogHandle::semaphore;
 AnalogHandle *AnalogHandle::_instances[ADC_DMA_BUFF_SIZE] = {0};
 
+AnalogHandle::AnalogHandle(PinName pin)
+{
+    // iterate over static member ADC_PINS and match index to pin
+    for (int i = 0; i < ADC_DMA_BUFF_SIZE; i++)
+    {
+        if (pin == ADC_PINS[i])
+        {
+            index = i;
+            break;
+        }
+    }
+    // Add constructed instance to the static list of instances (required for IRQ routing)
+    for (int i = 0; i < ADC_DMA_BUFF_SIZE; i++)
+    {
+        if (_instances[i] == NULL)
+        {
+            _instances[i] = this;
+            break;
+        }
+    }
+}
+
+uint16_t AnalogHandle::read_u16()
+{
+    return invert ? BIT_MAX_16 - currValue : currValue;
+}
+
+void AnalogHandle::invertReadings()
+{
+    this->invert = !this->invert;
+}
+
+void AnalogHandle::setFilter(float value)
+{
+    if (value == 0)
+    {
+        filter = false;
+    }
+    else if (value > (float)1)
+    {
+        // raise error
+        filter = false;
+    }
+    else
+    {
+        prevValue = convert12to16(DMA_BUFFER[index]);
+        filterAmount = value;
+        filter = true;
+    }
+}
+
 SemaphoreHandle_t* AnalogHandle::initDenoising() {
     this->disableFilter();
     this->denoising = true;

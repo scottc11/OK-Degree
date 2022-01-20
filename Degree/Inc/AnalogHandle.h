@@ -3,6 +3,7 @@
 #include "main.h"
 #include "okSemaphore.h"
 #include "logger.h"
+
 #define ADC_SAMPLE_COUNTER_LIMIT 500
 
 /**
@@ -10,57 +11,20 @@
 */ 
 class AnalogHandle {
 public:
-    AnalogHandle(PinName pin) {
-        // iterate over static member ADC_PINS and match index to pin
-        for (int i = 0; i < ADC_DMA_BUFF_SIZE; i++)
-        {
-            if (pin == ADC_PINS[i]) {
-                index = i;
-                break;
-            }
-        }
-        // Add constructed instance to the static list of instances (required for IRQ routing)
-        for (int i = 0; i < ADC_DMA_BUFF_SIZE; i++)
-        {
-            if (_instances[i] == NULL)
-            {
-                _instances[i] = this;
-                break;
-            }
-        }
-    }
+    AnalogHandle(PinName pin);
 
     int index;
-
-    uint16_t read_u16() {
-        return invert ? BIT_MAX_16 - currValue : currValue;
-    }
-
-    void setFilter(float value) {
-        if (value == 0) {
-            filter = false;
-        } else if (value > (float)1) {
-            // raise error
-            filter = false;
-        }
-        else {
-            prevValue = convert12to16(DMA_BUFFER[index]);
-            filterAmount = value;
-            filter = true;
-        }
-    }
 
     SemaphoreHandle_t denoiseSemaphore;
     uint16_t idleNoiseThreshold; // how much noise an idle input signal contains
     uint16_t noiseCeiling;
     uint16_t noiseFloor;
 
+    uint16_t read_u16();
+    void setFilter(float value);
     void enableFilter() { filter = true; }
     void disableFilter() { filter = false; }
-
-    void invertReadings() {
-        this->invert = !this->invert;
-    }
+    void invertReadings();
 
     SemaphoreHandle_t* initDenoising();
     void calculateSignalNoise(uint16_t sample);
