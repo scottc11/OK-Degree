@@ -54,11 +54,16 @@ void AnalogHandle::setFilter(float value)
     }
 }
 
-SemaphoreHandle_t* AnalogHandle::initDenoising() {
+/**
+ * @brief takes the denoising semaphore and gives it once calculation is finished.
+ * NOTE: don't forget to "give()" the semaphore back after waiting for it.
+ * 
+ * @return okSemaphore* 
+ */
+okSemaphore* AnalogHandle::initDenoising() {
     this->disableFilter();
     this->denoising = true;
-    // create a semaphore
-    denoiseSemaphore = xSemaphoreCreateBinary();
+    denoiseSemaphore.take(); // create a semaphore
     return &denoiseSemaphore;
 }
 
@@ -88,7 +93,7 @@ void AnalogHandle::calculateSignalNoise(uint16_t sample)
         denoising = false;
         sampleCounter = 0; // reset back to 0 for later use
         idleNoiseThreshold = (noiseCeiling - noiseFloor) / 2;
-        xSemaphoreGive(denoiseSemaphore);
+        denoiseSemaphore.give();
     }
 }
 

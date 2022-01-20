@@ -29,9 +29,9 @@ void GlobalControl::init() {
     channels[2]->init();
     channels[3]->init();
 
-    SemaphoreHandle_t *sem_ptr = tempoPot.initDenoising();
-    xSemaphoreTake(*sem_ptr, portMAX_DELAY);
-    vSemaphoreDelete(*sem_ptr);
+    okSemaphore *sem_ptr = tempoPot.initDenoising();
+    sem_ptr->take(); // wait
+    sem_ptr->give();
     tempoPot.log_noise_threshold_to_console("Tempo Pot");
 
     clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));

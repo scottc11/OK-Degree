@@ -22,6 +22,7 @@ class okSemaphore {
 public:
     okSemaphore(){
         handle = xSemaphoreCreateBinary();
+        this->give();
     };
 
     ~okSemaphore() {
@@ -46,4 +47,15 @@ public:
     }
 
     void takeISR();
+
+    /**
+     * @brief pause task until semaphore available, then give it right back.
+     */
+    void wait() {
+        this->take();
+        this->give();
+    }
+
+    // xSemaphoreGetMutexHolder
+    // Return the handle of the task that holds the mutex specified by the function parameter, if any.
 };

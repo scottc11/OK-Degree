@@ -15,7 +15,7 @@ public:
 
     int index;
 
-    SemaphoreHandle_t denoiseSemaphore;
+    okSemaphore denoiseSemaphore;
     uint16_t idleNoiseThreshold; // how much noise an idle input signal contains
     uint16_t noiseCeiling;
     uint16_t noiseFloor;
@@ -27,7 +27,7 @@ public:
     void invertReadings();
     void log_noise_threshold_to_console(char const *source_id);
 
-    SemaphoreHandle_t* initDenoising();
+    okSemaphore* initDenoising();
     void calculateSignalNoise(uint16_t sample);
 
     void sampleReadyCallback(uint16_t sample);
