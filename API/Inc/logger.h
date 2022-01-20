@@ -12,7 +12,7 @@
 
 void logger_init();
 
-void logger_log(char *str);
+void logger_log(char const *str);
 
 void logger_log(int const num);
 

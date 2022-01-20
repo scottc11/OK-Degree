@@ -37,7 +37,7 @@ void logger_init()
     HAL_UART_Init(&huart3);
 }
 
-void logger_log(char *str)
+void logger_log(char const *str)
 {
     uart_transmit(str);
 }

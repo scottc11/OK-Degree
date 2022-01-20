@@ -25,7 +25,7 @@ public:
     void enableFilter() { filter = true; }
     void disableFilter() { filter = false; }
     void invertReadings();
-    void log_noise_threshold_to_console(char *source_str);
+    void log_noise_threshold_to_console(char const *source_id);
 
     SemaphoreHandle_t* initDenoising();
     void calculateSignalNoise(uint16_t sample);

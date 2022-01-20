@@ -62,9 +62,9 @@ namespace DEGREE {
         InterruptIn touchInterrupt; // interupt pin for touch pads
         DigitalOut recLED;
         DigitalOut freezeLED;
+        AnalogHandle tempoPot;
         DigitalOut tempoLED;
         DigitalOut tempoGate;
-        AnalogHandle tempoPot;
 
         int selectedChannel;
 

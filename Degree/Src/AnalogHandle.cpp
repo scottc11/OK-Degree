@@ -126,9 +126,9 @@ void AnalogHandle::sampleReadyTask(void *params) {
     }
 }
 
-void AnalogHandle::log_noise_threshold_to_console(char * source_str)
+void AnalogHandle::log_noise_threshold_to_console(char const *source_id)
 {
-    logger_log(source_str);
+    logger_log(source_id);
     logger_log(" ADC Noise: ");
     logger_log(this->idleNoiseThreshold);
     logger_log("\n");
