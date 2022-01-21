@@ -12,6 +12,8 @@
 ######################################
 TARGET = ok-dev-board
 
+FLASH_SIZE = $$((512 * 1024)) # 512 kB
+RAM_SIZE = $$((128 * 1024)) # 128 kB
 
 ######################################
 # building variables
@@ -244,6 +246,16 @@ LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BU
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
 
+#######################################
+# helpers
+#######################################
+usedFlash = $(shell $(SZ) $@ | sed -n 2p | awk '{print $$1}' )
+usedFlashPercent = $$(( 100 * $(usedFlash) / $(FLASH_SIZE) ))
+flashMessage = Flash Used: $(usedFlash)/$(FLASH_SIZE) ( $(usedFlashPercent) % )
+usedRam = $(shell $(SZ) $@ | sed -n 2p | awk '{ram=$$2+$$3} {print ram}' )
+usedRamPercent = $$(( 100 * $(usedRam) / $(RAM_SIZE) ))
+ramMessage = Ram Used: $(usedRam)/$(RAM_SIZE) ( $(usedRamPercent) % ) - (static only)
+cyan = echo -e "\033[1;36m$(1)\033[0m"
 
 #######################################
 # build the application
@@ -271,6 +283,7 @@ $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
+	@$(call cyan,\n$(flashMessage)\n$(ramMessage)\n)
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	$(HEX) $< $@
