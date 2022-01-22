@@ -35,6 +35,7 @@ void GlobalControl::init() {
     sem_ptr->take(); // wait
     sem_ptr->give();
     tempoPot.log_noise_threshold_to_console("Tempo Pot");
+    tempoPot.invertReadings();
 
     clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
@@ -87,11 +88,11 @@ void GlobalControl::pollTempoPot()
     if (currTempoPotValue > prevTempoPotValue + 600 || currTempoPotValue < prevTempoPotValue - 600) {
         if (currTempoPotValue > 1000)
         {
-            // if (clock->externalInputMode) { clock->disableInputCaptureISR(); }
-            clock->setPulseFrequency(clock->convertADCReadToTicks(500, BIT_MAX_16, currTempoPotValue));
+            if (clock->externalInputMode) { clock->disableInputCaptureISR(); }
+            clock->setPulseFrequency(clock->convertADCReadToTicks(1000, BIT_MAX_16, currTempoPotValue));
         } else {
             // change clock source to input mode by enabling input capture ISR
-            // clock->enableInputCaptureISR();
+            clock->enableInputCaptureISR();
         }
         prevTempoPotValue = currTempoPotValue;
     }

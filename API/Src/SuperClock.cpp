@@ -94,13 +94,14 @@ void SuperClock::initTIM4(uint16_t prescaler, uint16_t period)
 
 /**
  * @brief Take a 16-bit ADC read and map it between the min ticksPerPulse and max ticksPerPulse
- * 
+ * NOTE: because a lower values actually mean faster tempos, inverting the incoming value is needed
  * @param min the minimum ADC input value
  * @param max the maximum ADC input value
- * @param value 
+ * @param value this value gets inverted
  */
 uint16_t SuperClock::convertADCReadToTicks(uint16_t min, uint16_t max, uint16_t value)
 {
+    value = (max - value) + min; // invert
     return (uint16_t)scaleIntToRange(value, min, max, MIN_TICKS_PER_PULSE, MAX_TICKS_PER_PULSE);
 }
 
