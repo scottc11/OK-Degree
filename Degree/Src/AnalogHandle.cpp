@@ -102,7 +102,8 @@ void AnalogHandle::sampleReadyCallback(uint16_t sample)
     prevValue = currValue;
     currValue = convert12to16(sample);
     if (filter) {
-        currValue = (currValue * filterAmount) + (prevValue * (1 - filterAmount));
+        // currValue = (currValue * filterAmount) + (prevValue * (1 - filterAmount));
+        currValue = prevValue + (filterAmount * (currValue - prevValue));
     }
     if (this->denoising)
     {
