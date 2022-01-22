@@ -116,13 +116,13 @@ namespace DEGREE {
         SX1509 *_leds;
         Degrees *degreeSwitches;
         Bender *bender;
-        VoltPerOctave output;
-
-        DigitalOut gateOut;        // gate output
-        bool gateState;            // state of the gate output
         DigitalOut *globalGateOut; // global gate output
-        uint8_t currRatchetRate;      // 
-
+        DigitalOut gateOut; // gate output
+        AnalogHandle adc;   // CV input ADC
+        VoltPerOctave output;        
+        
+        uint8_t currRatchetRate;      //
+        bool gateState;               // state of the gate output
         TouchChannelMode currMode;
         TouchChannelMode prevMode;
 
@@ -136,7 +136,6 @@ namespace DEGREE {
         bool freezeChannel;
 
         // Quantiser members
-        AnalogHandle adc;                  // CV input ADC
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
         uint8_t currActiveOctaves;         // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
         uint8_t prevActiveOctaves;         // 4-bits to represent the previous octaves external CV will get mapped to (active = 1, inactive= 0)

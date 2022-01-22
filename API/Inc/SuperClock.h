@@ -3,6 +3,7 @@
 #include "common.h"
 #include "tim_api.h"
 #include "Callback.h"
+#include "Algorithms.h"
 
 #ifndef PPQN
 #define PPQN 96
@@ -12,13 +13,8 @@
 #define EXT_CLOCK_INPUT PA_3
 #endif
 
-#ifndef MAX_CLOCK_FREQ
-#define MAX_CLOCK_FREQ 500
-#endif
-
-#ifndef MIN_CLOCK_FREQ
-#define MIN_CLOCK_FREQ 65535
-#endif
+#define MAX_TICKS_PER_PULSE 34299  // (40 BPM)  MAX TIM4 tickers per pulse
+#define MIN_TICKS_PER_PULSE 5716   // (240 BPM) MIN TIM4 tickers per pulse
 
 extern TIM_HandleTypeDef htim2; // 32-bit timer
 extern TIM_HandleTypeDef htim4; // 16-bit timer
@@ -32,6 +28,7 @@ public:
     int pulse;              // the current PPQN
     uint16_t ticksPerStep;  // how many TIM2 ticks per one step / quarter note
     uint16_t ticksPerPulse; // how many TIM2 ticks for one PPQN
+    bool externalInputMode;
 
     Callback<void()> tickCallback;           // this callback gets executed at a frequency equal to tim1_freq
     Callback<void()> input_capture_callback; // this callback gets executed every on the rising edge of external input
@@ -55,7 +52,10 @@ public:
     void initTIM4(uint16_t prescaler, uint16_t period);
     void start();
 
-    void setFrequency(uint32_t freq);
+    void setPulseFrequency(uint32_t ticks);
+    uint16_t convertADCReadToTicks(uint16_t min, uint16_t max, uint16_t value);
+    void enableInputCaptureISR();
+    void disableInputCaptureISR();
 
     // Callback Setters
     void attachInputCaptureCallback(Callback<void()> func);

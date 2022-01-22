@@ -2,42 +2,27 @@
 
 void Bender::init()
 {
+    adc.setFilter(0.1);
+    okSemaphore *sem = adc.initDenoising();
+    sem->wait();
+    adc.log_noise_threshold_to_console("Bender");
+
+    // zero the sensor
+    this->zeroBend = adc.avgValueWhenIdle;
+
     dac->init();
-    outputFilter.setAlpha(0.05);
+    outputFilter.setAlpha(0.1);
     outputFilter.setInitial(this->dacOutputRange); // set initial value to middle of DAC (0V)
-    calibrateIdle();
+    
     setRatchetThresholds();
     updateDAC(0);
 }
 
-// TODO: this calibration no longer works when sample the ADC with a timer
-void Bender::calibrateIdle()
-{
-    // must set initial value for digital filter
-    inputFilter.setInitial(adc.read_u16());
-
-    // populate calibration array
-    for (int i = 0; i < PB_CALIBRATION_RANGE; i++)
-    {
-        calibrationSamples[i] = this->read();
-        HAL_Delay(1);
-    }
-
-    // find min/max value from calibration results
-    int max = arr_max(calibrationSamples, PB_CALIBRATION_RANGE);
-    int min = arr_min(calibrationSamples, PB_CALIBRATION_RANGE);
-    this->idleDebounce = (max - min) + BENDER_DEBOUNCE;
-
-    // zero the sensor
-    this->zeroBend = arr_average(calibrationSamples, PB_CALIBRATION_RANGE);
-    return;
-}
-
 /**
- * chan A @ 220ohm gain: Max = 45211, Min = 27228, zero = 35432, debounce = 496
- * chan B @ 220ohm gain: Max = XXXXX, Min = XXXXX, zero = 32931, debounce = 337
- * chan C @ 220ohm gain: Max = 48276, Min = 28566, zero = 38468, debounce = 448
- * chan D @ 220ohm gain: Max = 43002, Min = 25974, zero = 35851, debounce = 320
+Bender A ADC Noise: 568, Idle: 25390
+Bender B ADC Noise: 928, Idle: 41385
+Bender C ADC Noise: 720, Idle: 30807
+Bender D ADC Noise: 760, Idle: 32271
 */
 void Bender::calibrateMinMax()
 {
@@ -133,7 +118,7 @@ void Bender::updateDAC(uint16_t value)
 
 bool Bender::isIdle()
 {
-    if (currBend > zeroBend + idleDebounce || currBend < zeroBend - idleDebounce)
+    if (currBend > zeroBend + 500 || currBend < zeroBend - 500)
     {
         return false;
     }

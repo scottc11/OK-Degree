@@ -26,6 +26,9 @@ A `mutex` is used for mutual exclusion where as `binary semaphore` is used for s
 
 A semaphore that is used for mutual exclusion must always be returned.
 
+#### WHY USE A MUTEX?
+We can end up with a situation where Task A reads the value, Task B interrupts to read the same value, increment it, and write it back. When execution returns to Task A, it still has the original value in local, working memory. It increments that value and writes it back to memory, overwriting the work of Task B. This results in the same value being written to global/shared memory, even though two increment commands were executed.
+
 # Gatekeepers
 
 A gatekeeper task is a task that has sole ownership of a resource. Gatekeeper tasks provide a clean method of implementing mutual exclusion without the risk of priority inversion or deadlock.

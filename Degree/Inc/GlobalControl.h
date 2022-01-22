@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main.h"
+#include "okSemaphore.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
@@ -61,9 +62,9 @@ namespace DEGREE {
         InterruptIn touchInterrupt; // interupt pin for touch pads
         DigitalOut recLED;
         DigitalOut freezeLED;
+        AnalogHandle tempoPot;
         DigitalOut tempoLED;
         DigitalOut tempoGate;
-        AnalogHandle tempoPot;
 
         int selectedChannel;
 

@@ -11,6 +11,7 @@
 #pragma once
 
 #include "cmsis_os.h"
+#include "logger.h"
 
 class okTask
 {
@@ -19,7 +20,14 @@ public:
     {
         name = _name;
         task_func = _func;
-        xTaskCreate(this->startTask, name, 100, this, 1, &this->handle);
+        BaseType_t status;
+        status = xTaskCreate(this->startTask, name, 100, this, 1, &this->handle);
+        if (status != pdPASS) {
+            logger_log("Task Create COULD_NOT_ALLOCATE_REQUIRED_MEMORY\n");
+            logger_log("TASK: ");
+            logger_log(name);
+            logger_log("\n");
+        }
     };
 
     char *name;

@@ -18,20 +18,44 @@
 
 #include "cmsis_os.h"
 
-SemaphoreHandle_t xBinaraySemaphore;
+class okSemaphore {
+public:
+    okSemaphore(){
+        handle = xSemaphoreCreateBinary();
+        this->give();
+    };
 
-void main() {
-    xBinaraySemaphore = xSemaphoreCreateBinary();
-    
-    // in order to 'get the ball rolling', you need to first 'give' the semaphore ie. release access to it ie. let it be taken.
-    xSemaphoreGive(xBinaraySemaphore);
-}
-
-void task(void *params) {
-    while (1)
-    {
-        xSemaphoreTake(xBinaraySemaphore, portMAX_DELAY);
-        // do something
-        xSemaphoreGive(xBinaraySemaphore);
+    ~okSemaphore() {
+        vSemaphoreDelete(handle);
     }
-}
+
+    SemaphoreHandle_t handle;
+
+    void give() {
+        xSemaphoreGive(handle);
+    }
+
+    void giveISR() {
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(handle, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+
+    void take(TickType_t delay = portMAX_DELAY)
+    {
+        xSemaphoreTake(handle, delay);
+    }
+
+    void takeISR();
+
+    /**
+     * @brief pause task until semaphore available, then give it right back.
+     */
+    void wait() {
+        this->take();
+        this->give();
+    }
+
+    // xSemaphoreGetMutexHolder
+    // Return the handle of the task that holds the mutex specified by the function parameter, if any.
+};

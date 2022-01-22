@@ -10,6 +10,7 @@
 #pragma once
 
 #include "main.h"
+#include "okSemaphore.h"
 #include "Callback.h"
 #include "ExpoFilter.h"
 #include "DAC8554.h"
@@ -33,7 +34,6 @@ public:
     DAC8554 *dac;              // pointer to Pitch Bends DAC
     DAC8554::Channel dacChan;  // which dac channel to address
     AnalogHandle adc;              // CV input via Instrumentation Amplifier
-    ExpoFilter inputFilter;    //
     ExpoFilter outputFilter;
     Callback<void()> idleCallback;                    // MBED Callback which gets called when the Bender is idle / not-active
     Callback<void(uint16_t bend)> activeCallback;     // MBED Callback which gets called when the Bender is active / being bent
@@ -49,7 +49,6 @@ public:
     uint16_t ratchetThresholds[8];
 
     uint16_t zeroBend;                            // the average ADC value when pitch bend is idle
-    uint16_t idleDebounce;                        // for debouncing the ADC when Pitch Bend is idle
     uint16_t maxBend = DEFAULT_MAX_BEND;          // the minimum value the ADC can achieve when Pitch Bend fully pulled
     uint16_t minBend = DEFAULT_MIN_BEND;          // the maximum value the ADC can achieve when Pitch Bend fully pressed
 

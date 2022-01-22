@@ -37,7 +37,7 @@ void logger_init()
     HAL_UART_Init(&huart3);
 }
 
-void logger_log(char *str)
+void logger_log(char const *str)
 {
     uart_transmit(str);
 }
@@ -78,6 +78,7 @@ void uart_transmit(int const data)
 
 void logger_log_system_config()
 {
+    logger_log("\n");
     logger_log("SYSCLK: ");
     logger_log(HAL_RCC_GetSysClockFreq());
     logger_log("\n");
@@ -89,4 +90,5 @@ void logger_log_system_config()
     logger_log("\n");
     logger_log("PCLK2: ");
     logger_log(HAL_RCC_GetPCLK2Freq());
+    logger_log("\n");
 }

@@ -29,8 +29,17 @@ void GlobalControl::init() {
     channels[2]->init();
     channels[3]->init();
 
+    // Tempo Pot ADC Noise: 1300ish w/ 100nF
+    tempoPot.setFilter(0.01);
+    okSemaphore *sem_ptr = tempoPot.initDenoising();
+    sem_ptr->take(); // wait
+    sem_ptr->give();
+    tempoPot.log_noise_threshold_to_console("Tempo Pot");
+    tempoPot.invertReadings();
+
     clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
+    this->pollTempoPot();
 }
 
 void GlobalControl::poll()
@@ -76,11 +85,17 @@ void GlobalControl::handleTouchInterupt() {
 void GlobalControl::pollTempoPot()
 {
     currTempoPotValue = tempoPot.read_u16();
-    if (currTempoPotValue > prevTempoPotValue + 50 || currTempoPotValue < prevTempoPotValue - 50) {
-        clock->setFrequency(currTempoPotValue);
+    if (currTempoPotValue > prevTempoPotValue + 600 || currTempoPotValue < prevTempoPotValue - 600) {
+        if (currTempoPotValue > 1000)
+        {
+            if (clock->externalInputMode) { clock->disableInputCaptureISR(); }
+            clock->setPulseFrequency(clock->convertADCReadToTicks(1000, BIT_MAX_16, currTempoPotValue));
+        } else {
+            // change clock source to input mode by enabling input capture ISR
+            clock->enableInputCaptureISR();
+        }
         prevTempoPotValue = currTempoPotValue;
     }
-    
 }
 
 void GlobalControl::pollTouchPads() {
