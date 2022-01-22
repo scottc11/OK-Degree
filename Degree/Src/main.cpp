@@ -109,11 +109,12 @@ int main(void)
   SystemClock_Config();
 
   logger_init();
-  logger_log("Logger Initialized \n");
+  logger_log("\nLogger Initialized\n");
   logger_log_system_config();
 
   multi_chan_adc_init();
   multi_chan_adc_start();
+  HAL_Delay(100);
 
   // xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
   xTaskCreate(vTask1, "vTask1", RTOS_MAX_STACK_SIZE, NULL, 1, NULL);
