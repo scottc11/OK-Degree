@@ -10,6 +10,12 @@ void multi_chan_adc_init()
     MX_ADC1_Init();
     MX_TIM3_Init();
 
+    multi_chan_adc_set_sample_rate(&hadc1, &htim3, 2000);
+
+    logger_log("ADC Sample Rate: ");
+    logger_log(multi_chan_adc_get_sample_rate(&hadc1, &htim3));
+    logger_log("\n");
+
     AnalogHandle::semaphore = xSemaphoreCreateBinary();
     xTaskCreate(AnalogHandle::sampleReadyTask, "ADC Sample Ready Task", 1024, NULL, 3, NULL);
 }

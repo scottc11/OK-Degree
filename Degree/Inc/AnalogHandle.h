@@ -4,7 +4,7 @@
 #include "okSemaphore.h"
 #include "logger.h"
 
-#define ADC_SAMPLE_COUNTER_LIMIT 500
+#define ADC_SAMPLE_COUNTER_LIMIT 2000
 
 /**
  * @brief Simple class that pulls the data from a DMA buffer into an object
