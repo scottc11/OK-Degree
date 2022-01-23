@@ -76,7 +76,7 @@ void InterruptIn::gpio_irq_init(PinName pin)
 
     /* EXTI interrupt init*/
     _irq = gpio_get_irq_line(_pin);
-    HAL_NVIC_SetPriority(_irq, 0, 0);
+    HAL_NVIC_SetPriority(_irq, RTOS_ISR_DEFAULT_PRIORITY, 0);
     HAL_NVIC_EnableIRQ(_irq);
 }
 

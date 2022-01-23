@@ -5,9 +5,6 @@
 # ------------------------------------------------
 # Generic Makefile (based on gcc)
 #
-# ChangeLog :
-#	2017-02-10 - Several enhancements + project update mode
-#   2015-07-22 - first version
 # ------------------------------------------------
 
 ######################################
@@ -21,6 +18,9 @@ TARGET = ok-dev-board
 ######################################
 # debug build?
 DEBUG = 1
+
+SERIAL_DEBUG ?= 0
+
 # optimization
 OPT = -Og
 
@@ -58,6 +58,19 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
+middleware/FreeRTOS/Source/croutine.c \
+middleware/FreeRTOS/Source/event_groups.c \
+middleware/FreeRTOS/Source/list.c \
+middleware/FreeRTOS/Source/queue.c \
+middleware/FreeRTOS/Source/stream_buffer.c \
+middleware/FreeRTOS/Source/tasks.c \
+middleware/FreeRTOS/Source/timers.c \
+middleware/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c \
+middleware/FreeRTOS/Source/portable/MemMang/heap_4.c \
+middleware/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c \
+System/Src/freertos.c \
+System/Src/stm32f4xx_hal_timebase_tim.c \
 System/Src/stm32f4xx_hal_msp.c \
 System/Src/stm32f4xx_it.c \
 System/Src/system_stm32f4xx.c \
@@ -65,12 +78,13 @@ System/Src/system_clock_config.c
 
 CPP_SOURCES = \
 API/Src/gpio_api.cpp \
-API/Src/dma_api.cpp \
 API/Src/error_handler.cpp \
 API/Src/Flash.cpp \
 API/Src/I2C.cpp \
 API/Src/InterruptIn.cpp \
+API/Src/logger.cpp \
 API/Src/SPI.cpp \
+API/Src/DigitalIn.cpp \
 API/Src/DigitalOut.cpp \
 API/Src/SuperClock.cpp \
 API/Src/tim_api.cpp \
@@ -127,13 +141,14 @@ BIN = $(CP) -O binary -S
 #######################################
 # CFLAGS
 #######################################
-# cpu
+
+# Specify the name of the target CPU.
 CPU = -mcpu=cortex-m4
 
-# fpu
+# Specify the name of the target floating point hardware/format.
 FPU = -mfpu=fpv4-sp-d16
 
-# float-abi
+# Specify if floating point hardware should be used.
 FLOAT-ABI = -mfloat-abi=hard
 
 # mcu
@@ -154,6 +169,8 @@ AS_INCLUDES =
 
 # C includes
 C_INCLUDES =  \
+-IAPI \
+-IAPI/rtos/Inc \
 -IAPI/Inc \
 -IAPI/cxxsupport \
 -IDegree/Inc \
@@ -161,6 +178,9 @@ C_INCLUDES =  \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include \
+-Imiddleware/FreeRTOS/Source/include \
+-Imiddleware/FreeRTOS/Source/CMSIS_RTOS_V2 \
+-Imiddleware/FreeRTOS/Source/portable/GCC/ARM_CM4F \
 -Iok-drivers/drivers/CAP1208 \
 -Iok-drivers/drivers/DAC8554 \
 -Iok-drivers/drivers/SX1509 \
@@ -174,22 +194,39 @@ C_INCLUDES =  \
 -Iok-drivers/utils/OK_I2C \
 -ISystem/Inc
 
+CPP_INCLUDES = \
+
+###########
+
+# -Og                   
+# -Wall	Recommended compiler warnings
+# -fdata-sections
+# -ffunction-sections
+# -g    Generate debugging information
+# -gdwarf-2
+# -MMD
+# -MP
+# -c                       Compile and assemble, but do not link.
+###########
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
-CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections 
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
 endif
 
+ifeq ($(SERIAL_DEBUG), 1)
+CFLAGS += -DSERIAL_DEBUG=1
+endif
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
 # C++ Flags
-CPPFLAGS = $(CFLAGS)
+CPPFLAGS = $(CFLAGS) $(CPP_INCLUDES)
 CPPFLAGS += \
 -fno-exceptions \
 -fno-rtti 
@@ -283,4 +320,4 @@ DFU_ALT_SETTING = 0
 DFU_FUSE_ADDRESS = $(FLASH_ADDRESS)
 
 usb-upload:
-	dfu-util --alt $(DFU_ALT_SETTING) --intf $(DFU_INTERFACE_NUMBER) -s $(DFU_FUSE_ADDRESS):leave -D $(BUILD_DIR)/$(TARGET).dfu
+	dfu-util -a $(DFU_ALT_SETTING) -s $(DFU_FUSE_ADDRESS):leave -D $(BUILD_DIR)/$(TARGET).bin

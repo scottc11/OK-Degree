@@ -2,4 +2,8 @@
 
 #include "common.h"
 
-void tim_config(TIM_HandleTypeDef *htim, TIM_TypeDef *TIM, uint16_t prescaler, uint16_t period);
+uint32_t tim_get_APBx_freq(TIM_HandleTypeDef *htim);
+
+uint32_t tim_get_overflow_freq(TIM_HandleTypeDef *htim);
+
+void tim_set_overflow_freq(TIM_HandleTypeDef *htim, uint32_t target_freq);

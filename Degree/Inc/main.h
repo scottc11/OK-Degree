@@ -1,7 +1,9 @@
 #pragma once
 
-#include "api.h"
 #include "system_clock_config.h"
+#include "cmsis_os.h"
+
+#include "common.h"
 
 // #define BOARD_REV_V38
 
@@ -78,6 +80,9 @@
 #define SPI2_MOSI PB_15
 #define SPI2_MISO PB_14
 #define SPI2_SCK  PB_13
+
+#define UART_RX PC_11
+#define UART_TX PC_10
 
 #define MCP23017_CTRL_ADDR 0x24 // 0100100
 

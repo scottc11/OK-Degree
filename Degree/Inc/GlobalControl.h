@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main.h"
+#include "okSemaphore.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
@@ -61,13 +62,11 @@ namespace DEGREE {
         InterruptIn touchInterrupt; // interupt pin for touch pads
         DigitalOut recLED;
         DigitalOut freezeLED;
+        AnalogHandle tempoPot;
         DigitalOut tempoLED;
         DigitalOut tempoGate;
-        AnalogHandle tempoPot;
 
         int selectedChannel;
-
-        int currPulse;
 
         bool recordEnabled;      // global recording flag
         bool sampleVCO;          // global flag for calibration routine
@@ -89,8 +88,8 @@ namespace DEGREE {
         void pollButtons();
         void pollTouchPads();
         void pollTempoPot();
-        
-        void advanceSequencer();
+
+        void advanceSequencer(uint8_t pulse);
         void resetSequencer();
 
         void handleButtonPress(int pad);

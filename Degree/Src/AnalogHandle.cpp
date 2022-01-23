@@ -1,32 +1,40 @@
 #include "AnalogHandle.h"
 
-uint16_t AnalogHandle::tim_prescaler = ADC_TIM_PRESCALER;
-uint16_t AnalogHandle::tim_period = ADC_TIM_PERIOD;
-bool AnalogHandle::sample_ready = false;
+SemaphoreHandle_t AnalogHandle::semaphore;
+AnalogHandle *AnalogHandle::_instances[ADC_DMA_BUFF_SIZE] = {0};
 
-/**
- * @brief read the ADC DMA buffer. Gets converted from 12 bit to 16 bit value
- * 
- * @return uint16_t 16-bit value
- */
-uint16_t AnalogHandle::read_u16()
+AnalogHandle::AnalogHandle(PinName pin)
 {
-    prevValue = currValue;
-    currValue = convert12to16(DMA_BUFFER[index]);
-
-    if (filter)
+    // iterate over static member ADC_PINS and match index to pin
+    for (int i = 0; i < ADC_DMA_BUFF_SIZE; i++)
     {
-        currValue = (currValue * filterAmount) + (prevValue * (1 - filterAmount));
+        if (pin == ADC_PINS[i])
+        {
+            index = i;
+            break;
+        }
     }
-
-    return currValue;
+    // Add constructed instance to the static list of instances (required for IRQ routing)
+    for (int i = 0; i < ADC_DMA_BUFF_SIZE; i++)
+    {
+        if (_instances[i] == NULL)
+        {
+            _instances[i] = this;
+            break;
+        }
+    }
 }
 
-/**
- * @brief Set the digital filter alpha value for filtering input
- * 
- * @param value 
- */
+uint16_t AnalogHandle::read_u16()
+{
+    return invert ? BIT_MAX_16 - currValue : currValue;
+}
+
+void AnalogHandle::invertReadings()
+{
+    this->invert = !this->invert;
+}
+
 void AnalogHandle::setFilter(float value)
 {
     if (value == 0)
@@ -40,57 +48,97 @@ void AnalogHandle::setFilter(float value)
     }
     else
     {
+        prevValue = convert12to16(DMA_BUFFER[index]);
         filterAmount = value;
         filter = true;
     }
 }
 
 /**
- * @brief Sample the ADC for the lowest, highest, and median voltage
- * @param duration number of samples to take
-*/
-uint16_t AnalogHandle::samplePeakToPeak(int numSamples) {
-    sampleCounter = 0;
-    sample_ready = false;
-    while (sampleCounter < numSamples)
+ * @brief takes the denoising semaphore and gives it once calculation is finished.
+ * NOTE: don't forget to "give()" the semaphore back after waiting for it.
+ * 
+ * @return okSemaphore* 
+ */
+okSemaphore* AnalogHandle::initDenoising() {
+    this->denoising = true;
+    denoisingSemaphore.take(); // create a semaphore
+    return &denoisingSemaphore;
+}
+
+// set this as a task so that in the main loop you block with a semaphore until this task gives the semaphore back (once it has completed)
+void AnalogHandle::calculateSignalNoise(uint16_t sample)
+{
+    // get max read, get min read, get avg read
+    if (sampleCounter < ADC_SAMPLE_COUNTER_LIMIT)
     {
-        if (sample_ready)
+        if (sampleCounter == 0) {
+            noiseCeiling = sample;
+            noiseFloor = sample;
+        } else {
+            if (sample > noiseCeiling)
+            {
+                noiseCeiling = sample;
+            }
+            else if (sample < noiseFloor)
+            {
+                noiseFloor = sample;
+            }
+        }
+        sampleCounter++;
+    }
+    else
+    {
+        denoising = false;
+        sampleCounter = 0; // reset back to 0 for later use
+        idleNoiseThreshold = (noiseCeiling - noiseFloor) / 2;
+        avgValueWhenIdle = noiseFloor + idleNoiseThreshold;
+        denoisingSemaphore.give();
+    }
+}
+
+void AnalogHandle::sampleReadyCallback(uint16_t sample)
+{
+    prevValue = currValue;
+    currValue = convert12to16(sample);
+    if (filter) {
+        // currValue = (currValue * filterAmount) + (prevValue * (1 - filterAmount));
+        currValue = prevValue + (filterAmount * (currValue - prevValue));
+    }
+    if (this->denoising)
+    {
+        this->calculateSignalNoise(currValue);
+    }
+    // set value
+}
+
+void AnalogHandle::RouteConversionCompleteCallback() // static
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(AnalogHandle::semaphore, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void AnalogHandle::sampleReadyTask(void *params) {
+    while (1)
+    {
+        xSemaphoreTake(AnalogHandle::semaphore, portMAX_DELAY);
+        for (auto ins : _instances)
         {
-            // sample ADC
-            uint16_t sample = this->read_u16();
-            if (sample > max)
+            if (ins) // if instance not NULL
             {
-                max = sample;
+                ins->sampleReadyCallback(AnalogHandle::DMA_BUFFER[ins->index]);
             }
-            else if (sample < min)
-            {
-                min = sample;
-            }
-            sampleCounter++;
-            sample_ready = false;
         }
     }
-    zeroCrossing = (max - min) / 2;
 }
 
-uint16_t AnalogHandle::getZeroCrossing() {
-    return zeroCrossing;
-}
-
-uint16_t AnalogHandle::getMax() {
-    return max;
-}
-
-uint16_t AnalogHandle::getMin() {
-    return min;
-}
-
-/**
- * @brief returns the frequency at which each ADC Channel is getting read.
- * This is equal to TIM3 overflow frquency / number of ADC Channels active
- * 
- * @return uint16_t 
- */
-uint16_t AnalogHandle::getSampleFrequency() {
-    return (APB2_TIM_FREQ / (tim_prescaler * tim_period)) / ADC_DMA_BUFF_SIZE;
+void AnalogHandle::log_noise_threshold_to_console(char const *source_id)
+{
+    logger_log(source_id);
+    logger_log(" ADC Noise: ");
+    logger_log(this->idleNoiseThreshold);
+    logger_log(", Idle: ");
+    logger_log(this->avgValueWhenIdle);
+    logger_log("\n");
 }

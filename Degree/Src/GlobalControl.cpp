@@ -29,8 +29,17 @@ void GlobalControl::init() {
     channels[2]->init();
     channels[3]->init();
 
-    // clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
+    // Tempo Pot ADC Noise: 1300ish w/ 100nF
+    tempoPot.setFilter(0.01);
+    okSemaphore *sem_ptr = tempoPot.initDenoising();
+    sem_ptr->take(); // wait
+    sem_ptr->give();
+    tempoPot.log_noise_threshold_to_console("Tempo Pot");
+    tempoPot.invertReadings();
+
+    clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
+    this->pollTempoPot();
 }
 
 void GlobalControl::poll()
@@ -76,11 +85,17 @@ void GlobalControl::handleTouchInterupt() {
 void GlobalControl::pollTempoPot()
 {
     currTempoPotValue = tempoPot.read_u16();
-    if (currTempoPotValue > prevTempoPotValue + 50 || currTempoPotValue < prevTempoPotValue - 50) {
-        clock->setFrequency(currTempoPotValue);
+    if (currTempoPotValue > prevTempoPotValue + 600 || currTempoPotValue < prevTempoPotValue - 600) {
+        if (currTempoPotValue > 1000)
+        {
+            if (clock->externalInputMode) { clock->disableInputCaptureISR(); }
+            clock->setPulseFrequency(clock->convertADCReadToTicks(1000, BIT_MAX_16, currTempoPotValue));
+        } else {
+            // change clock source to input mode by enabling input capture ISR
+            clock->enableInputCaptureISR();
+        }
         prevTempoPotValue = currTempoPotValue;
     }
-    
 }
 
 void GlobalControl::pollTouchPads() {
@@ -358,16 +373,13 @@ void GlobalControl::loadCalibrationDataFromFlash()
 /**
  * Method gets called once every PPQN
  * 
-*/ 
-void GlobalControl::advanceSequencer()
+*/
+void GlobalControl::advanceSequencer(uint8_t pulse)
 {
-    __disable_irq();
-    // pollTempoPot();
-    // set tempo output high and low
-    if (currPulse == 0) {
+    if (pulse == 0) {
         tempoLED.write(HIGH);
         tempoGate.write(HIGH);
-    } else if (currPulse == 4) {
+    } else if (pulse == 4) {
         tempoLED.write(LOW);
         tempoGate.write(LOW);
     }
@@ -378,29 +390,48 @@ void GlobalControl::advanceSequencer()
         channels[i]->setTickerFlag();
     }
 
-    if (currPulse < PPQN - 1) {
-        currPulse += 1;
-    } else {
-        currPulse = 0;
+#ifdef CLOCK_DEBUG
+    if (pulse == PPQN - 2) {
+        tempoGate.write(HIGH);
     }
-    __enable_irq();
+
+    if (pulse == PPQN - 1)
+    {
+        tempoGate.write(LOW);
+    }
+#endif
 }
 
+/**
+ * @brief reset all sequencers PPQN position to 0
+ * 
+ * The issue might be that the sequence is not always running too slow, but running to fast. In other words, the
+ * pulse count overtakes the external clocks rising edge. To avoid this scenario, you need to halt further execution of the sequence should it reach PPQN - 1 
+ * prior to the ext clock rising edge. Thing is, the sequence would first need to know that it is being externally clocked...
+ * 
+ * TODO: external clock is ignored unless the CLOCK knob is set to its minimum value and tap tempo is reset.
+ * 
+ * Currently, your clock division is very off. The higher the ext clock signal is, you lose an increasing amount of pulses.
+ * Ex. @ 120bpm sequence will reset on pulse 84 (ie. missing 12 PPQNs)
+ * Ex. @ 132bpm sequence missing 20 PPQNs
+ */
 void GlobalControl::resetSequencer()
 {
     for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
     {
-
         // try just setting the sequence to 0, set any potential gates low. You may miss a note but 🤷‍♂️
 
         // if sequence is not on its final PPQN of its step, then trigger all remaining PPQNs in current step until currPPQN == 0
-        // if (channels[i]->sequence.currStepPosition != 0) {
-        //     while (channels[i]->sequence.currStepPosition != 0)
-        //     {
-        //         channels[i]->handleSequence(channels[i]->sequence.currPosition);
-        //         channels[i]->sequence.advance();
-        //     }
-        // }
+        if (channels[i]->sequence.currStepPosition != 0) {
+            while (channels[i]->sequence.currStepPosition != 0)
+            {
+                // you can't be calling i2c / spi functions here, meaning you can't execute unexecuted sequence events until you first abstract
+                // the DAC and LED components of an event out into a seperate thread.
+
+                // incrementing the clock will at least keep the sequence in sync with an external clock
+                channels[i]->sequence.advance();
+            }
+            channels[i]->setTickerFlag();
+        }
     }
-    
 }

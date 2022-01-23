@@ -1,7 +1,10 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 #include "stm32f4xx_hal.h"
 #include "system_clock_config.h"
 #include "PinNames.h"
@@ -9,6 +12,12 @@
 #include "error_handler.h"
 
 #define FLASH_SIZE (uint32_t)0x80000
+
+#define RTOS_MAX_STACK_SIZE 2048
+#define RTOS_MIN_STACK_SIZE configMINIMAL_STACK_SIZE
+#define RTOS_ISR_DEFAULT_PRIORITY 6
+
+#define NUM_GPIO_IRQ_INSTANCES 16
 
 /* Base address of the Flash sectors Bank 1 */
 #define ADDR_FLASH_SECTOR_0 ((uint32_t)0x08000000) /* Base @ of Sector 0, 16 Kbytes */
