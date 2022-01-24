@@ -108,6 +108,8 @@ int main(void)
 
   SystemClock_Config();
 
+  // your going to need some kind of rtos_init function which creates all the tasks in a specific order
+  // xTaskCreate(TASK_logger, "Logger Task", 256, NULL, 1, NULL);
   logger_init();
   logger_log("\nLogger Initialized\n");
   logger_log_system_config();

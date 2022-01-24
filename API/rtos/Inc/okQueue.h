@@ -17,26 +17,27 @@
 #pragma once
 
 #include "cmsis_os.h"
+#include "common.h"
 #include "logger.h"
 
 template<typename T>
 class okQueue
 {
+public:
     okQueue(int length) {
-        handle = xQueueCreate(length, (T));
+        handle = xQueueCreate(length, sizeof(T));
         if (handle == NULL) {
-            logger_log("there is insufficient heap RAM available for the queue to be created.");
+            // logger_log("there is insufficient heap RAM available for the queue to be created.");
         }
     }
 
     QueueHandle_t handle;
     BaseType_t status;
-    T data;
 
     int write();
-    int read(TickType_t delay = portMAX_DELAY)
+    int receive(T *item, TickType_t delay = portMAX_DELAY)
     {
-        status = xQueueReceive(this->handle, &data, delay);
-        return data;
+        status = xQueueReceive(this->handle, item, delay);
+        return item;
     }
 };

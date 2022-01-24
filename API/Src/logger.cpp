@@ -1,5 +1,9 @@
 #include "logger.h"
 
+#define TASK_LOGGER_MAX_STR_LENGTH 50
+#define TASK_LOGGER_PRIORITY 1
+
+QueueHandle_t logger_queue;
 UART_HandleTypeDef huart3;
 okQueue<char *> Q_logger(5);
 
@@ -74,7 +78,10 @@ void logger_log_err(char *str)
  */
 void uart_transmit(uint8_t *data)
 {
-    HAL_UART_Transmit(&huart3, data, strlen((const char *)data), HAL_MAX_DELAY);
+    // if RTOS, logger_queue_message
+    logger_queue_message(data);
+    // else
+    // HAL_UART_Transmit(&huart3, data, strlen((const char *)data), HAL_MAX_DELAY);
 }
 
 void logger_log_system_config()
@@ -94,16 +101,28 @@ void logger_log_system_config()
     logger_log("\n");
 }
 
-void logger_queue_message() {
-
+void logger_queue_message(uint8_t *message) {
+    // the time the task should be kept in the Blocked state to wait for space to become available on the queue should the queue already be full
+    BaseType_t status;
+    status = xQueueSend(logger_queue, message, 0);
+    if (status != pdPASS)
+    {
+        // The send operation could not complete because the queue was full
+    }
 }
 
 void TASK_logger(void *params) {
+    logger_queue = xQueueCreate(5, sizeof(char *));
     logger_init();
     logger_log_system_config();
-    char * str;
+    char data[TASK_LOGGER_MAX_STR_LENGTH];
+    BaseType_t status;
     while (1)
     {
-
+        status = xQueueReceive(logger_queue, &data, portMAX_DELAY);
+        if (status == pdPASS)
+        {
+            HAL_UART_Transmit(&huart3, (uint8_t *)data, strlen((const char *)data), HAL_MAX_DELAY);
+        }
     }   
 }
