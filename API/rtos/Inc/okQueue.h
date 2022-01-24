@@ -23,9 +23,9 @@ template<typename T>
 class okQueue
 {
     okQueue(int length) {
-        handle = xQueueCreate(length, (T));
+        // handle = xQueueCreate(length, (T));
         if (handle == NULL) {
-            logger_log("there is insufficient heap RAM available for the queue to be created.");
+            // logger_log("there is insufficient heap RAM available for the queue to be created.");
         }
     }
 
