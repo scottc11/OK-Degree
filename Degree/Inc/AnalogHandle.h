@@ -38,6 +38,8 @@ public:
 
     void initMinMaxDetection();
     void detectMinMax();
+    void setInputMax(uint16_t value);
+    void setInputMin(uint16_t value);
 
     void sampleReadyCallback(uint16_t sample);
 

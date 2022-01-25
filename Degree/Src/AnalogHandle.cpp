@@ -157,10 +157,20 @@ void AnalogHandle::detectMinMax()
     uint16_t input = this->read_u16();
     if (input > inputMax)
     {
-        inputMax = input;
+        this->setInputMax(input);
     }
     else if (input < inputMin)
     {
-        inputMin = input;
+        this->setInputMin(input);
     }
+}
+
+void AnalogHandle::setInputMax(uint16_t value)
+{
+    this->inputMax = value;
+}
+
+void AnalogHandle::setInputMin(uint16_t value)
+{
+    this->inputMin = value;
 }
