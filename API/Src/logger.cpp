@@ -111,6 +111,14 @@ void logger_queue_message(uint8_t *message) {
     }
 }
 
+/**
+ * @brief 
+ * 
+ * NOTE: perhaps what you do is have an array of say 10 char arrays each with 50 chars per. Then you make your queue with
+ * a length of 10. This way there is never not enough char arrays to store the strings because the queue API would technically be full.
+ * 
+ * @param params 
+ */
 void TASK_logger(void *params) {
     logger_queue = xQueueCreate(5, sizeof(char *));
     logger_init();
