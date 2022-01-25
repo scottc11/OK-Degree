@@ -12,7 +12,6 @@
 #include "main.h"
 #include "okSemaphore.h"
 #include "Callback.h"
-#include "ExpoFilter.h"
 #include "DAC8554.h"
 #include "ArrayMethods.h"
 #include "AnalogHandle.h"
@@ -34,7 +33,6 @@ public:
     DAC8554 *dac;              // pointer to Pitch Bends DAC
     DAC8554::Channel dacChan;  // which dac channel to address
     AnalogHandle adc;              // CV input via Instrumentation Amplifier
-    ExpoFilter outputFilter;
     Callback<void()> idleCallback;                    // MBED Callback which gets called when the Bender is idle / not-active
     Callback<void(uint16_t bend)> activeCallback;     // MBED Callback which gets called when the Bender is active / being bent
     Callback<void(BendState state)> triStateCallback; // callback which gets called when bender changes from one of three BendState states
@@ -42,15 +40,11 @@ public:
     BendState currState;
     BendState prevState;
     int currBend;                                 // 16 bit value (0..65,536)
-    float dacOutputRange = BIT_MAX_16 / 2;        // range in which the DAC can output (in either direction)
+    uint16_t dacOutputRange = BIT_MAX_16 / 2;     // range in which the DAC can output (in either direction)
     int dacOutput;                                // the amount of Control Voltage to apply Pitch Bend DAC
     bool outputInverted;                          // whether to invert the output of the DAC based on how the ADC reads the direction of the bender
     int calibrationSamples[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
     uint16_t ratchetThresholds[8];
-
-    uint16_t zeroBend;                            // the average ADC value when pitch bend is idle
-    uint16_t maxBend = DEFAULT_MAX_BEND;          // the minimum value the ADC can achieve when Pitch Bend fully pulled
-    uint16_t minBend = DEFAULT_MIN_BEND;          // the maximum value the ADC can achieve when Pitch Bend fully pressed
 
     Bender(DAC8554 *dac_ptr, DAC8554::Channel _dacChan, PinName adcPin, bool inverted = false) : adc(adcPin)
     {
@@ -62,13 +56,15 @@ public:
     void init();
     void poll();
     uint16_t read();
-    void calibrateIdle();
-    void calibrateMinMax();
+    uint16_t getIdleValue();
+    uint16_t getMaxBend();
+    uint16_t getMinBend();
+
     void setRatchetThresholds();
     void updateDAC(uint16_t value);
     bool isIdle();
     int setMode(int targetMode = 0);
-    int calculateOutput(uint16_t value);
+    uint16_t calculateOutput(uint16_t value);
     void attachIdleCallback(Callback<void()> func);
     void attachActiveCallback(Callback<void(uint16_t bend)> func);
     void attachTriStateCallback(Callback<void(BendState state)> func);
