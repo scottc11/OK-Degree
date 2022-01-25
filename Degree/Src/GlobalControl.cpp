@@ -57,7 +57,13 @@ void GlobalControl::poll()
         channels[3]->poll();
         break;
     case CALIBRATING_1VO:
-        // dooo
+        pollButtons();
+        break;
+    case CALIBRATING_BENDER:
+        for (int i = 0; i < 4; i++)
+        {
+            channels[i]->bender->adc.detectMinMax();
+        }
         pollButtons();
         break;
     default:
@@ -188,17 +194,22 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case Gestures::CALIBRATE_BENDER:
-        // if (this->mode == CALIBRATING_BENDER)
-        // {
-        //     this->saveCalibrationToFlash();
-        //     display->clear();
-        //     this->mode = DEFAULT;
-        // }
-        // else
-        // {
-        //     this->mode = CALIBRATING_BENDER;
-        //     display->benderCalibration();
-        // }
+        if (this->mode == CALIBRATING_BENDER)
+        {
+            // this->saveCalibrationToFlash();
+            // display->clear();
+            this->mode = DEFAULT;
+        }
+        else
+        {
+            this->mode = CALIBRATING_BENDER;
+            display->benderCalibration();
+            for (int i = 0; i < 4; i++)
+            {
+                channels[i]->bender->adc.initMinMaxDetection();
+            }
+            
+        }
         break;
 
     case Gestures::RESET_CALIBRATION_TO_DEFAULT:
