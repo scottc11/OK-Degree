@@ -142,3 +142,25 @@ void AnalogHandle::log_noise_threshold_to_console(char const *source_id)
     logger_log(this->avgValueWhenIdle);
     logger_log("\n");
 }
+
+/**
+ * @brief initializes the min and max input values to the currently read value on the ADC Pin
+ */
+void AnalogHandle::initMinMaxDetection()
+{
+    inputMax = this->read_u16() + 1;
+    inputMin = this->read_u16() - 1;
+}
+
+void AnalogHandle::detectMinMax()
+{
+    uint16_t input = this->read_u16();
+    if (input > inputMax)
+    {
+        inputMax = input;
+    }
+    else if (input < inputMin)
+    {
+        inputMin = input;
+    }
+}
