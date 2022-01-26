@@ -101,6 +101,8 @@ namespace DEGREE {
         
         void loadCalibrationDataFromFlash();
         void saveCalibrationDataToFlash();
+        int getCalibrationDataPosition(int data_index, int channel_index);
+        int getCalibrationBufferSize();
 
     private:
     private:

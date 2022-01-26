@@ -64,10 +64,6 @@ class Flash {
 public:
     Flash(){};
 
-    HAL_StatusTypeDef unlock(uint32_t sector);
-
-    HAL_StatusTypeDef lock();
-
     HAL_StatusTypeDef erase(uint32_t address);
 
     HAL_StatusTypeDef write(uint32_t address, uint32_t *data, int size);
@@ -75,4 +71,8 @@ public:
     void read(uint32_t address, uint32_t *rxBuffer, int size);
 
     uint32_t getSector(uint32_t Address);
+
+private:
+    HAL_StatusTypeDef unlock(uint32_t sector);
+    HAL_StatusTypeDef lock();
 };

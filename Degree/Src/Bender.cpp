@@ -95,8 +95,6 @@ uint16_t Bender::calculateOutput(uint16_t value)
 */
 void Bender::updateDAC(uint16_t value)
 {
-    logger_log(value);
-    logger_log("\n");
     dacOutput = value; // copy to class member
     dac->write(dacChan, dacOutput);
 }

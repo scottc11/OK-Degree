@@ -59,6 +59,8 @@ public:
     uint16_t getIdleValue();
     uint16_t getMaxBend();
     uint16_t getMinBend();
+    void setMaxBend(uint16_t value) { adc.setInputMax(value); }
+    void setMinBend(uint16_t value) { adc.setInputMin(value); }
 
     void setRatchetThresholds();
     void updateDAC(uint16_t value);
