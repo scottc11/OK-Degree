@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main.h"
+#include "filters.h"
 #include "okSemaphore.h"
 #include "logger.h"
 
