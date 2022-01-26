@@ -57,7 +57,13 @@ void GlobalControl::poll()
         channels[3]->poll();
         break;
     case CALIBRATING_1VO:
-        // dooo
+        pollButtons();
+        break;
+    case CALIBRATING_BENDER:
+        for (int i = 0; i < 4; i++)
+        {
+            channels[i]->bender->adc.detectMinMax();
+        }
         pollButtons();
         break;
     default:
@@ -173,7 +179,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
     case FREEZE:
         freezeLED.write(HIGH);
-        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->freeze(true);
         }
@@ -181,24 +187,29 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case RESET:
-        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->resetSequence();
         }
         break;
 
     case Gestures::CALIBRATE_BENDER:
-        // if (this->mode == CALIBRATING_BENDER)
-        // {
-        //     this->saveCalibrationToFlash();
-        //     display->clear();
-        //     this->mode = DEFAULT;
-        // }
-        // else
-        // {
-        //     this->mode = CALIBRATING_BENDER;
-        //     display->benderCalibration();
-        // }
+        if (this->mode == CALIBRATING_BENDER)
+        {
+            this->saveCalibrationDataToFlash();
+            display->clear();
+            this->mode = DEFAULT;
+        }
+        else
+        {
+            this->mode = CALIBRATING_BENDER;
+            display->benderCalibration();
+            for (int i = 0; i < 4; i++)
+            {
+                channels[i]->bender->adc.initMinMaxDetection();
+            }
+            
+        }
         break;
 
     case Gestures::RESET_CALIBRATION_TO_DEFAULT:
@@ -228,7 +239,7 @@ void GlobalControl::handleButtonPress(int pad)
 
     case BEND_MODE:
         // iterate over currTouched and setChannelBenderMode if touched
-        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             if (touchPads->padIsTouched(i, currTouched, prevTouched))
             {
@@ -248,7 +259,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
     case SEQ_LENGTH:
         this->display->clear();
-        for (int chan = 0; chan < NUM_DEGREE_CHANNELS; chan++)
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
         }
@@ -257,14 +268,14 @@ void GlobalControl::handleButtonPress(int pad)
         if (!recordEnabled)
         {
             recLED.write(1);
-            for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+            for (int i = 0; i < CHANNEL_COUNT; i++)
                 channels[i]->enableSequenceRecording();
             recordEnabled = true;
         }
         else
         {
             recLED.write(0);
-            for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+            for (int i = 0; i < CHANNEL_COUNT; i++)
                 channels[i]->disableSequenceRecording();
             recordEnabled = false;
         }
@@ -281,7 +292,7 @@ void GlobalControl::handleButtonRelease(int pad)
     {
     case FREEZE:
         freezeLED.write(LOW);
-        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->freeze(false);
         }
@@ -319,7 +330,7 @@ void GlobalControl::handleButtonRelease(int pad)
         break;
     case SEQ_LENGTH:
         this->display->clear();
-        for (int chan = 0; chan < NUM_DEGREE_CHANNELS; chan++)
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             if (channels[chan]->sequence.containsEvents)
             {
@@ -338,9 +349,9 @@ void GlobalControl::handleButtonRelease(int pad)
 */ 
 void GlobalControl::loadCalibrationDataFromFlash()
 {
-    uint32_t buffer[CALIBRATION_ARR_SIZE * 4];
+    uint32_t buffer[this->getCalibrationBufferSize()];
     Flash flash;
-    flash.read(FLASH_CONFIG_ADDR, (uint32_t *)buffer, CALIBRATION_ARR_SIZE * 4);
+    flash.read(FLASH_CONFIG_ADDR, (uint32_t *)buffer, this->getCalibrationBufferSize());
 
     // check if calibration data exists by testing contents of buffer
     uint32_t count = 0;
@@ -361,13 +372,64 @@ void GlobalControl::loadCalibrationDataFromFlash()
         {
             for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
             {
-                int index = i + CALIBRATION_ARR_SIZE * chan; // determine falshData index position based on channel
+                int index = this->getCalibrationDataPosition(i, chan);
                 channels[chan]->output.dacVoltageMap[i] = (uint16_t)buffer[index];
             }
-            // channels[chan]->bender.minBend = buffer[BENDER_MIN_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
-            // channels[chan]->bender.maxBend = buffer[BENDER_MAX_CAL_INDEX + CALIBRATION_ARR_SIZE * chan];
+            channels[chan]->bender->setMinBend(buffer[this->getCalibrationDataPosition(BENDER_MIN_CAL_INDEX, chan)]);
+            channels[chan]->bender->setMaxBend(buffer[this->getCalibrationDataPosition(BENDER_MAX_CAL_INDEX, chan)]);
         }
     }
+}
+
+/**
+ * @brief Save all 4 channels calibration data to flash
+ * 
+ * NOTE: every time we calibrate a channel, all 4 channels calibration data needs to be re-saved to flash
+ * because we have to delete/clear an entire sector of data first.
+*/
+void GlobalControl::saveCalibrationDataToFlash()
+{
+    // disable interupts?
+    uint32_t buffer[this->getCalibrationBufferSize()];
+    int buffer_position = 0;
+    for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
+    {
+        for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)   // dac array iterrator
+        {
+            buffer_position = this->getCalibrationDataPosition(i, chan);
+            buffer[buffer_position] = channels[chan]->output.dacVoltageMap[i]; // copy values into buffer
+        }
+        // load max and min Bender calibration data into buffer (two 16bit chars)
+        buffer[this->getCalibrationDataPosition(BENDER_MIN_CAL_INDEX, chan)] = channels[chan]->bender->getMinBend();
+        buffer[this->getCalibrationDataPosition(BENDER_MAX_CAL_INDEX, chan)] = channels[chan]->bender->getMaxBend();
+    }
+    // now load this buffer into flash memory
+    Flash flash;
+    flash.erase(FLASH_CONFIG_ADDR);
+    flash.write(FLASH_CONFIG_ADDR, buffer, this->getCalibrationBufferSize());
+}
+
+/**
+ * @brief Calibration data for all channels is stored in a single buffer, this function returns the relative
+ * position of a channels calibration data inside that buffer
+ *
+ * @param data_index
+ * @param channel_index
+ * @return int
+ */
+int GlobalControl::getCalibrationDataPosition(int data_index, int channel_index)
+{
+    return (data_index + CALIBRATION_ARR_SIZE * channel_index);
+}
+
+/**
+ * @brief get the total size of the calibration buffer
+ * 
+ * @return int 
+ */
+int GlobalControl::getCalibrationBufferSize()
+{
+    return CALIBRATION_ARR_SIZE * CHANNEL_COUNT;
 }
 
 /**
@@ -384,7 +446,7 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         tempoGate.write(LOW);
     }
 
-    for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+    for (int i = 0; i < CHANNEL_COUNT; i++)
     {
         channels[i]->sequence.advance();
         channels[i]->setTickerFlag();
@@ -417,7 +479,7 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
  */
 void GlobalControl::resetSequencer()
 {
-    for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+    for (int i = 0; i < CHANNEL_COUNT; i++)
     {
         // try just setting the sequence to 0, set any potential gates low. You may miss a note but 🤷‍♂️
 

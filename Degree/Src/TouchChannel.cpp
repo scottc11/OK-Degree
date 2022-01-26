@@ -11,7 +11,6 @@ void TouchChannel::init()
     sequence.init();
 
     bender->init();
-    bender->adc.setFilter(0.1);
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
     bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
@@ -381,7 +380,7 @@ void TouchChannel::setGate(bool state)
 */
 uint8_t TouchChannel::calculateRatchet(uint16_t bend)
 {
-    if (bend > bender->zeroBend) // BEND UP == Strait
+    if (bend > bender->getIdleValue()) // BEND UP == Strait
     {
         if (bend < bender->ratchetThresholds[3])
         {
@@ -400,7 +399,7 @@ uint8_t TouchChannel::calculateRatchet(uint16_t bend)
             return RATCHET_DIV_8;
         }
     }
-    else if (bend < bender->zeroBend)  // BEND DOWN == Triplets
+    else if (bend < bender->getIdleValue())  // BEND DOWN == Triplets
     {
         if (bend > bender->ratchetThresholds[7])
         {
@@ -500,13 +499,13 @@ void TouchChannel::benderActiveCallback(uint16_t value)
         // Pitch Bend UP
         if (bender->currState == Bender::BEND_UP)
         {
-            bend = output.calculatePitchBend(value, bender->zeroBend, bender->maxBend);
+            bend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
             output.setPitchBend(bend); // non-inverted
         }
         // Pitch Bend DOWN
         else if (bender->currState == Bender::BEND_DOWN)
         {
-            bend = output.calculatePitchBend(value, bender->zeroBend, bender->minBend); // NOTE: inverted mapping
+            bend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
             output.setPitchBend(bend * -1);                                           // inverted
         }
         break;

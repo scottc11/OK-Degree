@@ -1,10 +1,13 @@
 #pragma once
 
 #include "main.h"
+#include "filters.h"
 #include "okSemaphore.h"
 #include "logger.h"
 
 #define ADC_SAMPLE_COUNTER_LIMIT 2000
+#define ADC_DEFAULT_INPUT_MAX BIT_MAX_16
+#define ADC_DEFAULT_INPUT_MIN 0
 
 /**
  * @brief Simple class that pulls the data from a DMA buffer into an object
@@ -16,10 +19,12 @@ public:
     int index;
 
     okSemaphore denoisingSemaphore;
-    uint16_t idleNoiseThreshold;   // how much noise an idle input signal contains
-    uint16_t avgValueWhenIdle;        // where the sensor sits when "idle" (only relevant for sensors)
-    uint16_t noiseCeiling;         // highest read noise value when idle
-    uint16_t noiseFloor;           // lowest read noise value when idle
+    uint16_t idleNoiseThreshold;               // how much noise an idle input signal contains
+    uint16_t avgValueWhenIdle;                 // where the sensor sits when "idle" (only relevant for sensors)
+    uint16_t noiseCeiling;                     // highest read noise value when idle
+    uint16_t noiseFloor;                       // lowest read noise value when idle
+    uint16_t inputMax = ADC_DEFAULT_INPUT_MAX; // highest read value from signal
+    uint16_t inputMin = ADC_DEFAULT_INPUT_MIN; // lowest read value from signal
 
     uint16_t read_u16();
     void setFilter(float value);
@@ -31,6 +36,11 @@ public:
 
     okSemaphore* initDenoising();
     void calculateSignalNoise(uint16_t sample);
+
+    void initMinMaxDetection();
+    void detectMinMax();
+    void setInputMax(uint16_t value);
+    void setInputMin(uint16_t value);
 
     void sampleReadyCallback(uint16_t sample);
 

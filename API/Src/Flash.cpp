@@ -100,7 +100,9 @@ HAL_StatusTypeDef Flash::write(uint32_t address, uint32_t *data, int size)
     return status;
 }
 
-/** Read data starting at defined address
+/**
+ * @brief Read data starting at defined address
+ * 
  * @param address Address to begin reading from
  * @param rxBuffer The buffer to read data into. Must be of type uint32_t
  * @param size The number of bytes to read

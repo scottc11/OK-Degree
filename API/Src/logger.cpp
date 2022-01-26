@@ -1,6 +1,7 @@
 #include "logger.h"
 
 UART_HandleTypeDef huart3;
+// okQueue<char *> Q_logger(5);
 
 void logger_init()
 {
@@ -39,41 +40,41 @@ void logger_init()
 
 void logger_log(char const *str)
 {
-    uart_transmit(str);
+    uart_transmit((uint8_t *)str);
 }
 
 void logger_log(int const num) {
-    uart_transmit(num);
+    char tmp[33];
+    itoa(num, tmp, 10);
+    uart_transmit((uint8_t *)tmp);
 }
 
 void logger_log(uint32_t const num) {
-    char tmp[33];
-    itoa(num, tmp, 10);
-    HAL_UART_Transmit(&huart3, (uint8_t *)tmp, strlen(tmp), HAL_MAX_DELAY);
+    char str[33];
+    itoa(num, str, 10);
+    uart_transmit((uint8_t *)str);
 }
 
 void logger_log(float const f) {
     char str[33];
     utoa(f, str, 10);
     // snprintf(str, sizeof(str), "%f", f);
-    HAL_UART_Transmit(&huart3, (uint8_t *)str, strlen(str), HAL_MAX_DELAY);
+    uart_transmit((uint8_t *)str);
 }
 
 void logger_log_err(char *str)
 {
-    uart_transmit(str);
+    uart_transmit((uint8_t *)str);
 }
 
-void uart_transmit(char const data[])
+/**
+ * @brief Hardware UART Transmit function
+ * 
+ * @param data 
+ */
+void uart_transmit(uint8_t *data)
 {
-    HAL_UART_Transmit(&huart3, (uint8_t *)data, strlen(data), HAL_MAX_DELAY);
-}
-
-void uart_transmit(int const data)
-{
-    char tmp[33];
-    itoa(data, tmp, 10);
-    HAL_UART_Transmit(&huart3, (uint8_t *)tmp, strlen(tmp), HAL_MAX_DELAY);
+    HAL_UART_Transmit(&huart3, data, strlen((const char *)data), HAL_MAX_DELAY);
 }
 
 void logger_log_system_config()
@@ -91,4 +92,18 @@ void logger_log_system_config()
     logger_log("PCLK2: ");
     logger_log(HAL_RCC_GetPCLK2Freq());
     logger_log("\n");
+}
+
+void logger_queue_message() {
+
+}
+
+void TASK_logger(void *params) {
+    logger_init();
+    logger_log_system_config();
+    char * str;
+    while (1)
+    {
+
+    }   
 }

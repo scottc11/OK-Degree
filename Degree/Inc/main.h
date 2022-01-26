@@ -9,7 +9,7 @@
 
 #define PPQN 96
 
-#define NUM_DEGREE_CHANNELS 4
+#define CHANNEL_COUNT 4
 #define ADC_DMA_BUFF_SIZE   9
 #define ADC_TIM_PRESCALER   100
 #define ADC_TIM_PERIOD      2000
@@ -26,8 +26,8 @@
 #define DEFAULT_SEQ_LENGTH 32
 #define MAX_SEQ_LENGTH 32
 
-#define BENDER_ZERO     32767
-#define BENDER_DEBOUNCE 1000
+#define BENDER_ZERO            32767
+#define BENDER_NOISE_THRESHOLD 500
 
 #define REC_LED PC_13
 #define FREEZE_LED PB_7
