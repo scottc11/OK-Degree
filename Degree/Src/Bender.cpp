@@ -84,7 +84,7 @@ uint16_t Bender::calculateOutput(uint16_t value)
     // ELSE executes when a bender is poorly calibrated, and exceeds its max or min bend
     else
     {
-        return dacOutput; // return whatever the last calulated output was.
+        return currOutput; // return whatever the last calulated output was.
     }
 }
 
@@ -95,8 +95,9 @@ uint16_t Bender::calculateOutput(uint16_t value)
 */
 void Bender::updateDAC(uint16_t value)
 {
-    dacOutput = value; // copy to class member
-    dac->write(dacChan, dacOutput);
+    prevOutput = currOutput;
+    currOutput = filter_one_pole<uint16_t>(value, prevOutput, 0.065);
+    dac->write(dacChan, currOutput);
 }
 
 bool Bender::isIdle()

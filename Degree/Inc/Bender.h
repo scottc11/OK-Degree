@@ -15,6 +15,7 @@
 #include "DAC8554.h"
 #include "ArrayMethods.h"
 #include "AnalogHandle.h"
+#include "filters.h"
 
 #define PB_CALIBRATION_RANGE 300
 #define DEFAULT_MAX_BEND 50000
@@ -41,7 +42,8 @@ public:
     BendState prevState;
     int currBend;                                 // 16 bit value (0..65,536)
     uint16_t dacOutputRange = BIT_MAX_16 / 2;     // range in which the DAC can output (in either direction)
-    int dacOutput;                                // the amount of Control Voltage to apply Pitch Bend DAC
+    uint16_t currOutput;                          // current DAC output
+    uint16_t prevOutput;                          // previous DAC output
     bool outputInverted;                          // whether to invert the output of the DAC based on how the ADC reads the direction of the bender
     int calibrationSamples[PB_CALIBRATION_RANGE]; // an array which gets populated during initialization phase to determine a debounce value + zeroing
     uint16_t ratchetThresholds[8];
