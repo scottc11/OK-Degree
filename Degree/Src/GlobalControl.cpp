@@ -179,7 +179,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
     case FREEZE:
         freezeLED.write(HIGH);
-        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->freeze(true);
         }
@@ -187,7 +187,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case RESET:
-        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->resetSequence();
         }
@@ -196,8 +196,8 @@ void GlobalControl::handleButtonPress(int pad)
     case Gestures::CALIBRATE_BENDER:
         if (this->mode == CALIBRATING_BENDER)
         {
-            // this->saveCalibrationToFlash();
-            // display->clear();
+            this->saveCalibrationToFlash();
+            display->clear();
             this->mode = DEFAULT;
         }
         else
@@ -239,7 +239,7 @@ void GlobalControl::handleButtonPress(int pad)
 
     case BEND_MODE:
         // iterate over currTouched and setChannelBenderMode if touched
-        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             if (touchPads->padIsTouched(i, currTouched, prevTouched))
             {
@@ -259,7 +259,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
     case SEQ_LENGTH:
         this->display->clear();
-        for (int chan = 0; chan < NUM_DEGREE_CHANNELS; chan++)
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
         }
@@ -268,14 +268,14 @@ void GlobalControl::handleButtonPress(int pad)
         if (!recordEnabled)
         {
             recLED.write(1);
-            for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+            for (int i = 0; i < CHANNEL_COUNT; i++)
                 channels[i]->enableSequenceRecording();
             recordEnabled = true;
         }
         else
         {
             recLED.write(0);
-            for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+            for (int i = 0; i < CHANNEL_COUNT; i++)
                 channels[i]->disableSequenceRecording();
             recordEnabled = false;
         }
@@ -292,7 +292,7 @@ void GlobalControl::handleButtonRelease(int pad)
     {
     case FREEZE:
         freezeLED.write(LOW);
-        for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+        for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->freeze(false);
         }
@@ -330,7 +330,7 @@ void GlobalControl::handleButtonRelease(int pad)
         break;
     case SEQ_LENGTH:
         this->display->clear();
-        for (int chan = 0; chan < NUM_DEGREE_CHANNELS; chan++)
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             if (channels[chan]->sequence.containsEvents)
             {
@@ -382,6 +382,22 @@ void GlobalControl::loadCalibrationDataFromFlash()
 }
 
 /**
+ * @brief Save all 4 channels calibration data to flash
+ * 
+ * NOTE: every time we calibrate a channel, all 4 channels calibration data needs to be re-saved to flash
+ * because we have to delete/clear an entire sector of data first.
+*/
+void GlobalControl::saveCalibrationDataToFlash()
+{
+    uint32_t buffer[CALIBRATION_ARR_SIZE * 4];
+    for (int i = 0; i < 4; i++)
+    {
+        /* code */
+    }
+    
+}
+
+/**
  * Method gets called once every PPQN
  * 
 */
@@ -395,7 +411,7 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         tempoGate.write(LOW);
     }
 
-    for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+    for (int i = 0; i < CHANNEL_COUNT; i++)
     {
         channels[i]->sequence.advance();
         channels[i]->setTickerFlag();
@@ -428,7 +444,7 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
  */
 void GlobalControl::resetSequencer()
 {
-    for (int i = 0; i < NUM_DEGREE_CHANNELS; i++)
+    for (int i = 0; i < CHANNEL_COUNT; i++)
     {
         // try just setting the sequence to 0, set any potential gates low. You may miss a note but 🤷‍♂️
 

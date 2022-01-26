@@ -9,7 +9,7 @@
 
 #define PPQN 96
 
-#define NUM_DEGREE_CHANNELS 4
+#define CHANNEL_COUNT 4
 #define ADC_DMA_BUFF_SIZE   9
 #define ADC_TIM_PRESCALER   100
 #define ADC_TIM_PERIOD      2000

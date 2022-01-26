@@ -53,7 +53,7 @@ namespace DEGREE {
 
         Mode mode;
         SuperClock *clock;
-        TouchChannel *channels[NUM_DEGREE_CHANNELS];
+        TouchChannel *channels[CHANNEL_COUNT];
         CAP1208 *touchPads;
         Degrees *switches;      // degree 3-stage toggle switches io
         MCP23017 *buttons;      // io for tactile buttons
@@ -100,6 +100,7 @@ namespace DEGREE {
         void handleTouchInterupt();
         
         void loadCalibrationDataFromFlash();
+        void saveCalibrationDataToFlash();
 
     private:
     private:
