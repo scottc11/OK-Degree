@@ -112,12 +112,15 @@ void logger_queue_message(uint8_t *message) {
 }
 
 /**
- * @brief 
- * 
+ * @brief "Another extremely common use case for queues is to have a single queue accept input from many 
+ * different sources. This is especially useful for something like a debug serial port or a log file. 
+ * Many different tasks can be writing to the queue, with a single task responsible for receiving data 
+ * from the queue and pushing it out to the shared resource." - Chapter 3, RTOS Queues
+ *
  * NOTE: perhaps what you do is have an array of say 10 char arrays each with 50 chars per. Then you make your queue with
  * a length of 10. This way there is never not enough char arrays to store the strings because the queue API would technically be full.
- * 
- * @param params 
+ *
+ * @param params
  */
 void TASK_logger(void *params) {
     logger_queue = xQueueCreate(5, sizeof(char *));
