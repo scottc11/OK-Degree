@@ -3,6 +3,7 @@
 #include "main.h"
 #include "filters.h"
 #include "okSemaphore.h"
+#include "okQueue.h"
 #include "logger.h"
 
 #define ADC_SAMPLE_COUNTER_LIMIT 2000
@@ -18,6 +19,7 @@ public:
 
     int index;
 
+    okQueue<uint16_t, 1> queue;
     okSemaphore denoisingSemaphore;
     uint16_t idleNoiseThreshold;               // how much noise an idle input signal contains
     uint16_t avgValueWhenIdle;                 // where the sensor sits when "idle" (only relevant for sensors)

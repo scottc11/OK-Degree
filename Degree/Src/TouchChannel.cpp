@@ -875,13 +875,35 @@ void TouchChannel::disableSequenceRecording()
 
 void TouchChannel::enableCalibration()
 {
-    // cycle the sequencer leds
-    display->clear();
-    display->drawSquare(this->channelIndex);
-    adc.setFilter(0);
+    // start calibration task and pass `this` as an argument
+    xTaskCreate(this->taskReceiveVCOSample, "Receive VCO Sample", RTOS_STACK_SIZE_MIN, this, RTOS_PRIORITY_HIGH, NULL);
 }
 
 void TouchChannel::disableCalibration()
 {
     display->clear();
+    // destroy task
+}
+
+/**
+ * @brief
+ *
+ * @param params
+ */
+void TouchChannel::taskReceiveVCOSample(void *params)
+{
+    TouchChannel *chan = (TouchChannel *)params;
+    uint16_t sample;
+    chan->display->clear();
+    chan->display->drawSquare(chan->channelIndex);
+    chan->adc.disableFilter();
+    chan->output.initCalibration();
+
+    multi_chan_adc_set_sample_rate(&hadc1, &htim3, 16000); // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
+
+    while (1)
+    {
+        chan->adc.queue.receive(&sample);
+        chan->output.sampleVCO(sample);
+    }
 }

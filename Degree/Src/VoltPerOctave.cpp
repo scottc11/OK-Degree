@@ -87,10 +87,19 @@ void VoltPerOctave::resetVoltageMap()
 */
 void VoltPerOctave::initCalibration()
 {
-    
-    int attempts;
-    float currFreq;
-    
+    // reset variables
+    this->freqSampleIndex = 0;
+    this->vcoFrequency = 0.0;
+    this->currVCOInputVal = 0;
+    this->prevVCOInputVal = 0;
+
+    this->resetVoltageMap();
+
+    // get min max of input signal via adc
+
+    int attempts = 0;
+    float currFreq = 0.f;
+
     // handle first iteration of calibrating by finding the frequency in PITCH_FREQ array closest to the currently sampled frequency
     // if (i == 0)
     // {
@@ -140,6 +149,7 @@ void VoltPerOctave::sampleVCO(uint16_t adc_sample)
         {
             freqSampleIndex = 0;
             logger_log("\n");
+            logger_log("avg: ");
             logger_log(calculateAverageFreq());
             // multi_chan_adc_disable_irq(); // disable adc dma interrupt
             // give semaphore to calibrate task

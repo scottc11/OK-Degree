@@ -88,7 +88,7 @@ namespace DEGREE {
             Bender *_bender,
             PinName adc_pin,
             PinName gatePin,
-            DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan)
+            DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan, &adc)
         {
             channelIndex = _index;
             display = display_ptr;
@@ -196,6 +196,8 @@ namespace DEGREE {
         // Calibration Methods
         void enableCalibration();
         void disableCalibration();
+
+        static void taskReceiveVCOSample(void *params);
     };
 } // end namespace
 

@@ -97,6 +97,11 @@ void AnalogHandle::calculateSignalNoise(uint16_t sample)
     }
 }
 
+/**
+ * @brief This is not exactly a callback, its really a "sender" task
+ * 
+ * @param sample 
+ */
 void AnalogHandle::sampleReadyCallback(uint16_t sample)
 {
     prevValue = currValue;
@@ -108,7 +113,7 @@ void AnalogHandle::sampleReadyCallback(uint16_t sample)
     {
         this->calculateSignalNoise(currValue);
     }
-    // set value
+    this->queue.send(sample, (TickType_t)0); // send sample to queue for other tasks
 }
 
 void AnalogHandle::RouteConversionCompleteCallback() // static

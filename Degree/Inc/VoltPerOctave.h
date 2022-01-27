@@ -48,10 +48,11 @@ namespace DEGREE {
         uint16_t minPitchBend = 0; // should always be 0
         uint16_t currPitchBend;    // the amount of pitch bend to apply to the 1v/o DAC output. Can be positive/negative centered @ 0
 
-        VoltPerOctave(DAC8554 *_dac, DAC8554::Channel _chan)
+        VoltPerOctave(DAC8554 *_dac, DAC8554::Channel _chan, AnalogHandle *_adc)
         {
             this->dac = _dac;
             this->dacChannel = _chan;
+            this->adc = _adc;
         };
 
         void init();
@@ -61,8 +62,8 @@ namespace DEGREE {
         void bend(uint16_t value);
         uint16_t calculatePitchBend(int input, int min, int max);
         void resetVoltageMap();
-        void initCalibration();
 
+        void initCalibration();
         void sampleVCO(uint16_t adc_sample);
         float calculateAverageFreq();
 

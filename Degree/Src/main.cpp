@@ -66,20 +66,6 @@ TouchChannel chanD(3, &display, &touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_
 
 GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display);
 
-void taskCalibrateVCO(void *params) {
-  uint16_t buffer;
-  chanA.adc.disableFilter();
-
-  multi_chan_adc_set_sample_rate(&hadc1, &htim3, 16000); // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
-
-  while (1)
-  {
-    // xQueueReceive(adcQueue, &buffer, portMAX_DELAY);
-    // chanA.output.sampleVCO(chanA.adc.read_u16());
-  }  
-}
-
-
 /**
  * @brief
  * NOTE: The stack used by a task will grow and shrink as the task executes and interrupts are processed.
@@ -117,7 +103,7 @@ int main(void)
   HAL_Delay(100);
 
   // xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
-  xTaskCreate(vTask1, "vTask1", RTOS_MAX_STACK_SIZE, NULL, 1, NULL);
+  xTaskCreate(vTask1, "vTask1", RTOS_STACK_SIZE_MAX, NULL, 1, NULL);
 
   vTaskStartScheduler();
 
