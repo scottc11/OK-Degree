@@ -249,13 +249,12 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET
 #######################################
 # helpers
 #######################################
-usedFlash = $(shell $(SZ) $@ | sed -n 2p | awk '{print $$1}' )
+usedFlash = $$( $(SZ) $@ | sed -n 2p | awk '{print $$1}' )
 usedFlashPercent = $$(( 100 * $(usedFlash) / $(FLASH_SIZE) ))
 flashMessage = Flash Used: $(usedFlash)/$(FLASH_SIZE) ( $(usedFlashPercent) % )
-usedRam = $(shell $(SZ) $@ | sed -n 2p | awk '{ram=$$2+$$3} {print ram}' )
+usedRam = $$( $(SZ) $@ | sed -n 2p | awk '{ram=$$2+$$3} {print ram}' )
 usedRamPercent = $$(( 100 * $(usedRam) / $(RAM_SIZE) ))
 ramMessage = Ram Used: $(usedRam)/$(RAM_SIZE) ( $(usedRamPercent) % ) - (static only)
-cyan = echo -e "\033[1;36m$(1)\033[0m"
 
 #######################################
 # build the application
@@ -283,7 +282,10 @@ $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
-	@$(call cyan,\n$(flashMessage)\n$(ramMessage)\n)
+	@echo ""
+	@echo "$(flashMessage)"
+	@echo "$(ramMessage)"
+	@echo ""
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	$(HEX) $< $@
