@@ -21,6 +21,7 @@ public:
 
     okQueue<uint16_t, 1> queue;
     okSemaphore denoisingSemaphore;
+    okSemaphore sampleSemaphore;
     uint16_t idleNoiseThreshold;               // how much noise an idle input signal contains
     uint16_t avgValueWhenIdle;                 // where the sensor sits when "idle" (only relevant for sensors)
     uint16_t noiseCeiling;                     // highest read noise value when idle
@@ -35,14 +36,19 @@ public:
     void invertReadings();
     
     void log_noise_threshold_to_console(char const *source_id);
+    void log_min_max(char const *source_id);
 
-    okSemaphore* initDenoising();
+    okSemaphore * initDenoising();
     void calculateSignalNoise(uint16_t sample);
 
-    void initMinMaxDetection();
-    void detectMinMax();
+    okSemaphore * beginMinMaxSampling(uint16_t numSamples);
+    void resetMinMax();
+    void sampleMinMax(uint16_t sample);
     void setInputMax(uint16_t value);
     void setInputMin(uint16_t value);
+    uint16_t getInputMax(void) { return inputMax; }
+    uint16_t getInputMin(void) { return inputMin; }
+    uint16_t getInputMedian(void) { return inputMin + ((inputMax - inputMin) / 2); }
 
     void sampleReadyCallback(uint16_t sample);
 
@@ -62,6 +68,8 @@ private:
     float filterAmount = 0.1;
     bool invert = false;
 
-    uint16_t sampleCounter;        // basic counter for DSP
-    bool denoising;                // flag to tell handle whether to use the incloming data in the DMA_BUFFER for denoising an idle input signal
+    uint16_t sampleTime;      // how long / how many samples you wish to sample for
+    uint16_t sampleCounter;   // basic counter for DSP
+    bool samplingNoise;       // flag to tell handle whether to use the incloming data in the DMA_BUFFER for denoising an idle input signal
+    bool samplingMinMax;
 };
