@@ -71,7 +71,7 @@ GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch
  * NOTE: The stack used by a task will grow and shrink as the task executes and interrupts are processed.
  * @param pvParameters
  */
-void vTask1(void *pvParameters)
+void taskMain(void *pvParameters)
 {
   i2c1.init();
   i2c3.init();
@@ -81,6 +81,9 @@ void vTask1(void *pvParameters)
   superClock.initTIM2(40, 0xFFFFFFFF - 1); // precaler value handles BPM range 40..240
   superClock.initTIM4(40, 10000 - 1);
   superClock.start();
+
+  logger_log_task_watermark();
+  
   while (1)
   {
     glblCtrl.poll();
@@ -103,7 +106,7 @@ int main(void)
   HAL_Delay(100);
 
   // xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
-  xTaskCreate(vTask1, "vTask1", RTOS_STACK_SIZE_MAX, NULL, 1, NULL);
+  xTaskCreate(taskMain, "taskMain", 512, NULL, 1, NULL);
 
   vTaskStartScheduler();
 

@@ -3,6 +3,9 @@
         {
             "name": "Mac",
             "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
+            "defines": [
+                "USE_HAL_DRIVER"
+            ],
             "includePath": [
                 "${workspaceFolder}/API/*",
                 "${workspaceFolder}/API/rtos/*",
