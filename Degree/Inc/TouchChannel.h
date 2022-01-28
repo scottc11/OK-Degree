@@ -9,6 +9,7 @@
 #include "VoltPerOctave.h"
 #include "SuperSeq.h"
 #include "Display.h"
+#include "okSemaphore.h"
 
 typedef struct QuantOctave
 {

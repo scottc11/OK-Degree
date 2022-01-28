@@ -64,9 +64,13 @@ namespace DEGREE {
         void resetVoltageMap();
 
         void initCalibration();
+        void setCalibrationZeroCrossing(uint16_t value) { signalZeroCrossing = value; }
+        void setCalibrationThreshold(uint16_t value) { signalZeroCrossingThreshold = value; }
         void sampleVCO(uint16_t adc_sample);
         float calculateAverageFreq();
 
+        static uint16_t signalZeroCrossing;
+        static uint16_t signalZeroCrossingThreshold;
         static uint32_t numSamplesTaken;
         static bool slopeIsPositive;
         static float vcoFrequency;

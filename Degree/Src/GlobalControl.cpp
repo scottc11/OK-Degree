@@ -62,7 +62,8 @@ void GlobalControl::poll()
     case CALIBRATING_BENDER:
         for (int i = 0; i < 4; i++)
         {
-            channels[i]->bender->adc.detectMinMax();
+            uint16_t sample = channels[i]->bender->adc.read_u16();
+            channels[i]->bender->adc.sampleMinMax(sample);
         }
         pollButtons();
         break;
@@ -206,7 +207,7 @@ void GlobalControl::handleButtonPress(int pad)
             display->benderCalibration();
             for (int i = 0; i < 4; i++)
             {
-                channels[i]->bender->adc.initMinMaxDetection();
+                channels[i]->bender->adc.resetMinMax();
             }
             
         }
@@ -249,6 +250,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case CLEAR_SEQ:
+        logger_log_task_watermark();
         break;
 
     case PB_RANGE:

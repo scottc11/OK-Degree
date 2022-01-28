@@ -2,6 +2,8 @@
 
 using namespace DEGREE;
 
+uint16_t VoltPerOctave::signalZeroCrossing = 0;
+uint16_t VoltPerOctave::signalZeroCrossingThreshold = 0;
 uint32_t VoltPerOctave::numSamplesTaken = 0;
 bool VoltPerOctave::slopeIsPositive = false;
 float VoltPerOctave::vcoFrequency = 0;
@@ -116,22 +118,19 @@ void VoltPerOctave::initCalibration()
 
 /**
  * @brief 
- * 
+ * you need to first determine the "range" of the signal going into the ADC, so that you can determine a mid-point
+ * for detecting zero crossings
  * @param adc_sample 
  */
 void VoltPerOctave::sampleVCO(uint16_t adc_sample)
 {   
-    // you need to first determine the "range" of the signal going into the ADC, so that you can determine a mid-point
-    // for detecting zero crossings
-
-    
     // NEGATIVE SLOPE
-    if (adc_sample >= (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal < (VCO_ZERO_CROSSING + VCO_ZERO_CROSS_THRESHOLD) && slopeIsPositive)
+    if (adc_sample >= (signalZeroCrossing + signalZeroCrossingThreshold) && prevVCOInputVal < (signalZeroCrossing + signalZeroCrossingThreshold) && slopeIsPositive)
     {
         slopeIsPositive = false;
     }
     // POSITIVE SLOPE
-    else if (adc_sample <= (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && prevVCOInputVal > (VCO_ZERO_CROSSING - VCO_ZERO_CROSS_THRESHOLD) && !slopeIsPositive)
+    else if (adc_sample <= (signalZeroCrossing - signalZeroCrossingThreshold) && prevVCOInputVal > (signalZeroCrossing - signalZeroCrossingThreshold) && !slopeIsPositive)
     {
         float vcoPeriod = numSamplesTaken;           // how many samples have occurred between positive zero crossings
         vcoFrequency = (float)multi_chan_adc_get_sample_rate(&hadc1, &htim3) / vcoPeriod;           // sample rate divided by period of input signal
@@ -143,6 +142,8 @@ void VoltPerOctave::sampleVCO(uint16_t adc_sample)
         // initialization of a massive array to hold all the samples.
         if (freqSampleIndex < MAX_FREQ_SAMPLES - 1)
         {
+            // logger_log("\n");
+            // logger_log(vcoFrequency);
             freqSampleIndex += 1;
         }
         else
