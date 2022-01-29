@@ -239,6 +239,34 @@ void taskExitCalibration(void *params)
         vTaskDelete(thStartCalibration);
         multi_chan_adc_set_sample_rate(&hadc1, &htim3, ADC_SAMPLE_RATE_HZ);
         control->disableVCOCalibration();
+    }   
+}
+
+static const float TARGET_FREQUENCY_C1 = PITCH_FREQ_ARR[0];
+static const float TARGET_FREQUENCY_C2 = PITCH_FREQ_ARR[12];
+static const float TARGET_FREQUENCY_C3 = PITCH_FREQ_ARR[24];
+
+void taskTuner(void *params) {
+    TouchChannel *channel = (TouchChannel *)params;
+    float sampledFrequency = 0;
+    while (1)
+    {
+        // listen for a notification for a freq sample being ready
+        
+        // once sample obtained, compare that value to a target value
+        // target values should be all C notes under a certain range
+
+        if (sampledFrequency > TARGET_FREQUENCY_C1 + TUNING_TOLERANCE)
+        {
+            // top half leds light up relative to how far away from the target frequency you are
+        }
+        else if (sampledFrequency < TARGET_FREQUENCY_C1 - TUNING_TOLERANCE)
+        {
+            // bottom half leds light up relative to how far away from the target frequency you are
+        }
+        else {
+            // light up middle two rows of display
+        }
     }
     
 }
