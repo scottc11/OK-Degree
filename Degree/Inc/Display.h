@@ -1,3 +1,23 @@
+/**
+ * @file Display.h
+ * @author your name (you@domain.com)
+ * @brief 
+ * @version 0.1
+ * @date 2022-01-29
+ * 
+ * 
+ * 0   1   2   3
+ * 
+ * 4   5   6   7
+ * 
+ * 8   9   10  11
+ * 
+ * 12  13  14  15
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #pragma once
 
 #include "main.h"
@@ -16,6 +36,9 @@ static const int CHAN_DISPLAY_LED_MAP[4][16]{
 #define DISPLAY_SQUARE_LENGTH 12
 static const int DISPLAY_SQUARE_LED_MAP[DISPLAY_SQUARE_LENGTH] = {0, 1, 2, 3, 7, 11, 15, 14, 13, 12, 8, 4};
 
+#define DISPLAY_SPIRAL_LENGTH 16
+static const int DISPLAY_SPIRAL_LED_MAP[DISPLAY_SPIRAL_LENGTH] = {0, 1, 2, 3, 7, 11, 15, 14, 13, 12, 8, 4, 5, 6, 10, 9};
+
 class Display
 {
 public:
@@ -27,10 +50,13 @@ public:
 
     void init();
     void clear();
+    void setGlobalCurrent(uint8_t value);
     void setChannelLED(int chan, int index, bool on);
     void setSequenceLEDs(int chan, int length, int diviser, bool on);
     void stepSequenceLED(int chan, int currStep, int prevStep, int length);
     void benderCalibration();
 
-    void drawSquare(int chan);
+    void drawSquare(int chan, TickType_t speed);
+    void drawSpiral(int chan, bool direction, TickType_t speed);
+    void flash(int flashes, TickType_t ticks);
 };

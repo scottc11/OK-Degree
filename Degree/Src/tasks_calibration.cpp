@@ -31,8 +31,10 @@ void taskObtainSignalFrequency(void *params)
     int freqSampleIndex = 0; // index for storing new frequency sample into freqSamples array
 
     channel->display->clear();
-    channel->display->drawSquare(channel->channelIndex);
-    channel->adc.disableFilter();
+    channel->display->drawSpiral(channel->channelIndex, true, 50);
+    channel->display->clear();
+    
+    channel->adc.disableFilter(); // must not filter ADC input
 
     multi_chan_adc_set_sample_rate(&hadc1, &htim3, CALIBRATION_SAMPLE_RATE_HZ); // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
 
@@ -71,7 +73,7 @@ void taskObtainSignalFrequency(void *params)
             freqSamples[freqSampleIndex] = vcoFrequency;                                      // store sample in array
             numSamplesTaken = 0;                                                              // reset sample count to zero for the next sampling routine
 
-            // NOTE: you could illiminate the freqSamples array by first, ignoring the first iteration of sampling, and then just adding
+            // NOTE: you could eliminate the freqSamples array by first, ignoring the first iteration of sampling, and then just adding
             // each newly sampled frequency to a sum. This way you could increase the MAX_FREQ_SAMPLES as high as you want without requiring the
             // initialization of a massive array to hold all the samples.
             if (freqSampleIndex < MAX_FREQ_SAMPLES - 1)
@@ -95,6 +97,11 @@ void taskObtainSignalFrequency(void *params)
     }
 }
 
+/**
+ * @brief Once an accurate frequency has been detected, this task executes and adjusts the DAC output of a channel till the incoming frequency matches a target frequency
+ * 
+ * @param params 
+ */
 void taskCalibrate(void *params)
 {
     TouchChannel *channel = (TouchChannel *)params;
@@ -115,9 +122,6 @@ void taskCalibrate(void *params)
     {
         xSemaphoreTake(sem_calibrate, portMAX_DELAY);
         currAvgFreq = calculateAverageFreq();
-        // logger_log("\n");
-        // logger_log("avg: ");
-        // logger_log(currAvgFreq);
         
         // handle first iteration of calibrating by finding the frequency in PITCH_FREQ_ARR closest to the currently sampled frequency
         if (iteration == 0)
@@ -138,28 +142,25 @@ void taskCalibrate(void *params)
             
         }
 
-        targetFreq = PITCH_FREQ_ARR[initialPitchIndex + iteration];
-        // logger_log("\n");
-        // logger_log("Target Frequency: ");
-        // logger_log(targetFreq);
+        // obtain the target frequency
+        targetFreq = PITCH_FREQ_ARR[initialPitchIndex + iteration];        
 
-        
-
-        // if currAvgFreq is close enough to targetFreq, or max cal attempts has been reached, break out of while loop and move to next 'note'
+        // if currAvgFreq is close enough to targetFreq, or max cal attempts has been reached, break out of while loop and move to the next 'note'
         if ((currAvgFreq <= targetFreq + TUNING_TOLERANCE && currAvgFreq >= targetFreq - TUNING_TOLERANCE) || calibrationAttemps > MAX_CALIB_ATTEMPTS)
         {
             channel->output.dacVoltageMap[iteration] = newDacValue > BIT_MAX_16 ? BIT_MAX_16 : newDacValue; // replace current DAC value with adjusted value (NOTE: must cap value or else it will roll over to zero)
-            logger_log("\n");
-            logger_log("Iteration ");
+            logger_log("\nIteration ");
             logger_log(iteration);
             logger_log(" DONE, attempts Taken: ");
             logger_log(calibrationAttemps);
 
+            int ledIndex = map_num_in_range<int>(iteration, 0, DAC_1VO_ARR_SIZE, 0, 15);
+            channel->display->setChannelLED(channel->channelIndex, ledIndex, true);
+
             // if we are on the final iteration, then some how breakout of all this crap.
             if (iteration == DAC_1VO_ARR_SIZE - 1) {
-                logger_log("\n");
-                logger_log("\n");
-                logger_log("*** CALIBRATION FINISHED ***");
+                logger_log("\n\n*** CALIBRATION FINISHED ***");
+                channel->display->setChannelLED(channel->channelIndex, 15, true);
                 // send a notification to exitCalibration task
                 xTaskNotify(thExitCalibration, 0, eNotifyAction::eNoAction);
             }
@@ -168,7 +169,7 @@ void taskCalibrate(void *params)
             dacAdjustment = DEFAULT_VOLTAGE_ADJMNT;
             iteration++;
             newDacValue = channel->output.dacVoltageMap[iteration]; // prepare for the next iteration
-            vTaskDelay(10); // wait for DAC to settle
+            vTaskDelay(CALIBRATION_DAC_SETTLE_TIME); // wait for DAC to settle
             xSemaphoreGive(sem_obtain_freq);
         }
         else
@@ -181,9 +182,6 @@ void taskCalibrate(void *params)
                     dacAdjustment = (dacAdjustment / 2) + 1; // + 1 so it never becomes zero
                 }
                 newDacValue -= dacAdjustment;
-                // logger_log("\n");
-                // logger_log("Overshot");
-                // logger_log("\n");
             }
 
             else if (currAvgFreq < targetFreq - TUNING_TOLERANCE) // undershot target freq
@@ -193,14 +191,11 @@ void taskCalibrate(void *params)
                     dacAdjustment = (dacAdjustment / 2) + 1; // so it never becomes zero
                 }
                 newDacValue += dacAdjustment;
-                // logger_log("\n");
-                // logger_log("Undershot");
-                // logger_log("\n");
             }
             prevAvgFreq = currAvgFreq;
             calibrationAttemps++;
             channel->output.dac->write(channel->output.dacChannel, newDacValue);
-            vTaskDelay(10); // wait for DAC to settle
+            vTaskDelay(CALIBRATION_DAC_SETTLE_TIME); // wait for DAC to settle
             xSemaphoreGive(sem_obtain_freq);
         }
         
@@ -223,22 +218,23 @@ float calculateAverageFreq()
     return (float)(sum / (MAX_FREQ_SAMPLES - 1));
 }
 
+/**
+ * @brief 
+ * 
+ * @param params 
+ */
 void taskExitCalibration(void *params)
 {
     GlobalControl *control = (GlobalControl *)params;
     thExitCalibration = xTaskGetCurrentTaskHandle();
-    // you could use notification values here by using enums for each type of calibration routine, then handle each enum value to transition between running states appropriately
-    // ie.
-    // TASK_1VO_CALIBRATION_DONE:
-    //    // do
-    //    break;
-    // TASK_BENDER_CALIBRATION_DONE:
-    //    // do
-    //    break;
-
     while (1)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        
+        // flash the grid of leds on and off for a sec then exit
+        control->display->flash(3, 300);
+        control->display->clear();
+
         vTaskDelete(thCalibrate);
         vTaskDelete(thStartCalibration);
         multi_chan_adc_set_sample_rate(&hadc1, &htim3, ADC_SAMPLE_RATE_HZ);
@@ -246,3 +242,21 @@ void taskExitCalibration(void *params)
     }
     
 }
+
+// void taskCalibrationHandler(void *params) {
+//     while (1)
+//     {
+//         // take freq_sample_ready semaphore
+//         switch (notification)
+//         {
+//         case TUNE_VCO:
+//             // give tuning semaphore
+//             break;
+//         case CALIBRATE_VCO:
+//             // give calibrate semaphore
+//             break;
+//         default:
+//             break;
+//         }
+//     }
+// }

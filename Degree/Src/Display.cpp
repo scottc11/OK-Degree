@@ -3,6 +3,7 @@
 void Display::init()
 {
     ledMatrix.init();
+    ledMatrix.setGlobalCurrent(DISPLAY_MAX_CURRENT);
     for (int i = 0; i < 64; i++)
     {
         ledMatrix.setPWM(i, 127);
@@ -27,8 +28,25 @@ void Display::clear()
 }
 
 /**
- * @brief set a channels LED
-*/ 
+ * @brief set the current for ALL LEDs in the display. Ideal for blinking everything at once
+ * 
+ * @param value 
+ */
+void Display::setGlobalCurrent(uint8_t value) {
+    if (value > DISPLAY_MAX_CURRENT) {
+        ledMatrix.setGlobalCurrent(DISPLAY_MAX_CURRENT);
+    } else {
+        ledMatrix.setGlobalCurrent(value);
+    }
+}
+
+/**
+ * @brief set an LED in a channels 4x4 grid
+ *
+ * @param chan index of the target channel
+ * @param index value between 0..15. 0 is top left of the grid, 15 is bottom right of the grid
+ * @param on on or off
+ */
 void Display::setChannelLED(int chan, int index, bool on)
 {
     ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][index], on ? OK_PWM_HIGH : 0);
@@ -98,11 +116,52 @@ void Display::benderCalibration()
     }
 }
 
-void Display::drawSquare(int chan)
+/**
+ * @brief Draw a square
+ * 
+ * @param chan channel index
+ * @param speed how fast to draw it
+ */
+void Display::drawSquare(int chan, TickType_t speed)
 {
     for (int i = 0; i < DISPLAY_SQUARE_LENGTH; i++)
     {
         this->setChannelLED(chan, DISPLAY_SQUARE_LED_MAP[i], true);
-        HAL_Delay(50);
+        vTaskDelay(speed);
+    }
+}
+
+/**
+ * @brief Illuminate a channels LEDs in a spiral / circular direction
+ *
+ * @param chan channel index
+ * @param direction true = clockwise, false = counter clockwise
+ * @param speed how fast
+ */
+void Display::drawSpiral(int chan, bool direction, TickType_t speed)
+{
+    int index;
+    for (int i = 0; i < DISPLAY_SPIRAL_LENGTH; i++)
+    {
+        index = direction ? i : (DISPLAY_SPIRAL_LENGTH - 1) - i;
+        this->setChannelLED(chan, DISPLAY_SPIRAL_LED_MAP[index], true);
+        vTaskDelay(speed);
+    }
+}
+
+/**
+ * @brief flash the display on and off
+ * 
+ * @param flashes how many times to flash
+ * @param ticks how long each flash should take
+ */
+void Display::flash(int flashes, TickType_t ticks)
+{
+    for (int i = 0; i < flashes; i++)
+    {
+        this->setGlobalCurrent(0);
+        vTaskDelay(ticks);
+        this->setGlobalCurrent(DISPLAY_MAX_CURRENT);
+        vTaskDelay(ticks);
     }
 }
