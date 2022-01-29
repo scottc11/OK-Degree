@@ -877,7 +877,7 @@ void TouchChannel::enableCalibration()
 {
     // start calibration task and pass `this` as an argument
     BaseType_t status;
-    status = xTaskCreate(this->taskReceiveVCOSample, "taskSampleVCO", RTOS_STACK_SIZE_MIN, this, RTOS_PRIORITY_HIGH, NULL);
+    status = xTaskCreate(taskObtainSignalFrequency, "taskSampleVCO", RTOS_STACK_SIZE_MIN, this, RTOS_PRIORITY_HIGH, NULL);
     if (status == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY)
     {
         logger_log("could not allocate enough mem");
@@ -888,40 +888,4 @@ void TouchChannel::disableCalibration()
 {
     display->clear();
     // destroy task
-}
-
-/**
- * @brief Takes approx. 78 of stack space while running
- *
- * @param params
- */
-void TouchChannel::taskReceiveVCOSample(void *params)
-{
-    TouchChannel *chan = (TouchChannel *)params;
-    uint16_t sample;
-    chan->display->clear();
-    chan->display->drawSquare(chan->channelIndex);
-    chan->adc.disableFilter();
-
-    multi_chan_adc_set_sample_rate(&hadc1, &htim3, 16000); // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
-
-    // sample peak to peak;
-    okSemaphore *sem = chan->adc.beginMinMaxSampling(2000); // sampling time should be longer than the lowest possible note frequency
-    sem->wait();
-    chan->adc.log_min_max("CV");
-    chan->output.setCalibrationThreshold(1000); // NOTE: this value is important. If set around 500 freq readings become very unstable
-    chan->output.setCalibrationZeroCrossing(chan->adc.getInputMedian());
-    // set calibration threshold
-    // set calibration zero crossing
-
-    chan->output.initCalibration();
-    
-    logger_log_task_watermark();
-
-    while (1)
-    {
-        // chan->adc.queue.receive(&sample);
-        xQueueReceive(chan->adc.queue.handle, &sample, portMAX_DELAY);
-        chan->output.sampleVCO(chan->adc.read_u16()); // careful about adc polarity
-    }
 }

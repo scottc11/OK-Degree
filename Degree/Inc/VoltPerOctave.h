@@ -18,13 +18,6 @@
 #define CALIBRATION_FLOOR 0.2f
 #define NUM_OCTAVES 6
 
-#define DEFAULT_VOLTAGE_ADJMNT 200
-#define MAX_CALIB_ATTEMPTS 20        // how many times the calibrator will try and match the given frequency
-#define MAX_FREQ_SAMPLES 25          // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
-#define VCO_SAMPLE_RATE_US 125       // 8000hz is equal to 125us (microseconds)
-#define VCO_ZERO_CROSSING 60000      // The zero crossing is erelivant as the pre-opamp ADC is not bi-polar. Any value close to the ADC ceiling seems to work
-#define VCO_ZERO_CROSS_THRESHOLD 500 // for handling hysterisis at zero crossing point
-
 namespace DEGREE {
     const int PB_RANGE_MAP[8] = {1, 2, 3, 4, 5, 7, 10, 12};
     class VoltPerOctave
@@ -62,21 +55,5 @@ namespace DEGREE {
         void bend(uint16_t value);
         uint16_t calculatePitchBend(int input, int min, int max);
         void resetVoltageMap();
-
-        void initCalibration();
-        void setCalibrationZeroCrossing(uint16_t value) { signalZeroCrossing = value; }
-        void setCalibrationThreshold(uint16_t value) { signalZeroCrossingThreshold = value; }
-        void sampleVCO(uint16_t adc_sample);
-        float calculateAverageFreq();
-
-        static uint16_t signalZeroCrossing;
-        static uint16_t signalZeroCrossingThreshold;
-        static uint32_t numSamplesTaken;
-        static bool slopeIsPositive;
-        static float vcoFrequency;
-        static float freqSamples[MAX_FREQ_SAMPLES];
-        static int freqSampleIndex;
-        static uint16_t currVCOInputVal;
-        static uint16_t prevVCOInputVal;
     };
 }

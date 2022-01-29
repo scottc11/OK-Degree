@@ -2,16 +2,6 @@
 
 using namespace DEGREE;
 
-uint16_t VoltPerOctave::signalZeroCrossing = 0;
-uint16_t VoltPerOctave::signalZeroCrossingThreshold = 0;
-uint32_t VoltPerOctave::numSamplesTaken = 0;
-bool VoltPerOctave::slopeIsPositive = false;
-float VoltPerOctave::vcoFrequency = 0;
-float VoltPerOctave::freqSamples[MAX_FREQ_SAMPLES] = {};
-int VoltPerOctave::freqSampleIndex = 0;
-uint16_t VoltPerOctave::currVCOInputVal = 0;
-uint16_t VoltPerOctave::prevVCOInputVal = 0;
-
 void VoltPerOctave::init()
 {
     dac->init();
@@ -80,100 +70,4 @@ void VoltPerOctave::resetVoltageMap()
     {
         dacVoltageMap[i] = floor + (semitone * i);
     }
-}
-
-
-
-/**
- * @brief Calibrate the voltage map based on external frequency detection of VCO
-*/
-void VoltPerOctave::initCalibration()
-{
-    // reset variables
-    this->freqSampleIndex = 0;
-    this->vcoFrequency = 0.0;
-    this->currVCOInputVal = 0;
-    this->prevVCOInputVal = 0;
-
-    this->resetVoltageMap();
-
-    // get min max of input signal via adc
-
-    int attempts = 0;
-    float currFreq = 0.f;
-
-    // handle first iteration of calibrating by finding the frequency in PITCH_FREQ array closest to the currently sampled frequency
-    // if (i == 0)
-    // {
-    //     // set the dac output to the start of voltage map array
-    //     this->dac->write(dacChannel, dacVoltageMap[0]);
-    //     HAL_Delay(10); // settle DAC
-    //     // sample the signal frequency
-    //     // determine which pitch freq to target in PITCH_FREQ array
-    //     // int initialPitchIndex = arr_find_closest_float(const_cast<float *>(PITCH_FREQ), NUM_PITCH_FREQENCIES, currFreq);
-    // }
-}
-
-
-
-/**
- * @brief 
- * you need to first determine the "range" of the signal going into the ADC, so that you can determine a mid-point
- * for detecting zero crossings
- * @param adc_sample 
- */
-void VoltPerOctave::sampleVCO(uint16_t adc_sample)
-{   
-    // NEGATIVE SLOPE
-    if (adc_sample >= (signalZeroCrossing + signalZeroCrossingThreshold) && prevVCOInputVal < (signalZeroCrossing + signalZeroCrossingThreshold) && slopeIsPositive)
-    {
-        slopeIsPositive = false;
-    }
-    // POSITIVE SLOPE
-    else if (adc_sample <= (signalZeroCrossing - signalZeroCrossingThreshold) && prevVCOInputVal > (signalZeroCrossing - signalZeroCrossingThreshold) && !slopeIsPositive)
-    {
-        float vcoPeriod = numSamplesTaken;           // how many samples have occurred between positive zero crossings
-        vcoFrequency = (float)multi_chan_adc_get_sample_rate(&hadc1, &htim3) / vcoPeriod;           // sample rate divided by period of input signal
-        freqSamples[freqSampleIndex] = vcoFrequency; // store sample in array
-        numSamplesTaken = 0;                         // reset sample count to zero for the next sampling routine
-
-        // NOTE: you could illiminate the freqSamples array by first, ignoring the first iteration of sampling, and then just adding
-        // each newly sampled frequency to a sum. This way you could increase the MAX_FREQ_SAMPLES as high as you want without requiring the
-        // initialization of a massive array to hold all the samples.
-        if (freqSampleIndex < MAX_FREQ_SAMPLES - 1)
-        {
-            // logger_log("\n");
-            // logger_log(vcoFrequency);
-            freqSampleIndex += 1;
-        }
-        else
-        {
-            freqSampleIndex = 0;
-            logger_log("\n");
-            logger_log("avg: ");
-            logger_log(calculateAverageFreq());
-            // multi_chan_adc_disable_irq(); // disable adc dma interrupt
-            // give semaphore to calibrate task
-
-        }
-        slopeIsPositive = true;
-    }
-
-    prevVCOInputVal = adc_sample;
-    numSamplesTaken++;
-}
-
-/**
- * @brief Calculate Average frequency
- * NOTE: skipping the first sample is hard to explain but its important...
- * @return float
- */
-float VoltPerOctave::calculateAverageFreq()
-{
-    float sum = 0;
-    for (int i = 1; i < MAX_FREQ_SAMPLES; i++)
-    {
-        sum += this->freqSamples[i];
-    }
-    return (float)(sum / (MAX_FREQ_SAMPLES - 1));
 }

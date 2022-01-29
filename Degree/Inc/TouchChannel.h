@@ -10,6 +10,7 @@
 #include "SuperSeq.h"
 #include "Display.h"
 #include "okSemaphore.h"
+#include "tasks_calibration.h"
 
 typedef struct QuantOctave
 {

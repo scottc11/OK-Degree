@@ -97,6 +97,7 @@ Degree/Src/Display.cpp \
 Degree/Src/MultiChanADC.cpp \
 Degree/Src/SuperSeq.cpp \
 Degree/Src/TouchChannel.cpp \
+Degree/Src/tasks_calibration.cpp \
 Degree/Src/GlobalControl.cpp \
 Degree/Src/VoltPerOctave.cpp \
 ok-drivers/drivers/CAP1208/CAP1208.cpp \
