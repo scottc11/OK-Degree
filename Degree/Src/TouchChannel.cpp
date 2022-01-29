@@ -871,25 +871,3 @@ void TouchChannel::disableSequenceRecording()
         }
     }
 }
-
-
-void TouchChannel::enableCalibration()
-{
-    // start calibration task and pass `this` as an argument
-    BaseType_t status;
-    status = xTaskCreate(taskObtainSignalFrequency, "taskSampleVCO", RTOS_STACK_SIZE_MIN, this, RTOS_PRIORITY_HIGH, NULL);
-    if (status == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY)
-    {
-        logger_log("could not allocate enough mem");
-    }
-}
-
-void TouchChannel::disableCalibration()
-{
-    display->clear();
-    // destroy task!!!
-    // then casualy continue where you left off...
-    // I think you would want to have another task which is just dedicated to exiting calibration phase
-    // It listens for a notification and safely returns back to default mode
-    // ie. glblControl.mode == default
-}

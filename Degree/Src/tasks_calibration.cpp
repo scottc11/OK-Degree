@@ -6,10 +6,14 @@ static uint16_t signalZeroCrossing = 0;            // The zero crossing is ereli
 static uint32_t numSamplesTaken = 0;               // how many samples have elapsed between zero crossing events
 static bool slopeIsPositive = false;               // which direction the signals voltage is moving towards (false = towards GND, true = towards VDD)
 static float freqSamples[MAX_FREQ_SAMPLES] = {};   // array to store frequency samples for averaging
-static uint16_t prev_sample = 0;
+static uint16_t prev_adc_sample = 0;
 
 SemaphoreHandle_t sem_obtain_freq;
 SemaphoreHandle_t sem_calibrate;
+
+static xTaskHandle thStartCalibration;
+static xTaskHandle thExitCalibration;
+static xTaskHandle thCalibrate;
 
 /**
  * @brief Takes approx. 78 of stack space while running
@@ -20,6 +24,8 @@ void taskObtainSignalFrequency(void *params)
 {
     TouchChannel *channel = (TouchChannel *)params;
     
+    thStartCalibration = xTaskGetCurrentTaskHandle();
+
     uint16_t sample;
     float vcoFrequency = 0;  // the calculated frequency sample
     int freqSampleIndex = 0; // index for storing new frequency sample into freqSamples array
@@ -28,7 +34,7 @@ void taskObtainSignalFrequency(void *params)
     channel->display->drawSquare(channel->channelIndex);
     channel->adc.disableFilter();
 
-    multi_chan_adc_set_sample_rate(&hadc1, &htim3, 16000); // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
+    multi_chan_adc_set_sample_rate(&hadc1, &htim3, CALIBRATION_SAMPLE_RATE_HZ); // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
 
     // sample peak to peak;
     okSemaphore *sem = channel->adc.beginMinMaxSampling(2000); // sampling time should be longer than the lowest possible note frequency
@@ -39,7 +45,7 @@ void taskObtainSignalFrequency(void *params)
     sem_obtain_freq = xSemaphoreCreateBinary();
     sem_calibrate = xSemaphoreCreateBinary();
 
-    xTaskCreate(taskCalibrate, "calibrate", RTOS_STACK_SIZE_MIN, channel, 3, NULL);
+    xTaskCreate(taskCalibrate, "calibrate", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, &thCalibrate);
 
     xSemaphoreGive(sem_obtain_freq);
 
@@ -50,15 +56,15 @@ void taskObtainSignalFrequency(void *params)
         xSemaphoreTake(sem_obtain_freq, portMAX_DELAY);
         xQueueReceive(channel->adc.queue.handle, &sample, portMAX_DELAY);
         
-        uint16_t curr_sample = channel->adc.read_u16(); // obtain the sample from DMA buffer
+        uint16_t curr_adc_sample = channel->adc.read_u16(); // obtain the sample from DMA buffer
         
         // NEGATIVE SLOPE
-        if (curr_sample >= (signalZeroCrossing + ZERO_CROSS_THRESHOLD) && prev_sample < (signalZeroCrossing + ZERO_CROSS_THRESHOLD) && slopeIsPositive)
+        if (curr_adc_sample >= (signalZeroCrossing + ZERO_CROSS_THRESHOLD) && prev_adc_sample < (signalZeroCrossing + ZERO_CROSS_THRESHOLD) && slopeIsPositive)
         {
             slopeIsPositive = false;
         }
         // POSITIVE SLOPE
-        else if (curr_sample <= (signalZeroCrossing - ZERO_CROSS_THRESHOLD) && prev_sample > (signalZeroCrossing - ZERO_CROSS_THRESHOLD) && !slopeIsPositive)
+        else if (curr_adc_sample <= (signalZeroCrossing - ZERO_CROSS_THRESHOLD) && prev_adc_sample > (signalZeroCrossing - ZERO_CROSS_THRESHOLD) && !slopeIsPositive)
         {
             float vcoPeriod = numSamplesTaken;                                                // how many samples have occurred between positive zero crossings
             vcoFrequency = (float)multi_chan_adc_get_sample_rate(&hadc1, &htim3) / vcoPeriod; // sample rate divided by period of input signal
@@ -83,7 +89,7 @@ void taskObtainSignalFrequency(void *params)
             slopeIsPositive = true;
         }
 
-        prev_sample = curr_sample;
+        prev_adc_sample = curr_adc_sample;
         numSamplesTaken++;
         xSemaphoreGive(sem_obtain_freq);
     }
@@ -109,23 +115,33 @@ void taskCalibrate(void *params)
     {
         xSemaphoreTake(sem_calibrate, portMAX_DELAY);
         currAvgFreq = calculateAverageFreq();
-        logger_log("\n");
-        logger_log("avg: ");
-        logger_log(currAvgFreq);
+        // logger_log("\n");
+        // logger_log("avg: ");
+        // logger_log(currAvgFreq);
         
         // handle first iteration of calibrating by finding the frequency in PITCH_FREQ_ARR closest to the currently sampled frequency
         if (iteration == 0)
         {
             initialPitchIndex = arr_find_closest_float(const_cast<float *>(PITCH_FREQ_ARR), NUM_PITCH_FREQENCIES, currAvgFreq);
-            logger_log("\n");
-            logger_log("Target Frequency: ");
+            logger_log("\nInitial Target Frequency: ");
             logger_log(PITCH_FREQ_ARR[initialPitchIndex]);
+
+            if (initialPitchIndex + DAC_1VO_ARR_SIZE > NUM_PITCH_FREQENCIES) // if the starting PITCH_FREQ_ARR index is too high, you will overshoot the array. Must notify the UI to lower VCO input frequency
+            {
+                logger_log("\nVCO Input Frequency Too High. ");
+                logger_log("INDEX: ");
+                logger_log(initialPitchIndex);
+                logger_log("\nMust be less than -> ");
+                logger_log(NUM_PITCH_FREQENCIES - DAC_1VO_ARR_SIZE);
+                // what is the maximum starting target frequency?
+            }
+            
         }
 
         targetFreq = PITCH_FREQ_ARR[initialPitchIndex + iteration];
-        logger_log("\n");
-        logger_log("Target Frequency: ");
-        logger_log(targetFreq);
+        // logger_log("\n");
+        // logger_log("Target Frequency: ");
+        // logger_log(targetFreq);
 
         
 
@@ -141,8 +157,11 @@ void taskCalibrate(void *params)
 
             // if we are on the final iteration, then some how breakout of all this crap.
             if (iteration == DAC_1VO_ARR_SIZE - 1) {
-                // destroy task?
+                logger_log("\n");
+                logger_log("\n");
+                logger_log("*** CALIBRATION FINISHED ***");
                 // send a notification to exitCalibration task
+                xTaskNotify(thExitCalibration, 0, eNotifyAction::eNoAction);
             }
 
             calibrationAttemps = 0;
@@ -162,9 +181,9 @@ void taskCalibrate(void *params)
                     dacAdjustment = (dacAdjustment / 2) + 1; // + 1 so it never becomes zero
                 }
                 newDacValue -= dacAdjustment;
-                logger_log("\n");
-                logger_log("Overshot");
-                logger_log("\n");
+                // logger_log("\n");
+                // logger_log("Overshot");
+                // logger_log("\n");
             }
 
             else if (currAvgFreq < targetFreq - TUNING_TOLERANCE) // undershot target freq
@@ -174,9 +193,9 @@ void taskCalibrate(void *params)
                     dacAdjustment = (dacAdjustment / 2) + 1; // so it never becomes zero
                 }
                 newDacValue += dacAdjustment;
-                logger_log("\n");
-                logger_log("Undershot");
-                logger_log("\n");
+                // logger_log("\n");
+                // logger_log("Undershot");
+                // logger_log("\n");
             }
             prevAvgFreq = currAvgFreq;
             calibrationAttemps++;
@@ -202,4 +221,28 @@ float calculateAverageFreq()
         sum += freqSamples[i];
     }
     return (float)(sum / (MAX_FREQ_SAMPLES - 1));
+}
+
+void taskExitCalibration(void *params)
+{
+    GlobalControl *control = (GlobalControl *)params;
+    thExitCalibration = xTaskGetCurrentTaskHandle();
+    // you could use notification values here by using enums for each type of calibration routine, then handle each enum value to transition between running states appropriately
+    // ie.
+    // TASK_1VO_CALIBRATION_DONE:
+    //    // do
+    //    break;
+    // TASK_BENDER_CALIBRATION_DONE:
+    //    // do
+    //    break;
+
+    while (1)
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        vTaskDelete(thCalibrate);
+        vTaskDelete(thStartCalibration);
+        multi_chan_adc_set_sample_rate(&hadc1, &htim3, ADC_SAMPLE_RATE_HZ);
+        control->disableVCOCalibration();
+    }
+    
 }

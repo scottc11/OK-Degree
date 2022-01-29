@@ -10,7 +10,6 @@
 #include "SuperSeq.h"
 #include "Display.h"
 #include "okSemaphore.h"
-#include "tasks_calibration.h"
 
 typedef struct QuantOctave
 {
@@ -194,10 +193,6 @@ namespace DEGREE {
         void setGate(bool state);
         uint8_t calculateRatchet(uint16_t bend);
         void handleRatchet(int position, uint8_t rate);
-
-        // Calibration Methods
-        void enableCalibration();
-        void disableCalibration();
 
         static void taskReceiveVCOSample(void *params);
     };

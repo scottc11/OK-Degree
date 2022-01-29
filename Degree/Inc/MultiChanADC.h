@@ -21,6 +21,8 @@ extern TIM_HandleTypeDef htim3;
 #define ADC_TIM_PERIOD 2000
 #endif
 
+#define ADC_SAMPLE_RATE_HZ 2000
+
 extern TIM_HandleTypeDef htim3;
 
 void multi_chan_adc_init();

@@ -105,7 +105,6 @@ int main(void)
   multi_chan_adc_start();
   HAL_Delay(100);
 
-  // xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
   xTaskCreate(taskMain, "taskMain", 512, NULL, 1, NULL);
 
   vTaskStartScheduler();

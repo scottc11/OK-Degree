@@ -230,11 +230,7 @@ void GlobalControl::handleButtonPress(int pad)
                 }
             }
             gestureFlag = false;
-            channels[selectedChannel]->enableCalibration();
-            this->mode = CALIBRATING_1VO;
-        } else {
-            channels[selectedChannel]->disableCalibration();
-            this->mode = DEFAULT;
+            this->enableVCOCalibration(channels[selectedChannel]);
         }
         break;
 
@@ -498,4 +494,14 @@ void GlobalControl::resetSequencer()
             channels[i]->setTickerFlag();
         }
     }
+}
+
+void GlobalControl::enableVCOCalibration(TouchChannel *channel) {
+    this->mode = CALIBRATING_1VO;
+    xTaskCreate(taskExitCalibration, "exitCalibration", RTOS_STACK_SIZE_MIN, this, RTOS_PRIORITY_HIGH, NULL);
+    xTaskCreate(taskObtainSignalFrequency, "taskSampleVCO", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, NULL);
+}
+
+void GlobalControl::disableVCOCalibration() {
+    this->mode = GlobalControl::DEFAULT;
 }

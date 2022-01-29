@@ -2,6 +2,7 @@
 
 #include "main.h"
 #include "okSemaphore.h"
+#include "tasks_calibration.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
@@ -98,7 +99,10 @@ namespace DEGREE {
         void handleSwitchChange();
         void handleButtonInterupt();
         void handleTouchInterupt();
-        
+
+        void enableVCOCalibration(TouchChannel *channel);
+        void disableVCOCalibration();
+
         void loadCalibrationDataFromFlash();
         void saveCalibrationDataToFlash();
         int getCalibrationDataPosition(int data_index, int channel_index);
