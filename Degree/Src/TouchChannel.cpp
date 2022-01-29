@@ -887,5 +887,9 @@ void TouchChannel::enableCalibration()
 void TouchChannel::disableCalibration()
 {
     display->clear();
-    // destroy task
+    // destroy task!!!
+    // then casualy continue where you left off...
+    // I think you would want to have another task which is just dedicated to exiting calibration phase
+    // It listens for a notification and safely returns back to default mode
+    // ie. glblControl.mode == default
 }
