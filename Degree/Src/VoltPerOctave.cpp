@@ -36,7 +36,7 @@ void VoltPerOctave::setPitchBend(uint16_t value)
 */
 uint16_t VoltPerOctave::calculatePitchBend(int input, int min, int max)
 {
-    return scaleIntToRange(input, min, max, minPitchBend, maxPitchBend);
+    return map_num_in_range<uint16_t>(input, min, max, minPitchBend, maxPitchBend);
 }
 
 /**
