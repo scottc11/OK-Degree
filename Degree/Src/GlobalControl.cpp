@@ -214,7 +214,12 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case Gestures::RESET_CALIBRATION_DATA:
-        this->resetCalibrationDataToDefault();
+        if (gestureFlag)
+        {
+            this->handleChannelGesture(callback(this, &GlobalControl::resetCalibration1VO));
+        } else {
+            this->resetCalibrationDataToDefault();
+        }
         break;
 
     case Gestures::CALIBRATE_1VO:
@@ -420,6 +425,18 @@ void GlobalControl::resetCalibrationDataToDefault()
 }
 
 /**
+ * @brief reset a channels 1vo calibration data
+ * 
+ * @param chan index
+ */
+void GlobalControl::resetCalibration1VO(int chan)
+{
+    // basically just reset a channels voltage map to default and then save as usual
+    channels[chan]->output.resetVoltageMap();
+    this->saveCalibrationDataToFlash();
+}
+
+/**
  * @brief Calibration data for all channels is stored in a single buffer, this function returns the relative
  * position of a channels calibration data inside that buffer
  *
@@ -516,4 +533,16 @@ void GlobalControl::enableVCOCalibration(TouchChannel *channel) {
 
 void GlobalControl::disableVCOCalibration() {
     this->mode = GlobalControl::DEFAULT;
+}
+
+void GlobalControl::handleChannelGesture(Callback<void(int chan)> callback)
+{
+    for (int i = 0; i < CHANNEL_COUNT; i++)
+    {
+        if (touchPads->padIsTouched(i, currTouched, prevTouched))
+        {
+            callback(i);
+            break;
+        }
+    }
 }

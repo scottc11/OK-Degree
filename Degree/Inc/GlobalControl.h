@@ -95,7 +95,9 @@ namespace DEGREE {
 
         void handleButtonPress(int pad);
         void handleButtonRelease(int pad);
-        
+
+        void handleChannelGesture(Callback<void(int chan)> callback);
+
         void handleSwitchChange();
         void handleButtonInterupt();
         void handleTouchInterupt();
@@ -107,6 +109,7 @@ namespace DEGREE {
         void saveCalibrationDataToFlash();
         void deleteCalibrationDataFromFlash();
         void resetCalibrationDataToDefault();
+        void resetCalibration1VO(int chan);
         int getCalibrationDataPosition(int data_index, int channel_index);
         int getCalibrationBufferSize();
 
