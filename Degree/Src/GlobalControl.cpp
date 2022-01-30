@@ -213,10 +213,8 @@ void GlobalControl::handleButtonPress(int pad)
         }
         break;
 
-    case Gestures::RESET_CALIBRATION_TO_DEFAULT:
-        // display->benderCalibration();
-        // saveCalibrationToFlash(true);
-        // display->clear();
+    case Gestures::RESET_CALIBRATION_DATA:
+        this->resetCalibrationDataToDefault();
         break;
 
     case Gestures::CALIBRATE_1VO:
@@ -359,14 +357,16 @@ void GlobalControl::loadCalibrationDataFromFlash()
     if (count == 4 * 0xFFFF) // if all data is equal to 0xFFFF, than no calibration exists
     {
         // load default 1VO values
-        for (int chan = 0; chan < 4; chan++)
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             channels[chan]->output.resetVoltageMap();
+            channels[chan]->bender->setMaxBend(DEFAULT_MAX_BEND);
+            channels[chan]->bender->setMinBend(DEFAULT_MIN_BEND);
         }
     }
     else
     { // if it does, load the data from flash
-        for (int chan = 0; chan < 4; chan++)
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
             {
@@ -405,6 +405,18 @@ void GlobalControl::saveCalibrationDataToFlash()
     Flash flash;
     flash.erase(FLASH_CONFIG_ADDR);
     flash.write(FLASH_CONFIG_ADDR, buffer, this->getCalibrationBufferSize());
+}
+
+void GlobalControl::deleteCalibrationDataFromFlash()
+{
+    Flash flash;
+    flash.erase(FLASH_CONFIG_ADDR);
+}
+
+void GlobalControl::resetCalibrationDataToDefault()
+{
+    this->deleteCalibrationDataFromFlash();
+    this->loadCalibrationDataFromFlash();
 }
 
 /**

@@ -105,6 +105,8 @@ namespace DEGREE {
 
         void loadCalibrationDataFromFlash();
         void saveCalibrationDataToFlash();
+        void deleteCalibrationDataFromFlash();
+        void resetCalibrationDataToDefault();
         int getCalibrationDataPosition(int data_index, int channel_index);
         int getCalibrationBufferSize();
 
@@ -149,8 +151,8 @@ namespace DEGREE {
 
         enum Gestures : uint16_t
         {
-            CALIBRATE_BENDER = SHIFT | BEND_MODE,                      // SHIFT + BEND_MODE
-            RESET_CALIBRATION_TO_DEFAULT = SHIFT | RECORD | BEND_MODE, // SHIFT + REC + BEND_MODE
+            CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
+            RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
             CALIBRATE_1VO = SHIFT | CMODE,
             CLEAR_SEQ_A = CLEAR_SEQ | CTRL_A,
             CLEAR_SEQ_B = CLEAR_SEQ | CTRL_B,
