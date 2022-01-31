@@ -21,9 +21,33 @@ void Display::init()
 */ 
 void Display::clear()
 {
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < DISPLAY_LED_COUNT; i++)
     {
-        ledMatrix.setPWM(i, 0);
+        this->setLED(i, false);
+    }
+}
+
+void Display::clear(int chan)
+{
+    for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
+    {
+        this->setChannelLED(chan, i, false);
+    }
+}
+
+void Display::fill()
+{
+    for (int i = 0; i < DISPLAY_LED_COUNT; i++)
+    {
+        this->setLED(i, true);
+    }
+}
+
+void Display::fill(int chan)
+{
+    for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
+    {
+        this->setChannelLED(chan, i, true);
     }
 }
 
@@ -38,6 +62,10 @@ void Display::setGlobalCurrent(uint8_t value) {
     } else {
         ledMatrix.setGlobalCurrent(value);
     }
+}
+
+void Display::setLED(int index, bool state, uint8_t pwm /*=OK_PWM_HIGH*/) {
+    ledMatrix.setPWM(index, state ? pwm : 0);
 }
 
 /**
@@ -113,14 +141,6 @@ void Display::benderCalibration()
                 ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][i], OK_PWM_MID);
             }
         }
-    }
-}
-
-void Display::fill(int chan)
-{
-    for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
-    {
-        this->setChannelLED(chan, i, true);
     }
 }
 

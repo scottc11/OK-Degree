@@ -394,6 +394,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
 void GlobalControl::saveCalibrationDataToFlash()
 {
     // disable interupts?
+    this->display->fill();
     uint32_t buffer[this->getCalibrationBufferSize()]; // move this off the... stack?
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
@@ -411,6 +412,9 @@ void GlobalControl::saveCalibrationDataToFlash()
     Flash flash;
     flash.erase(FLASH_CONFIG_ADDR);
     flash.write(FLASH_CONFIG_ADDR, buffer, this->getCalibrationBufferSize());
+    // flash the grid of leds on and off for a sec then exit
+    this->display->flash(3, 300);
+    this->display->clear();
     logger_log("\nSaved Calibration Data to Flash");
 }
 

@@ -26,6 +26,7 @@
 #define OK_PWM_HIGH 255
 #define OK_PWM_MID 80
 #define OK_PWM_LOW 20
+#define DISPLAY_LED_COUNT         64
 #define DISPLAY_CHANNEL_LED_COUNT 16
 
 static const int CHAN_DISPLAY_LED_MAP[4][DISPLAY_CHANNEL_LED_COUNT] {
@@ -51,13 +52,16 @@ public:
 
     void init();
     void clear();
+    void clear(int chan);
+    void fill();
+    void fill(int chan);
     void setGlobalCurrent(uint8_t value);
+    void setLED(int index, bool state, uint8_t pwm=OK_PWM_HIGH);
     void setChannelLED(int chan, int index, bool on);
     void setSequenceLEDs(int chan, int length, int diviser, bool on);
     void stepSequenceLED(int chan, int currStep, int prevStep, int length);
     void benderCalibration();
 
-    void fill(int chan);
     void drawSquare(int chan, TickType_t speed);
     void drawSpiral(int chan, bool direction, TickType_t speed);
     void flash(int flashes, TickType_t ticks);

@@ -18,12 +18,6 @@ void task_controller(void *params) {
         switch (command)
         {
         case EXIT_1VO_CALIBRATION:
-            logger_log_task_watermark();
-            // flash the grid of leds on and off for a sec then exit
-            controller->display->flash(3, 300);
-            controller->display->clear();
-            logger_log_task_watermark();
-
             vTaskDelete(thCalibrate);
             vTaskDelete(thStartCalibration);
             // offload all this shit to a task with a much higher stack size
