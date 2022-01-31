@@ -157,7 +157,6 @@ void GlobalControl::pollButtons()
 */
 void GlobalControl::handleButtonPress(int pad)
 {
-
     switch (pad)
     {
     case CMODE:
@@ -253,6 +252,8 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case PB_RANGE:
+        xTaskNotify(thController, CTRL_CMNDS::EXIT_1VO_CALIBRATION, eNotifyAction::eNoAction);
+        // xTaskNotify(thController, 0, eNotifyAction::eSetValueWithOverwrite);
         // channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
         // channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
         // channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
@@ -393,7 +394,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
 void GlobalControl::saveCalibrationDataToFlash()
 {
     // disable interupts?
-    uint32_t buffer[this->getCalibrationBufferSize()];
+    uint32_t buffer[this->getCalibrationBufferSize()]; // move this off the... stack?
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
     {
@@ -410,6 +411,7 @@ void GlobalControl::saveCalibrationDataToFlash()
     Flash flash;
     flash.erase(FLASH_CONFIG_ADDR);
     flash.write(FLASH_CONFIG_ADDR, buffer, this->getCalibrationBufferSize());
+    logger_log("\nSaved Calibration Data to Flash");
 }
 
 void GlobalControl::deleteCalibrationDataFromFlash()
@@ -527,12 +529,12 @@ void GlobalControl::resetSequencer()
 
 void GlobalControl::enableVCOCalibration(TouchChannel *channel) {
     this->mode = CALIBRATING_1VO;
-    xTaskCreate(taskExitCalibration, "exitCalibration", RTOS_STACK_SIZE_MIN, this, RTOS_PRIORITY_HIGH, NULL);
     xTaskCreate(taskObtainSignalFrequency, "taskSampleVCO", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, NULL);
 }
 
 void GlobalControl::disableVCOCalibration() {
-    this->mode = GlobalControl::DEFAULT;
+    this->mode = GlobalControl::Mode::DEFAULT;
+    logger_log("\ndisableVCOCalibration");
 }
 
 void GlobalControl::handleChannelGesture(Callback<void(int chan)> callback)

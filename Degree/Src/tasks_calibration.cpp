@@ -11,10 +11,6 @@ static uint16_t prev_adc_sample = 0;
 SemaphoreHandle_t sem_obtain_freq;
 SemaphoreHandle_t sem_calibrate;
 
-static xTaskHandle thStartCalibration;
-static xTaskHandle thExitCalibration;
-static xTaskHandle thCalibrate;
-
 /**
  * @brief Takes approx. 78 of stack space while running
  *
@@ -162,7 +158,7 @@ void taskCalibrate(void *params)
                 logger_log("\n\n*** CALIBRATION FINISHED ***");
                 channel->display->setChannelLED(channel->channelIndex, 15, true);
                 // send a notification to exitCalibration task
-                xTaskNotify(thExitCalibration, 0, eNotifyAction::eNoAction);
+                xTaskNotify(thController, CTRL_CMNDS::EXIT_1VO_CALIBRATION, eNotifyAction::eNoAction);
             }
 
             calibrationAttemps = 0;
@@ -216,30 +212,6 @@ float calculateAverageFreq()
         sum += freqSamples[i];
     }
     return (float)(sum / (MAX_FREQ_SAMPLES - 1));
-}
-
-/**
- * @brief 
- * 
- * @param params 
- */
-void taskExitCalibration(void *params)
-{
-    GlobalControl *control = (GlobalControl *)params;
-    thExitCalibration = xTaskGetCurrentTaskHandle();
-    while (1)
-    {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        
-        // flash the grid of leds on and off for a sec then exit
-        control->display->flash(3, 300);
-        control->display->clear();
-
-        vTaskDelete(thCalibrate);
-        vTaskDelete(thStartCalibration);
-        multi_chan_adc_set_sample_rate(&hadc1, &htim3, ADC_SAMPLE_RATE_HZ);
-        control->disableVCOCalibration();
-    }   
 }
 
 static const float TARGET_FREQUENCY_C1 = PITCH_FREQ_ARR[0];

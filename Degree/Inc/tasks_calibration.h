@@ -21,4 +21,3 @@ void initializeCalibration();
 void taskObtainSignalFrequency(void *params);
 float calculateAverageFreq();
 void taskCalibrate(void *params);
-void taskExitCalibration(void *params);

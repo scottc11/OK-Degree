@@ -19,6 +19,7 @@
 #include "Bender.h"
 #include "AnalogHandle.h"
 #include "Display.h"
+#include "task_controller.h"
 
 using namespace DEGREE;
 
@@ -106,6 +107,7 @@ int main(void)
   HAL_Delay(100);
 
   xTaskCreate(taskMain, "taskMain", 512, NULL, 1, NULL);
+  xTaskCreate(task_controller, "controller", 512, &glblCtrl, RTOS_PRIORITY_HIGH, NULL);
 
   vTaskStartScheduler();
 
