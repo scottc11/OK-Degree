@@ -252,7 +252,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case PB_RANGE:
-        xTaskNotify(thController, CTRL_CMNDS::EXIT_1VO_CALIBRATION, eNotifyAction::eNoAction);
+        xTaskNotify(thController, CTRL_CMNDS::ENTER_VCO_TUNING, eNotifyAction::eSetValueWithOverwrite);
         // xTaskNotify(thController, 0, eNotifyAction::eSetValueWithOverwrite);
         // channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
         // channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
@@ -533,6 +533,7 @@ void GlobalControl::resetSequencer()
 
 void GlobalControl::enableVCOCalibration(TouchChannel *channel) {
     this->mode = CALIBRATING_1VO;
+    // potentially move task calibrate creation here
     xTaskCreate(taskObtainSignalFrequency, "taskSampleVCO", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, NULL);
 }
 

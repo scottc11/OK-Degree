@@ -4,6 +4,8 @@
 #include "MultiChanADC.h"
 #include "logger.h"
 #include "GlobalControl.h"
+#include "task_calibration.h"
+#include "task_tuner.h"
 
 using namespace DEGREE;
 
@@ -14,10 +16,11 @@ void task_controller(void *params) {
 
     while (1)
     {
+        // you could bit mask the first 16 bits to determine the command, and the bottom 16 bits to determine the channel to act on.
         uint32_t command = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         switch (command)
         {
-        case EXIT_1VO_CALIBRATION:
+        case CTRL_CMNDS::EXIT_1VO_CALIBRATION:
             vTaskDelete(thCalibrate);
             vTaskDelete(thStartCalibration);
             // offload all this shit to a task with a much higher stack size
@@ -27,8 +30,13 @@ void task_controller(void *params) {
 
             controller->disableVCOCalibration();
             break;
-        case EXIT_BENDER_CALIBRATION:
+        case CTRL_CMNDS::EXIT_BENDER_CALIBRATION:
             // do something
+            break;
+        case CTRL_CMNDS::ENTER_VCO_TUNING:
+            // start frequency detector task
+            xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[0], RTOS_PRIORITY_MED, &thStartCalibration);
+            xTaskCreate(task_tuner, "tuner", RTOS_STACK_SIZE_MIN, controller->channels[0], RTOS_PRIORITY_HIGH, &tuner_task_handle);
             break;
         default:
             break;

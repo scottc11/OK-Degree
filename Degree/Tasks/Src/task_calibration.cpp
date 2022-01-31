@@ -20,7 +20,7 @@ void taskObtainSignalFrequency(void *params)
 {
     TouchChannel *channel = (TouchChannel *)params;
     
-    thStartCalibration = xTaskGetCurrentTaskHandle();
+    // thStartCalibration = xTaskGetCurrentTaskHandle();
 
     uint16_t sample;
     float vcoFrequency = 0;          // the calculated frequency sample
@@ -44,7 +44,7 @@ void taskObtainSignalFrequency(void *params)
     sem_obtain_freq = xSemaphoreCreateBinary();
     sem_calibrate = xSemaphoreCreateBinary();
 
-    xTaskCreate(taskCalibrate, "calibrate", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, &thCalibrate);
+    // xTaskCreate(taskCalibrate, "calibrate", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, &thCalibrate);
 
     xSemaphoreGive(sem_obtain_freq);
 
@@ -83,8 +83,9 @@ void taskObtainSignalFrequency(void *params)
             {
                 signalAverageFrequency = (float)(avgFrequencySum / (MAX_FREQ_SAMPLES - 1));
                 // if the frequency sampler queue is full, you could wait intil it gets freed up, then you don't need to work with semaphores
-                xSemaphoreGive(sem_calibrate); // give semaphore to calibrate task
-                xSemaphoreTake(sem_obtain_freq, portMAX_DELAY); // wait till other tasks gives this semaphore back, then obtain next notes freq.
+                xQueueSend(tuner_queue, &signalAverageFrequency, portMAX_DELAY);
+                // xSemaphoreGive(sem_calibrate); // give semaphore to calibrate task
+                // xSemaphoreTake(sem_obtain_freq, portMAX_DELAY); // wait till other tasks gives this semaphore back, then obtain next notes freq.
                 frequencySampleCounter = 0;
                 avgFrequencySum = 0;
             }
