@@ -5,7 +5,7 @@ using namespace DEGREE;
 static uint16_t signalZeroCrossing = 0;            // The zero crossing is erelivant as the pre-opamp ADC is not bi-polar. Any value close to the ADC ceiling seems to work
 static uint32_t numSamplesTaken = 0;               // how many samples have elapsed between zero crossing events
 static bool slopeIsPositive = false;               // which direction the signals voltage is moving towards (false = towards GND, true = towards VDD)
-static float freqSamples[MAX_FREQ_SAMPLES] = {};   // array to store frequency samples for averaging
+static float signalAverageFrequency = 0;           // running average of signal frequency
 static uint16_t prev_adc_sample = 0;
 
 SemaphoreHandle_t sem_obtain_freq;
@@ -23,8 +23,9 @@ void taskObtainSignalFrequency(void *params)
     thStartCalibration = xTaskGetCurrentTaskHandle();
 
     uint16_t sample;
-    float vcoFrequency = 0;  // the calculated frequency sample
-    int freqSampleIndex = 0; // index for storing new frequency sample into freqSamples array
+    float vcoFrequency = 0;          // the calculated frequency sample
+    int frequencySampleCounter = 0;  // index for storing new frequency sample into freqSamples array
+    float avgFrequencySum = 0;       // the sum of all new frequency samples (for calculating a running average afterwards)
 
     channel->display->clear();
     channel->display->drawSpiral(channel->channelIndex, true, 50);
@@ -66,23 +67,26 @@ void taskObtainSignalFrequency(void *params)
         {
             float vcoPeriod = numSamplesTaken;                                                // how many samples have occurred between positive zero crossings
             vcoFrequency = (float)multi_chan_adc_get_sample_rate(&hadc1, &htim3) / vcoPeriod; // sample rate divided by period of input signal
-            freqSamples[freqSampleIndex] = vcoFrequency;                                      // store sample in array
             numSamplesTaken = 0;                                                              // reset sample count to zero for the next sampling routine
 
             // NOTE: you could eliminate the freqSamples array by first, ignoring the first iteration of sampling, and then just adding
             // each newly sampled frequency to a sum. This way you could increase the MAX_FREQ_SAMPLES as high as you want without requiring the
             // initialization of a massive array to hold all the samples.
-            if (freqSampleIndex < MAX_FREQ_SAMPLES - 1)
+            if (frequencySampleCounter < MAX_FREQ_SAMPLES)
             {
-                // logger_log("\n");
-                // logger_log(vcoFrequency);
-                freqSampleIndex += 1;
+                if (frequencySampleCounter != 0) { // skipping the first sample is hard to explain but its important...
+                    avgFrequencySum += vcoFrequency;
+                }
+                frequencySampleCounter += 1;
             }
             else
             {
+                signalAverageFrequency = (float)(avgFrequencySum / (MAX_FREQ_SAMPLES - 1));
+                // if the frequency sampler queue is full, you could wait intil it gets freed up, then you don't need to work with semaphores
                 xSemaphoreGive(sem_calibrate); // give semaphore to calibrate task
                 xSemaphoreTake(sem_obtain_freq, portMAX_DELAY); // wait till other tasks gives this semaphore back, then obtain next notes freq.
-                freqSampleIndex = 0;
+                frequencySampleCounter = 0;
+                avgFrequencySum = 0;
             }
             slopeIsPositive = true;
         }
@@ -116,9 +120,11 @@ void taskCalibrate(void *params)
 
     while (1)
     {
+        // this seems like it should be a queue now. Processing the avg frequency when they appear on the queue
+        // this way you could have other tasks listen to the same queue for alternate purposes (ie. Tuner)
         xSemaphoreTake(sem_calibrate, portMAX_DELAY);
-        currAvgFreq = calculateAverageFreq();
-        
+        currAvgFreq = signalAverageFrequency;
+
         // handle first iteration of calibrating by finding the frequency in PITCH_FREQ_ARR closest to the currently sampled frequency
         if (iteration == 0)
         {
@@ -145,9 +151,13 @@ void taskCalibrate(void *params)
         if ((currAvgFreq <= targetFreq + TUNING_TOLERANCE && currAvgFreq >= targetFreq - TUNING_TOLERANCE) || calibrationAttemps > MAX_CALIB_ATTEMPTS)
         {
             channel->output.dacVoltageMap[iteration] = newDacValue > BIT_MAX_16 ? BIT_MAX_16 : newDacValue; // replace current DAC value with adjusted value (NOTE: must cap value or else it will roll over to zero)
-            logger_log("\nIteration ");
+            logger_log("\ni= ");
             logger_log(iteration);
-            logger_log(" DONE, attempts Taken: ");
+            logger_log(" :: target= ");
+            logger_log(targetFreq);
+            logger_log(" :: actual= ");
+            logger_log(currAvgFreq);
+            logger_log(" :: attempts= ");
             logger_log(calibrationAttemps);
 
             int ledIndex = map_num_in_range<int>(iteration, 0, DAC_1VO_ARR_SIZE, 0, 15);
@@ -197,21 +207,6 @@ void taskCalibrate(void *params)
         
     }
     
-}
-
-/**
- * @brief Calculate Average frequency
- * NOTE: skipping the first sample is hard to explain but its important...
- * @return float
- */
-float calculateAverageFreq()
-{
-    float sum = 0;
-    for (int i = 1; i < MAX_FREQ_SAMPLES; i++)
-    {
-        sum += freqSamples[i];
-    }
-    return (float)(sum / (MAX_FREQ_SAMPLES - 1));
 }
 
 static const float TARGET_FREQUENCY_C1 = PITCH_FREQ_ARR[0];

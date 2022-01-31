@@ -538,7 +538,6 @@ void GlobalControl::enableVCOCalibration(TouchChannel *channel) {
 
 void GlobalControl::disableVCOCalibration() {
     this->mode = GlobalControl::Mode::DEFAULT;
-    logger_log("\ndisableVCOCalibration");
 }
 
 void GlobalControl::handleChannelGesture(Callback<void(int chan)> callback)
