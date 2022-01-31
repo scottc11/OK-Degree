@@ -90,6 +90,7 @@ API/Src/DigitalIn.cpp \
 API/Src/DigitalOut.cpp \
 API/Src/SuperClock.cpp \
 API/Src/tim_api.cpp \
+API/rtos/Src/SoftwareTimer.cpp \
 Degree/Src/AnalogHandle.cpp \
 Degree/Src/main.cpp \
 Degree/Src/Bender.cpp \
