@@ -116,6 +116,14 @@ void Display::benderCalibration()
     }
 }
 
+void Display::fill(int chan)
+{
+    for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
+    {
+        this->setChannelLED(chan, i, true);
+    }
+}
+
 /**
  * @brief Draw a square
  * 

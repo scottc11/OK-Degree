@@ -2,6 +2,7 @@
 
 #include "system_clock_config.h"
 #include "cmsis_os.h"
+#include "task_handles.h"
 
 #include "common.h"
 
