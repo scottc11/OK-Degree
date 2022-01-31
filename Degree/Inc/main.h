@@ -2,6 +2,7 @@
 
 #include "system_clock_config.h"
 #include "cmsis_os.h"
+#include "task_handles.h"
 
 #include "common.h"
 
@@ -28,6 +29,8 @@
 
 #define BENDER_ZERO            32767
 #define BENDER_NOISE_THRESHOLD 500
+
+#define DISPLAY_MAX_CURRENT    127   // for managing current
 
 #define REC_LED PC_13
 #define FREEZE_LED PB_7

@@ -1,3 +1,6 @@
+#pragma once
+
+#include "main.h"
 // Notes are separated by "semitone" intervals.
 // There are 12 seimtones in each octave, and fundamental frequencies are logarithmically spaced,
 // so the fundamental frequency of each note is 2(1/12) = 1.0595 times the previous frequency.
@@ -5,7 +8,7 @@
 
 #define NUM_PITCH_FREQENCIES 96
 
-const float PITCH_FREQ[NUM_PITCH_FREQENCIES] = {
+const float PITCH_FREQ_ARR[NUM_PITCH_FREQENCIES] = {
     32.70,   //  C1
     34.65,   //  C#1/Db1
     36.71,   //  D1

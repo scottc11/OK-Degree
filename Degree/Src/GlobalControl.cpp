@@ -62,7 +62,8 @@ void GlobalControl::poll()
     case CALIBRATING_BENDER:
         for (int i = 0; i < 4; i++)
         {
-            channels[i]->bender->adc.detectMinMax();
+            uint16_t sample = channels[i]->bender->adc.read_u16();
+            channels[i]->bender->adc.sampleMinMax(sample);
         }
         pollButtons();
         break;
@@ -156,7 +157,6 @@ void GlobalControl::pollButtons()
 */
 void GlobalControl::handleButtonPress(int pad)
 {
-
     switch (pad)
     {
     case CMODE:
@@ -206,16 +206,19 @@ void GlobalControl::handleButtonPress(int pad)
             display->benderCalibration();
             for (int i = 0; i < 4; i++)
             {
-                channels[i]->bender->adc.initMinMaxDetection();
+                channels[i]->bender->adc.resetMinMax();
             }
             
         }
         break;
 
-    case Gestures::RESET_CALIBRATION_TO_DEFAULT:
-        // display->benderCalibration();
-        // saveCalibrationToFlash(true);
-        // display->clear();
+    case Gestures::RESET_CALIBRATION_DATA:
+        if (gestureFlag)
+        {
+            this->handleChannelGesture(callback(this, &GlobalControl::resetCalibration1VO));
+        } else {
+            this->resetCalibrationDataToDefault();
+        }
         break;
 
     case Gestures::CALIBRATE_1VO:
@@ -229,11 +232,7 @@ void GlobalControl::handleButtonPress(int pad)
                 }
             }
             gestureFlag = false;
-            channels[selectedChannel]->enableCalibration();
-            this->mode = CALIBRATING_1VO;
-        } else {
-            channels[selectedChannel]->disableCalibration();
-            this->mode = DEFAULT;
+            this->enableVCOCalibration(channels[selectedChannel]);
         }
         break;
 
@@ -249,9 +248,12 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case CLEAR_SEQ:
+        logger_log_task_watermark();
         break;
 
     case PB_RANGE:
+        xTaskNotify(thController, CTRL_CMNDS::EXIT_1VO_CALIBRATION, eNotifyAction::eNoAction);
+        // xTaskNotify(thController, 0, eNotifyAction::eSetValueWithOverwrite);
         // channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
         // channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
         // channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
@@ -361,14 +363,16 @@ void GlobalControl::loadCalibrationDataFromFlash()
     if (count == 4 * 0xFFFF) // if all data is equal to 0xFFFF, than no calibration exists
     {
         // load default 1VO values
-        for (int chan = 0; chan < 4; chan++)
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             channels[chan]->output.resetVoltageMap();
+            channels[chan]->bender->setMaxBend(DEFAULT_MAX_BEND);
+            channels[chan]->bender->setMinBend(DEFAULT_MIN_BEND);
         }
     }
     else
     { // if it does, load the data from flash
-        for (int chan = 0; chan < 4; chan++)
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
             {
@@ -390,7 +394,8 @@ void GlobalControl::loadCalibrationDataFromFlash()
 void GlobalControl::saveCalibrationDataToFlash()
 {
     // disable interupts?
-    uint32_t buffer[this->getCalibrationBufferSize()];
+    this->display->fill();
+    uint32_t buffer[this->getCalibrationBufferSize()]; // move this off the... stack?
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
     {
@@ -407,6 +412,34 @@ void GlobalControl::saveCalibrationDataToFlash()
     Flash flash;
     flash.erase(FLASH_CONFIG_ADDR);
     flash.write(FLASH_CONFIG_ADDR, buffer, this->getCalibrationBufferSize());
+    // flash the grid of leds on and off for a sec then exit
+    this->display->flash(3, 300);
+    this->display->clear();
+    logger_log("\nSaved Calibration Data to Flash");
+}
+
+void GlobalControl::deleteCalibrationDataFromFlash()
+{
+    Flash flash;
+    flash.erase(FLASH_CONFIG_ADDR);
+}
+
+void GlobalControl::resetCalibrationDataToDefault()
+{
+    this->deleteCalibrationDataFromFlash();
+    this->loadCalibrationDataFromFlash();
+}
+
+/**
+ * @brief reset a channels 1vo calibration data
+ * 
+ * @param chan index
+ */
+void GlobalControl::resetCalibration1VO(int chan)
+{
+    // basically just reset a channels voltage map to default and then save as usual
+    channels[chan]->output.resetVoltageMap();
+    this->saveCalibrationDataToFlash();
 }
 
 /**
@@ -494,6 +527,27 @@ void GlobalControl::resetSequencer()
                 channels[i]->sequence.advance();
             }
             channels[i]->setTickerFlag();
+        }
+    }
+}
+
+void GlobalControl::enableVCOCalibration(TouchChannel *channel) {
+    this->mode = CALIBRATING_1VO;
+    xTaskCreate(taskObtainSignalFrequency, "taskSampleVCO", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, NULL);
+}
+
+void GlobalControl::disableVCOCalibration() {
+    this->mode = GlobalControl::Mode::DEFAULT;
+}
+
+void GlobalControl::handleChannelGesture(Callback<void(int chan)> callback)
+{
+    for (int i = 0; i < CHANNEL_COUNT; i++)
+    {
+        if (touchPads->padIsTouched(i, currTouched, prevTouched))
+        {
+            callback(i);
+            break;
         }
     }
 }

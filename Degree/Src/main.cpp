@@ -19,6 +19,7 @@
 #include "Bender.h"
 #include "AnalogHandle.h"
 #include "Display.h"
+#include "task_controller.h"
 
 using namespace DEGREE;
 
@@ -66,26 +67,12 @@ TouchChannel chanD(3, &display, &touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_
 
 GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display);
 
-void taskCalibrateVCO(void *params) {
-  uint16_t buffer;
-  chanA.adc.disableFilter();
-
-  multi_chan_adc_set_sample_rate(&hadc1, &htim3, 16000); // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
-
-  while (1)
-  {
-    // xQueueReceive(adcQueue, &buffer, portMAX_DELAY);
-    // chanA.output.sampleVCO(chanA.adc.read_u16());
-  }  
-}
-
-
 /**
  * @brief
  * NOTE: The stack used by a task will grow and shrink as the task executes and interrupts are processed.
  * @param pvParameters
  */
-void vTask1(void *pvParameters)
+void taskMain(void *pvParameters)
 {
   i2c1.init();
   i2c3.init();
@@ -95,6 +82,9 @@ void vTask1(void *pvParameters)
   superClock.initTIM2(40, 0xFFFFFFFF - 1); // precaler value handles BPM range 40..240
   superClock.initTIM4(40, 10000 - 1);
   superClock.start();
+
+  logger_log_task_watermark();
+  
   while (1)
   {
     glblCtrl.poll();
@@ -116,8 +106,8 @@ int main(void)
   multi_chan_adc_start();
   HAL_Delay(100);
 
-  // xTaskCreate(taskCalibrateVCO, "taskCalibrateVCO", 100, NULL, 3, NULL);
-  xTaskCreate(vTask1, "vTask1", RTOS_MAX_STACK_SIZE, NULL, 1, NULL);
+  xTaskCreate(taskMain, "taskMain", 512, NULL, 1, NULL);
+  xTaskCreate(task_controller, "controller", 512, &glblCtrl, RTOS_PRIORITY_HIGH, NULL);
 
   vTaskStartScheduler();
 

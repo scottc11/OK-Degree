@@ -2,6 +2,7 @@
 
 #include "main.h"
 #include "okSemaphore.h"
+#include "task_calibration.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
@@ -94,13 +95,21 @@ namespace DEGREE {
 
         void handleButtonPress(int pad);
         void handleButtonRelease(int pad);
-        
+
+        void handleChannelGesture(Callback<void(int chan)> callback);
+
         void handleSwitchChange();
         void handleButtonInterupt();
         void handleTouchInterupt();
-        
+
+        void enableVCOCalibration(TouchChannel *channel);
+        void disableVCOCalibration();
+
         void loadCalibrationDataFromFlash();
         void saveCalibrationDataToFlash();
+        void deleteCalibrationDataFromFlash();
+        void resetCalibrationDataToDefault();
+        void resetCalibration1VO(int chan);
         int getCalibrationDataPosition(int data_index, int channel_index);
         int getCalibrationBufferSize();
 
@@ -145,8 +154,8 @@ namespace DEGREE {
 
         enum Gestures : uint16_t
         {
-            CALIBRATE_BENDER = SHIFT | BEND_MODE,                      // SHIFT + BEND_MODE
-            RESET_CALIBRATION_TO_DEFAULT = SHIFT | RECORD | BEND_MODE, // SHIFT + REC + BEND_MODE
+            CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
+            RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
             CALIBRATE_1VO = SHIFT | CMODE,
             CLEAR_SEQ_A = CLEAR_SEQ | CTRL_A,
             CLEAR_SEQ_B = CLEAR_SEQ | CTRL_B,

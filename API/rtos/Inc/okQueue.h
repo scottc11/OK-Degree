@@ -19,11 +19,12 @@
 #include "cmsis_os.h"
 #include "logger.h"
 
-template<typename T>
+template<class T, unsigned L>
 class okQueue
 {
-    okQueue(int length) {
-        // handle = xQueueCreate(length, (T));
+public:
+    okQueue() {
+        handle = xQueueCreate(L, sizeof(T));
         if (handle == NULL) {
             // logger_log("there is insufficient heap RAM available for the queue to be created.");
         }
@@ -31,12 +32,33 @@ class okQueue
 
     QueueHandle_t handle;
     BaseType_t status;
-    T data;
 
-    int write();
-    int read(TickType_t delay = portMAX_DELAY)
+    /**
+     * @brief When an item is added to a queue with available space, the addition happens immediately. Because 
+     * space was available in the queue, the task sending the item to the queue continues running, unless 
+     * there is another higher priority task waiting on an item to appear in the queue.
+     *
+     * NOTE: When a queue is full, no information is thrown away. Instead, the task attempting to send the item 
+     * to the queue will wait for up to a predetermined amount of time for available space in the queue.
+     * 
+     * @param item The item to put on the Queue. NOTE: currently being copied instead of referenced
+     * @param delay How long to wait for room if Queue is full.
+     * @return int
+     */
+    BaseType_t send(T item, TickType_t delay = portMAX_DELAY)
     {
-        status = xQueueReceive(this->handle, &data, delay);
-        return data;
+        return xQueueSend(this->handle, (void *) item, delay);
+    }
+
+    /**
+     * @brief Get an item from the Queue.
+     * Gets the first item from the Queue
+     * @param buffer_ptr Variable to place the item
+     * @param delay How long to wait for an item to be available.
+     * @return True if an item returned.
+     */
+    BaseType_t receive(T *buffer_ptr, TickType_t delay = portMAX_DELAY)
+    {
+        return xQueueReceive(this->handle, buffer_ptr, delay);
     }
 };

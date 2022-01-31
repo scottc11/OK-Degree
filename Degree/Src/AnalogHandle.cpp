@@ -61,7 +61,7 @@ void AnalogHandle::setFilter(float value)
  * @return okSemaphore* 
  */
 okSemaphore* AnalogHandle::initDenoising() {
-    this->denoising = true;
+    this->samplingNoise = true;
     denoisingSemaphore.take(); // create a semaphore
     return &denoisingSemaphore;
 }
@@ -89,7 +89,7 @@ void AnalogHandle::calculateSignalNoise(uint16_t sample)
     }
     else
     {
-        denoising = false;
+        samplingNoise = false;
         sampleCounter = 0; // reset back to 0 for later use
         idleNoiseThreshold = (noiseCeiling - noiseFloor) / 2;
         avgValueWhenIdle = noiseFloor + idleNoiseThreshold;
@@ -97,6 +97,11 @@ void AnalogHandle::calculateSignalNoise(uint16_t sample)
     }
 }
 
+/**
+ * @brief This is not exactly a callback, its really a "sender" task
+ * 
+ * @param sample 
+ */
 void AnalogHandle::sampleReadyCallback(uint16_t sample)
 {
     prevValue = currValue;
@@ -104,11 +109,25 @@ void AnalogHandle::sampleReadyCallback(uint16_t sample)
     if (filter) {
         currValue = filter_one_pole<uint16_t>(currValue, prevValue, filterAmount);
     }
-    if (this->denoising)
+    if (samplingNoise)
     {
         this->calculateSignalNoise(currValue);
     }
-    // set value
+    if (this->samplingMinMax) // execute if task has a semaphore?
+    {
+        if (sampleCounter < sampleTime) {
+            this->sampleMinMax(currValue);
+            sampleCounter++;
+        } else {
+            samplingMinMax = false;
+            sampleCounter = 0;
+            // maybe calulate median here
+            sampleSemaphore.give();
+        }
+        
+    }
+    
+    this->queue.send(currValue, (TickType_t)0); // send sample to queue for other tasks
 }
 
 void AnalogHandle::RouteConversionCompleteCallback() // static
@@ -142,26 +161,22 @@ void AnalogHandle::log_noise_threshold_to_console(char const *source_id)
     logger_log("\n");
 }
 
-/**
- * @brief initializes the min and max input values to the currently read value on the ADC Pin
- */
-void AnalogHandle::initMinMaxDetection()
-{
-    inputMax = this->read_u16() + 1;
-    inputMin = this->read_u16() - 1;
+void AnalogHandle::log_min_max(char const *source_id) {
+    logger_log(source_id);
+    logger_log(" Signal Max: ");
+    logger_log(this->inputMax);
+    logger_log(" || Signal Min: ");
+    logger_log(this->inputMin);
+    logger_log("\n");
 }
 
-void AnalogHandle::detectMinMax()
+/**
+ * @brief resets the min and max input values to the currently read value on the ADC Pin
+ */
+void AnalogHandle::resetMinMax()
 {
-    uint16_t input = this->read_u16();
-    if (input > inputMax)
-    {
-        this->setInputMax(input);
-    }
-    else if (input < inputMin)
-    {
-        this->setInputMin(input);
-    }
+    this->setInputMax(currValue + 1);
+    this->setInputMin(currValue - 1);
 }
 
 void AnalogHandle::setInputMax(uint16_t value)
@@ -172,4 +187,34 @@ void AnalogHandle::setInputMax(uint16_t value)
 void AnalogHandle::setInputMin(uint16_t value)
 {
     this->inputMin = value;
+}
+
+/**
+ * @brief 
+ * 
+ * @param numSamples how many samples ie. how long to sample for.
+ * @return okSemaphore* 
+ */
+okSemaphore * AnalogHandle::beginMinMaxSampling(uint16_t numSamples) {
+    this->resetMinMax();
+    this->sampleCounter = 0;
+    this->sampleTime = numSamples;
+    this->samplingMinMax = true;
+    this->sampleSemaphore.take();
+    return &sampleSemaphore;
+}
+
+/**
+ * @brief determine a signals min and max values
+ */
+void AnalogHandle::sampleMinMax(uint16_t sample)
+{
+    if (sample > inputMax)
+    {
+        this->setInputMax(sample);
+    }
+    else if (sample < inputMin)
+    {
+        this->setInputMin(sample);
+    }
 }

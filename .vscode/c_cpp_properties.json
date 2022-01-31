@@ -3,6 +3,9 @@
         {
             "name": "Mac",
             "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
+            "defines": [
+                "USE_HAL_DRIVER"
+            ],
             "includePath": [
                 "${workspaceFolder}/API/*",
                 "${workspaceFolder}/API/rtos/*",
@@ -13,6 +16,9 @@
                 "${workspaceFolder}/Degree/*",
                 "${workspaceFolder}/Degree/Inc/*",
                 "${workspaceFolder}/Degree/Src/*",
+                "${workspaceFolder}/Degree/Tasks/*",
+                "${workspaceFolder}/Degree/Tasks/Inc/*",
+                "${workspaceFolder}/Degree/Tasks/Src/*",
                 "${workspaceFolder}/Drivers/*",
                 "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/*",
                 "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc/*",

@@ -9,6 +9,7 @@
 #include "VoltPerOctave.h"
 #include "SuperSeq.h"
 #include "Display.h"
+#include "okSemaphore.h"
 
 typedef struct QuantOctave
 {
@@ -88,7 +89,7 @@ namespace DEGREE {
             Bender *_bender,
             PinName adc_pin,
             PinName gatePin,
-            DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan)
+            DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan, &adc)
         {
             channelIndex = _index;
             display = display_ptr;
@@ -193,9 +194,7 @@ namespace DEGREE {
         uint8_t calculateRatchet(uint16_t bend);
         void handleRatchet(int position, uint8_t rate);
 
-        // Calibration Methods
-        void enableCalibration();
-        void disableCalibration();
+        static void taskReceiveVCOSample(void *params);
     };
 } // end namespace
 

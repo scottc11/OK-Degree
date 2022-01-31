@@ -94,6 +94,22 @@ void logger_log_system_config()
     logger_log("\n");
 }
 
+void logger_log_task_watermark(void) {
+    TaskHandle_t task_handle = xTaskGetCurrentTaskHandle();
+    logger_log_task_watermark(task_handle);
+}
+
+void logger_log_task_watermark(TaskHandle_t task_handle) {
+    char * task_name = pcTaskGetName(task_handle);
+    UBaseType_t stackSpace;
+    stackSpace = uxTaskGetStackHighWaterMark(task_handle);
+    logger_log("\n");
+    logger_log(task_name);
+    logger_log(" stack remaining: ");
+    logger_log((uint32_t)stackSpace);
+    logger_log("\n");
+}
+
 void logger_queue_message() {
 
 }

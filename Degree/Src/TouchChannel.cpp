@@ -871,17 +871,3 @@ void TouchChannel::disableSequenceRecording()
         }
     }
 }
-
-
-void TouchChannel::enableCalibration()
-{
-    // cycle the sequencer leds
-    display->clear();
-    display->drawSquare(this->channelIndex);
-    adc.setFilter(0);
-}
-
-void TouchChannel::disableCalibration()
-{
-    display->clear();
-}

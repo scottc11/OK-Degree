@@ -99,6 +99,8 @@ Degree/Src/SuperSeq.cpp \
 Degree/Src/TouchChannel.cpp \
 Degree/Src/GlobalControl.cpp \
 Degree/Src/VoltPerOctave.cpp \
+Degree/Tasks/Src/task_calibration.cpp \
+Degree/Tasks/Src/task_handles.cpp \
 ok-drivers/drivers/CAP1208/CAP1208.cpp \
 ok-drivers/drivers/DAC8554/DAC8554.cpp \
 ok-drivers/drivers/SX1509/SX1509.cpp \
@@ -176,6 +178,7 @@ C_INCLUDES =  \
 -IAPI/Inc \
 -IAPI/cxxsupport \
 -IDegree/Inc \
+-IDegree/Tasks/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \

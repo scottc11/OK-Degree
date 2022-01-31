@@ -43,6 +43,9 @@ void logger_log_arr(T arr[], int length)
 
 void logger_log_system_config();
 
+void logger_log_task_watermark(void);
+void logger_log_task_watermark(TaskHandle_t task_handle);
+
 void logger_queue_message();
 
 void TASK_logger(void *params);
