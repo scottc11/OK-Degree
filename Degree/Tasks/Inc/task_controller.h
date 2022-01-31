@@ -38,6 +38,13 @@ void task_controller(void *params) {
             xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[0], RTOS_PRIORITY_MED, &thStartCalibration);
             xTaskCreate(task_tuner, "tuner", RTOS_STACK_SIZE_MIN, controller->channels[0], RTOS_PRIORITY_HIGH, &tuner_task_handle);
             break;
+        case CTRL_CMNDS::EXIT_VCO_TUNING:
+            vTaskDelete(thStartCalibration);
+            vTaskDelete(tuner_task_handle);
+            controller->display->fill();
+            controller->display->flash(3, 200);
+            controller->display->clear();
+            break;
         default:
             break;
         }

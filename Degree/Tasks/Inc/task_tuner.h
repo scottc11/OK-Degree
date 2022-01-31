@@ -5,9 +5,7 @@
 #include "TouchChannel.h"
 #include "PitchFrequencies.h"
 
-QueueHandle_t tuner_queue;
-TaskHandle_t tuner_task_handle;
-
 using namespace DEGREE;
 
+void timer_callback(TimerHandle_t xTimer);
 void task_tuner(void *params);
