@@ -3,11 +3,9 @@
 static const float TARGET_FREQUENCY_C1 = PITCH_FREQ_ARR[0];
 QueueHandle_t tuner_queue;
 TaskHandle_t tuner_task_handle;
-TimerHandle_t tuner_timer;
 
-void timer_callback(TimerHandle_t xTimer) {
+void timer_callback() {
     xTaskNotify(thController, CTRL_CMNDS::EXIT_VCO_TUNING, eSetValueWithoutOverwrite);
-    xTimerDelete(tuner_timer, 1);
 }
 
 void task_tuner(void *params)
@@ -15,7 +13,7 @@ void task_tuner(void *params)
     TouchChannel *channel = (TouchChannel *)params;
     float frequency;
     tuner_queue = xQueueCreate(1, sizeof(float));
-    tuner_timer = xTimerCreate("tunerTimer", 3000, pdFALSE, NULL, timer_callback);
+    SoftwareTimer timer(timer_callback, 3000, false);
     // your going to want to set the channels dac to lowest possibly value prior to tuning
     while (1)
     {
@@ -29,7 +27,7 @@ void task_tuner(void *params)
             channel->display->setChannelLED(channel->channelIndex, 1, true);
             channel->display->setChannelLED(channel->channelIndex, 2, true);
             channel->display->setChannelLED(channel->channelIndex, 3, true);
-            xTimerReset(tuner_timer, 0);
+            timer.reset();
         }
         else if (frequency < TARGET_FREQUENCY_C1 - TUNING_TOLERANCE)
         {
@@ -37,7 +35,7 @@ void task_tuner(void *params)
             channel->display->setChannelLED(channel->channelIndex, 13, true);
             channel->display->setChannelLED(channel->channelIndex, 14, true);
             channel->display->setChannelLED(channel->channelIndex, 15, true);
-            xTimerReset(tuner_timer, 0);
+            timer.reset();
         }
         else if (frequency > TARGET_FREQUENCY_C1 - TUNING_TOLERANCE && frequency < TARGET_FREQUENCY_C1 + TUNING_TOLERANCE)
         {
@@ -51,9 +49,7 @@ void task_tuner(void *params)
             channel->display->setChannelLED(channel->channelIndex, 10, true);
             channel->display->setChannelLED(channel->channelIndex, 11, true);
             // start timer
-            if (!xTimerIsTimerActive(tuner_timer)) {
-                xTimerStart(tuner_timer, portMAX_DELAY);
-            }
+            timer.start();
         }
     }
 }
