@@ -97,10 +97,10 @@ Degree/Src/Display.cpp \
 Degree/Src/MultiChanADC.cpp \
 Degree/Src/SuperSeq.cpp \
 Degree/Src/TouchChannel.cpp \
-Degree/Src/tasks_calibration.cpp \
 Degree/Src/GlobalControl.cpp \
 Degree/Src/VoltPerOctave.cpp \
 Degree/Tasks/Src/task_handles.cpp \
+Degree/Tasks/Src/tasks_calibration.cpp \
 ok-drivers/drivers/CAP1208/CAP1208.cpp \
 ok-drivers/drivers/DAC8554/DAC8554.cpp \
 ok-drivers/drivers/SX1509/SX1509.cpp \
