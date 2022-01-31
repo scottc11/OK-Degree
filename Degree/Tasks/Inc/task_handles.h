@@ -2,6 +2,8 @@
 
 #include "main.h"
 
+#define TUNING_TOLERANCE 0.1f // tolerable frequency tuning difference
+
 extern TaskHandle_t thStartCalibration;
 extern TaskHandle_t thExitCalibration;
 extern TaskHandle_t thCalibrate;
@@ -15,4 +17,5 @@ typedef enum
     EXIT_1VO_CALIBRATION,
     EXIT_BENDER_CALIBRATION,
     ENTER_VCO_TUNING,
+    EXIT_VCO_TUNING
 } CTRL_CMNDS;
