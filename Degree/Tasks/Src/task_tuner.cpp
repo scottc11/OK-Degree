@@ -14,7 +14,7 @@ void task_tuner(void *params)
     float frequency;
     tuner_queue = xQueueCreate(1, sizeof(float));
     SoftwareTimer timer(timer_callback, 3000, false);
-    // your going to want to set the channels dac to lowest possibly value prior to tuning
+    channel->output.resetDAC();
     while (1)
     {
         // listen for items on queue

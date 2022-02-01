@@ -114,8 +114,7 @@ void taskCalibrate(void *params)
     int iteration = 0;          // the current interation in the voltage map array
     int initialPitchIndex;      // the index of the initial target frequency in PITCH_FREQ_ARR
 
-    newDacValue = channel->output.dacVoltageMap[iteration]; // start at the lowest possible dac voltage
-    channel->output.dac->write(channel->output.dacChannel, channel->output.dacVoltageMap[iteration]); // start at zero
+    channel->output.resetDAC(); // start at the lowest possible dac voltage
 
     while (1)
     {

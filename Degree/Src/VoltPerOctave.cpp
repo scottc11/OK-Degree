@@ -54,6 +54,15 @@ void VoltPerOctave::updateDAC(int index, uint16_t pitchBend)
 }
 
 /**
+ * @brief Set the DAC to the lowest possible value this instance will allow (index 0 of voltage map);
+ * 
+ */
+void VoltPerOctave::resetDAC()
+{
+    dac->write(dacChannel, dacVoltageMap[0]);
+}
+
+/**
  * The values in the DAC voltage map are entirely dependant on the op-amp amplification
  * 
  * @brief This function takes pre-set values based on the op-amp gain configuration, and generates an array
