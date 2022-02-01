@@ -20,7 +20,7 @@ void taskObtainSignalFrequency(void *params)
 {
     TouchChannel *channel = (TouchChannel *)params;
     
-    thStartCalibration = xTaskGetCurrentTaskHandle();
+    // thStartCalibration = xTaskGetCurrentTaskHandle();
 
     uint16_t sample;
     float vcoFrequency = 0;          // the calculated frequency sample
@@ -44,9 +44,7 @@ void taskObtainSignalFrequency(void *params)
     sem_obtain_freq = xSemaphoreCreateBinary();
     sem_calibrate = xSemaphoreCreateBinary();
 
-    xTaskCreate(taskCalibrate, "calibrate", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, &thCalibrate);
-
-    xSemaphoreGive(sem_obtain_freq);
+    xSemaphoreGive(sem_obtain_freq); // i think you can remove this semaphore now
 
     logger_log_task_watermark();
 
@@ -83,8 +81,8 @@ void taskObtainSignalFrequency(void *params)
             {
                 signalAverageFrequency = (float)(avgFrequencySum / (MAX_FREQ_SAMPLES - 1));
                 // if the frequency sampler queue is full, you could wait intil it gets freed up, then you don't need to work with semaphores
-                xSemaphoreGive(sem_calibrate); // give semaphore to calibrate task
-                xSemaphoreTake(sem_obtain_freq, portMAX_DELAY); // wait till other tasks gives this semaphore back, then obtain next notes freq.
+                xQueueSend(tuner_queue, &signalAverageFrequency, portMAX_DELAY);
+                // xSemaphoreTake(sem_obtain_freq, portMAX_DELAY); // wait till other tasks gives this semaphore back, then obtain next notes freq.
                 frequencySampleCounter = 0;
                 avgFrequencySum = 0;
             }
@@ -112,18 +110,15 @@ void taskCalibrate(void *params)
     float prevAvgFreq;
     uint16_t newDacValue;
     float targetFreq;           // where we want the frequency to get to
+    int targetFreqIndex;        // current voltage map iteration + initial pitch index
     int iteration = 0;          // the current interation in the voltage map array
     int initialPitchIndex;      // the index of the initial target frequency in PITCH_FREQ_ARR
 
-    newDacValue = channel->output.dacVoltageMap[iteration]; // start at the lowest possible dac voltage
-    channel->output.dac->write(channel->output.dacChannel, channel->output.dacVoltageMap[iteration]); // start at zero
+    channel->output.resetDAC(); // start at the lowest possible dac voltage
 
     while (1)
     {
-        // this seems like it should be a queue now. Processing the avg frequency when they appear on the queue
-        // this way you could have other tasks listen to the same queue for alternate purposes (ie. Tuner)
-        xSemaphoreTake(sem_calibrate, portMAX_DELAY);
-        currAvgFreq = signalAverageFrequency;
+        xQueueReceive(tuner_queue, &currAvgFreq, portMAX_DELAY);
 
         // handle first iteration of calibrating by finding the frequency in PITCH_FREQ_ARR closest to the currently sampled frequency
         if (iteration == 0)
@@ -145,7 +140,8 @@ void taskCalibrate(void *params)
         }
 
         // obtain the target frequency
-        targetFreq = PITCH_FREQ_ARR[initialPitchIndex + iteration];        
+        targetFreqIndex = initialPitchIndex + iteration;
+        targetFreq = PITCH_FREQ_ARR[targetFreqIndex];
 
         // if currAvgFreq is close enough to targetFreq, or max cal attempts has been reached, break out of while loop and move to the next 'note'
         if ((currAvgFreq <= targetFreq + TUNING_TOLERANCE && currAvgFreq >= targetFreq - TUNING_TOLERANCE) || calibrationAttemps > MAX_CALIB_ATTEMPTS)
@@ -153,6 +149,8 @@ void taskCalibrate(void *params)
             channel->output.dacVoltageMap[iteration] = newDacValue > BIT_MAX_16 ? BIT_MAX_16 : newDacValue; // replace current DAC value with adjusted value (NOTE: must cap value or else it will roll over to zero)
             logger_log("\ni= ");
             logger_log(iteration);
+            logger_log(" :: x= ");
+            logger_log(targetFreqIndex);
             logger_log(" :: target= ");
             logger_log(targetFreq);
             logger_log(" :: actual= ");
@@ -166,16 +164,15 @@ void taskCalibrate(void *params)
             // if we are on the final iteration, then some how breakout of all this crap.
             if (iteration == DAC_1VO_ARR_SIZE - 1) {
                 logger_log("\n\n*** CALIBRATION FINISHED ***");
-                channel->display->setChannelLED(channel->channelIndex, 15, true);
                 // send a notification to exitCalibration task
-                xTaskNotify(thController, CTRL_CMNDS::EXIT_1VO_CALIBRATION, eNotifyAction::eNoAction);
+                ctrl_send_command(channel->channelIndex, CTRL_CMNDS::EXIT_1VO_CALIBRATION);
             }
 
             calibrationAttemps = 0;
             dacAdjustment = DEFAULT_VOLTAGE_ADJMNT;
             iteration++;
             newDacValue = channel->output.dacVoltageMap[iteration]; // prepare for the next iteration
-            vTaskDelay(CALIBRATION_DAC_SETTLE_TIME); // wait for DAC to settle
+            vTaskDelay(CALIBRATION_DAC_SETTLE_TIME + targetFreqIndex > 69 ? 10 : 0); // wait for DAC to settle
             xSemaphoreGive(sem_obtain_freq);
         }
         else
@@ -201,7 +198,7 @@ void taskCalibrate(void *params)
             prevAvgFreq = currAvgFreq;
             calibrationAttemps++;
             channel->output.dac->write(channel->output.dacChannel, newDacValue);
-            vTaskDelay(CALIBRATION_DAC_SETTLE_TIME); // wait for DAC to settle
+            vTaskDelay(CALIBRATION_DAC_SETTLE_TIME + targetFreqIndex > 69 ? 10 : 0); // wait for DAC to settle
             xSemaphoreGive(sem_obtain_freq);
         }
         
