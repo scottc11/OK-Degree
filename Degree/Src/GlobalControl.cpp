@@ -503,12 +503,6 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
  * The issue might be that the sequence is not always running too slow, but running to fast. In other words, the
  * pulse count overtakes the external clocks rising edge. To avoid this scenario, you need to halt further execution of the sequence should it reach PPQN - 1 
  * prior to the ext clock rising edge. Thing is, the sequence would first need to know that it is being externally clocked...
- * 
- * TODO: external clock is ignored unless the CLOCK knob is set to its minimum value and tap tempo is reset.
- * 
- * Currently, your clock division is very off. The higher the ext clock signal is, you lose an increasing amount of pulses.
- * Ex. @ 120bpm sequence will reset on pulse 84 (ie. missing 12 PPQNs)
- * Ex. @ 132bpm sequence missing 20 PPQNs
  */
 void GlobalControl::resetSequencer()
 {
