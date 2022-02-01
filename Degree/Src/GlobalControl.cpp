@@ -471,6 +471,7 @@ int GlobalControl::getCalibrationBufferSize()
 */
 void GlobalControl::advanceSequencer(uint8_t pulse)
 {
+    // you could maybe still keep this block of code within the ISR, for the least amount of latency on the clock output
     if (pulse == 0) {
         tempoLED.write(HIGH);
         tempoGate.write(HIGH);
@@ -482,7 +483,7 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
     for (int i = 0; i < CHANNEL_COUNT; i++)
     {
         channels[i]->sequence.advance();
-        channels[i]->setTickerFlag();
+        channels[i]->setTickerFlag(); // your going to want to use a queue here instead of a flag
     }
 
 #ifdef CLOCK_DEBUG

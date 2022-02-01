@@ -166,6 +166,8 @@ void SuperClock::disableInputCaptureISR()
 */ 
 void SuperClock::handleOverflowCallback()
 {
+    // is this technically advancing the sequence, then immediatly resetting it?
+    // I think the reset callback is currently being used to 'catchup' the sequences should they not be on pulse 0
     if (ppqnCallback) ppqnCallback(pulse);
 
     if (pulse == 0) {
