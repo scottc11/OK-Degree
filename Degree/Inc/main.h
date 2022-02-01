@@ -1,12 +1,19 @@
 #pragma once
 
-#include "api.h"
 #include "system_clock_config.h"
+#include "cmsis_os.h"
+#include "task_handles.h"
+
+#include "common.h"
+
+// #define BOARD_REV_V38
 
 #define PPQN 96
 
-#define NUM_DEGREE_CHANNELS 4
+#define CHANNEL_COUNT 4
 #define ADC_DMA_BUFF_SIZE   9
+#define ADC_TIM_PRESCALER   100
+#define ADC_TIM_PERIOD      2000
 
 #define DAC_1VO_ARR_SIZE 72
 #define BENDER_CALIBRATION_SIZE 2
@@ -20,8 +27,10 @@
 #define DEFAULT_SEQ_LENGTH 32
 #define MAX_SEQ_LENGTH 32
 
-#define BENDER_ZERO     32767
-#define BENDER_DEBOUNCE 1000
+#define BENDER_ZERO            32767
+#define BENDER_NOISE_THRESHOLD 500
+
+#define DISPLAY_MAX_CURRENT    127   // for managing current
 
 #define REC_LED PC_13
 #define FREEZE_LED PB_7
@@ -29,7 +38,12 @@
 #define TEMPO_POT PA_2
 
 #define EXT_CLOCK_INPUT PA_3
+
+#ifdef BOARD_REV_V38
+#define INT_CLOCK_OUTPUT PB_2
+#else
 #define INT_CLOCK_OUTPUT PA_0
+#endif
 
 #define ADC_A PA_6
 #define ADC_B PA_7
@@ -69,6 +83,9 @@
 #define SPI2_MOSI PB_15
 #define SPI2_MISO PB_14
 #define SPI2_SCK  PB_13
+
+#define UART_RX PC_11
+#define UART_TX PC_10
 
 #define MCP23017_CTRL_ADDR 0x24 // 0100100
 

@@ -1,8 +1,12 @@
 #pragma once
 
 #include "main.h"
+#include "logger.h"
 #include "DAC8554.h"
 #include "Algorithms.h"
+#include "PitchFrequencies.h"
+#include "AnalogHandle.h"
+#include "MultiChanADC.h"
 
 #ifndef DAC_1VO_ARR_SIZE
 #define DAC_1VO_ARR_SIZE 64
@@ -10,8 +14,8 @@
 
 #define DAC_RESOLUTION 65535
 #define V_OUT_MIN 0
-#define V_OUT_MAX 6.532
-#define CALIBRATION_FLOOR 0.2
+#define V_OUT_MAX 6.532f
+#define CALIBRATION_FLOOR 0.2f
 #define NUM_OCTAVES 6
 
 namespace DEGREE {
@@ -21,6 +25,7 @@ namespace DEGREE {
     public:
         DAC8554 *dac;                 // pointer to 16 bit DAC driver
         DAC8554::Channel dacChannel; // DAC channel
+        AnalogHandle *adc;           // 
 
         uint16_t currOutput; // value being output to the DAC
         int currNoteIndex;
@@ -36,10 +41,16 @@ namespace DEGREE {
         uint16_t minPitchBend = 0; // should always be 0
         uint16_t currPitchBend;    // the amount of pitch bend to apply to the 1v/o DAC output. Can be positive/negative centered @ 0
 
-        VoltPerOctave(){};
+        VoltPerOctave(DAC8554 *_dac, DAC8554::Channel _chan, AnalogHandle *_adc)
+        {
+            this->dac = _dac;
+            this->dacChannel = _chan;
+            this->adc = _adc;
+        };
 
         void init();
         void updateDAC(int index, uint16_t pitchBend);
+        void resetDAC();
         void setPitchBendRange(int value);
         void setPitchBend(uint16_t value);
         void bend(uint16_t value);

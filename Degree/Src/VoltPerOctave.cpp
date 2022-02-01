@@ -36,7 +36,7 @@ void VoltPerOctave::setPitchBend(uint16_t value)
 */
 uint16_t VoltPerOctave::calculatePitchBend(int input, int min, int max)
 {
-    return scaleIntToRange(input, min, max, minPitchBend, maxPitchBend);
+    return map_num_in_range<uint16_t>(input, min, max, minPitchBend, maxPitchBend);
 }
 
 /**
@@ -51,6 +51,15 @@ void VoltPerOctave::updateDAC(int index, uint16_t pitchBend)
         currOutput = dacVoltageMap[currNoteIndex] + pitchBend;
         dac->write(dacChannel, currOutput);
     }
+}
+
+/**
+ * @brief Set the DAC to the lowest possible value this instance will allow (index 0 of voltage map);
+ * 
+ */
+void VoltPerOctave::resetDAC()
+{
+    dac->write(dacChannel, dacVoltageMap[0]);
 }
 
 /**

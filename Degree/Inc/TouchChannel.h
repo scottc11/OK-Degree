@@ -9,6 +9,7 @@
 #include "VoltPerOctave.h"
 #include "SuperSeq.h"
 #include "Display.h"
+#include "okSemaphore.h"
 
 typedef struct QuantOctave
 {
@@ -77,15 +78,24 @@ namespace DEGREE {
             DIM_HIGH
         };
 
-        TouchChannel(int _index, Display *display_ptr, MPR121 *touchPads_ptr, SX1509 *leds, Degrees *degrees, DAC8554 *dac, DAC8554::Channel dac_chan, Bender *_bender, PinName adc_pin, PinName gatePin, DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin)
+        TouchChannel(
+            int _index,
+            Display *display_ptr,
+            MPR121 *touchPads_ptr,
+            SX1509 *leds,
+            Degrees *degrees,
+            DAC8554 *dac,
+            DAC8554::Channel dac_chan,
+            Bender *_bender,
+            PinName adc_pin,
+            PinName gatePin,
+            DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan, &adc)
         {
             channelIndex = _index;
             display = display_ptr;
             touchPads = touchPads_ptr;
             _leds = leds;
             degreeSwitches = degrees;
-            output.dac = dac;
-            output.dacChannel = dac_chan;
             bender = _bender;
             globalGateOut = global_gate_ptr;
 
@@ -107,13 +117,15 @@ namespace DEGREE {
         SX1509 *_leds;
         Degrees *degreeSwitches;
         Bender *bender;
-        VoltPerOctave output;
-
-        DigitalOut gateOut;        // gate output
-        bool gateState;            // state of the gate output
         DigitalOut *globalGateOut; // global gate output
         uint8_t currRatchetRate;   // TODO: you don't need to store this
 
+        DigitalOut gateOut; // gate output
+        AnalogHandle adc;   // CV input ADC
+        VoltPerOctave output;        
+        
+        uint8_t currRatchetRate;      //
+        bool gateState;               // state of the gate output
         TouchChannelMode currMode;
         TouchChannelMode prevMode;
 
@@ -127,7 +139,6 @@ namespace DEGREE {
         bool freezeChannel;
 
         // Quantiser members
-        AnalogHandle adc;                  // CV input ADC
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
         uint8_t currActiveOctaves;         // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
         uint8_t prevActiveOctaves;         // 4-bits to represent the previous octaves external CV will get mapped to (active = 1, inactive= 0)
@@ -179,13 +190,71 @@ namespace DEGREE {
         int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();
+        void benderTriStateCallback(Bender::BendState state);
 
         // Gate Output Methods
         void setGate(bool state);
-        uint8_t calculateRatchet(uint16_t bend, uint16_t bendZero, uint16_t bendMax);
+        uint8_t calculateRatchet(uint16_t bend);
         void handleRatchet(int position, uint8_t rate);
+
+        static void taskReceiveVCOSample(void *params);
     };
-
-
 } // end namespace
 
+/**
+ * TODO: create a static member of a mutex type for each shared resource multiple channels instances might use.
+ * ie. for the SPI / I2C peripherals
+ *
+ * An alternative to using mutexes would be to create a single "gatekeeper" task for each peripheral which listens for data entering a queue.
+ * Each touch channel instance would post data to the queue
+ *
+ * MPR121 gatekeeper:
+ *  - uses a queue which holds an 8-bit data. when a touch interupt occurs it loads the queue with a bit corrosponding to a channel, then the gatekeeper
+ *    reads the corrosponding MPR121 IC
+ *  - Might best use the Event Groups API of FreeRTOS ie. xEventGroupSetBitsFromISR()
+ *
+ * Sequencer Queue + Task:
+ *  - Inside the SuperClock ISR function that increments the PPQN by 1, you would additionally flag the "Sequencer Task" to execute its code. This way the scheduler is
+ *  somewhat synced to the Timer.
+ *
+ * Tasks:
+ * 1) Touch Read
+ * 2) Sequencer
+ * 3) Quantizer
+ * 4) VCO Calibrator
+ * 5) Bender Calibrator
+ */
+
+/*
+QueueHandle_t touchQueue;
+TaskHandle_t touch_handle;
+
+void taskHandleTouch(void *params)
+{
+  uint8_t value_received;
+  BaseType_t status;
+  while (1)
+  {
+    status = xQueueReceive(touchQueue, &value_received, portMAX_DELAY);
+
+    if (status != pdPASS)
+    {
+      serial.transmit("Could not recieive data from queue\n");
+    }
+    else
+    {
+      uint16_t touched = touchA.readPads();
+      serial.transmit("Recieived value from queue: ");
+      serial.transmit(touched);
+      serial.transmit("\n");
+    }
+  }
+}
+
+void touchInterupt()
+{
+  const uint8_t val = 2;
+  xQueueSendFromISR(touchQueue, &val, pdFALSE);
+  portYIELD_FROM_ISR(pdFALSE);
+}
+*/

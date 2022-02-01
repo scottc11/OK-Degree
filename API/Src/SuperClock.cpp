@@ -1,67 +1,17 @@
 #include "SuperClock.h"
 
-TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim4;
 
 SuperClock *SuperClock::instance = NULL;
 
 void SuperClock::start()
 {
     HAL_StatusTypeDef status;
-    status = HAL_TIM_Base_Start_IT(&htim1);
-    error_handler(status);
     status = HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
     error_handler(status);
-}
-
-/**
- * @brief Configure TIM1 in Master Mode
- * Timer Overflow Frequency = APB2 / ((prescaler) * (period))
- * 
- * @param prescaler none-zero indexed clock prescaler value
- * @param period none-zero indexed timer period value
-*/
-void SuperClock::initTIM1(uint16_t prescaler, uint16_t period)
-{
-    __HAL_RCC_TIM1_CLK_ENABLE();
-
-    /* TIM1 interrupt Init */
-    HAL_NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
-
-    TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-    TIM_MasterConfigTypeDef sMasterConfig = {0};
-    HAL_StatusTypeDef status;
-
-    tim1_freq = APB2_TIM_FREQ / (prescaler * period);
-
-    htim1.Instance = TIM1;
-    htim1.Init.Prescaler = prescaler - 1;
-    htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim1.Init.Period = period - 1;
-    htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    htim1.Init.RepetitionCounter = 0;
-    htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-
-    status = HAL_TIM_Base_Init(&htim1);
-    if (status != HAL_OK)
-    {
-        error_handler(status);
-    }
-
-    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-    status = HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig);
-    if (status != HAL_OK)
-    {
-        error_handler(status);
-    }
-    sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
-    status = HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig);
-    if (status != HAL_OK)
-    {
-        error_handler(status);
-    }
+    status = HAL_TIM_Base_Start_IT(&htim4);
+    error_handler(status);
 }
 
 /**
@@ -69,19 +19,17 @@ void SuperClock::initTIM1(uint16_t prescaler, uint16_t period)
  * @param prescaler setting to 1 should be best
  * @param period setting to 65535 should be best
 */
-void SuperClock::initTIM2(uint16_t prescaler, uint16_t period)
+void SuperClock::initTIM2(uint16_t prescaler, uint32_t period) // isn't TIM2 a 32-bit timer? This could greatly increase the resolution of frequency detection.
 {
-    tim2_freq = tim1_freq / (prescaler * period);
-
     __HAL_RCC_TIM2_CLK_ENABLE(); // turn on timer clock
 
-    gpio_config_input_capture(PA_3);  // config PA3 in input capture mode
+    gpio_config_input_capture(EXT_CLOCK_INPUT); // config PA3 in input capture mode
 
     /* TIM2 interrupt Init */
     HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(TIM2_IRQn);
 
-    TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+    TIM_ClockConfigTypeDef sClockSourceConfig = {0};
     TIM_MasterConfigTypeDef sMasterConfig = {0};
     TIM_IC_InitTypeDef sConfigIC = {0};
     HAL_StatusTypeDef status;
@@ -96,13 +44,10 @@ void SuperClock::initTIM2(uint16_t prescaler, uint16_t period)
     if (status != HAL_OK)
         error_handler(status);
 
-    status = HAL_TIM_IC_Init(&htim2);
-    if (status != HAL_OK)
-        error_handler(status);
+    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+    HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig);
 
-    sSlaveConfig.SlaveMode = TIM_SLAVEMODE_EXTERNAL1;
-    sSlaveConfig.InputTrigger = TIM_TS_ITR0;
-    status = HAL_TIM_SlaveConfigSynchro(&htim2, &sSlaveConfig);
+    status = HAL_TIM_IC_Init(&htim2);
     if (status != HAL_OK)
         error_handler(status);
 
@@ -114,99 +59,60 @@ void SuperClock::initTIM2(uint16_t prescaler, uint16_t period)
 
     sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_FALLING;
     sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-    sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-    sConfigIC.ICFilter = 0;
+    sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;                     // dedicated prescaler allows to “slow down” the frequency of the input signal
+    sConfigIC.ICFilter = 0;                                     // filter used to “debounce” the input signal
     status = HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_4);
     if (status != HAL_OK)
         error_handler(status);
 }
 
-void SuperClock::attach_tim1_callback(Callback<void()> func)
+void SuperClock::initTIM4(uint16_t prescaler, uint16_t period)
 {
-    tickCallback = func;
-}
+    __HAL_RCC_TIM4_CLK_ENABLE();
 
-void SuperClock::attachInputCaptureCallback(Callback<void()> func) {
-    input_capture_callback = func;
-}
+    HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM4_IRQn);
 
-void SuperClock::attachPPQNCallback(Callback<void()> func) {
-    ppqnCallback = func;
-}
+    TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+    TIM_MasterConfigTypeDef sMasterConfig = {0};
 
-void SuperClock::attachResetCallback(Callback<void()> func) {
-    resetCallback = func;
-}
+    htim4.Instance = TIM4;
+    htim4.Init.Prescaler = prescaler;
+    htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim4.Init.Period = period;
+    htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    HAL_TIM_Base_Init(&htim4);
 
-void SuperClock::setFrequency(uint16_t freq) {
-    if (freq < MAX_CLOCK_FREQ) {
-        ticksPerStep = MAX_CLOCK_FREQ;
-    } else if (freq > MIN_CLOCK_FREQ) {
-        ticksPerStep = MIN_CLOCK_FREQ;
-    } else {
-        ticksPerStep = freq;
-    }
-    
-    ticksPerPulse = (ticksPerStep * 2) / PPQN; // Forget why we multiply by 2
-}
+    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+    HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig);
 
-void SuperClock::handleInputCaptureCallback()
-{
-    tick = 0; // Reset the clock tick zero, so it will trigger the clock output in the period elapsed loop callback
-    pulse = 0;
-
-    __HAL_TIM_SetCounter(&htim2, 0); // reset after each input capture
-    uint16_t inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
-    setFrequency(inputCapture);
-
-    if (input_capture_callback)
-    {
-        input_capture_callback();
-    }
+    sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig);
 }
 
 /**
- * @brief this callback gets called everytime TIM1 overflows.
- * 
- * Use this callback to advance the sequencer position by 1 everytime tick equals the 
- * calculated PPQN value via TIM2 Input capture callback.
-*/ 
-void SuperClock::handleTickCallback()
+ * @brief Take a 16-bit ADC read and map it between the min ticksPerPulse and max ticksPerPulse
+ * NOTE: because a lower values actually mean faster tempos, inverting the incoming value is needed
+ * @param min the minimum ADC input value
+ * @param max the maximum ADC input value
+ * @param value this value gets inverted
+ */
+uint16_t SuperClock::convertADCReadToTicks(uint16_t min, uint16_t max, uint16_t value)
 {
-    
-    if (tick < ticksPerPulse) { // make sure you don't loose a step by not using "<=" instead of "<"
-        if (tick == 0) { // handle first tick in step
-            if (ppqnCallback) ppqnCallback();
-        }
-        tick++;
-    }
-    // this block will continue the sequence when an external clock is not detected, 
-    // otherwise input capture will reset tick back to 0
-    else {
-        tick = 0;
-
-        if (pulse < PPQN) {
-            if (pulse == 0) {
-                if (resetCallback) resetCallback();
-            }
-            pulse++;
-        } else {
-            pulse = 0;       
-        }
-    }
-
-    if (tickCallback)
-    {
-        tickCallback();
-    }
+    value = (max - value) + min; // invert
+    return map_num_in_range<uint16_t>(value, min, max, MIN_TICKS_PER_PULSE, MAX_TICKS_PER_PULSE);
 }
 
-void SuperClock::RouteCallback(TIM_HandleTypeDef *htim)
+/**
+ * @brief Set the TIM4 overflow frequency
+ * 
+ * @param ticks 
+ */
+void SuperClock::setPulseFrequency(uint32_t ticks)
 {
-    if (htim == &htim1)
-    {
-        instance->handleTickCallback();
-    }
+    __HAL_TIM_SetAutoreload(&htim4, ticks);
 }
 
 /**
@@ -226,20 +132,82 @@ void SuperClock::RouteCallback(TIM_HandleTypeDef *htim)
  * This means the sequence could technically get several beats ahead of any other gear.
  * To handle this, you could prevent the next sequence step from occuring if all sub-steps of the current step have been executed prior to a new IC event
  */
+void SuperClock::handleInputCaptureCallback()
+{
+    pulse = 0;
+    __HAL_TIM_SetCounter(&htim2, 0); // reset after each input capture
+    __HAL_TIM_SetCounter(&htim4, 0); // reset after each input capture
+    uint32_t inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
+    uint16_t pulse = inputCapture / PPQN;
+    this->setPulseFrequency(pulse);
+    this->handleOverflowCallback();
+    // setFrequency(inputCapture);
+
+    if (input_capture_callback) input_capture_callback();
+}
+
+void SuperClock::enableInputCaptureISR()
+{
+    externalInputMode = true;
+    // HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
+    HAL_NVIC_EnableIRQ(TIM2_IRQn);
+}
+
+void SuperClock::disableInputCaptureISR()
+{
+    externalInputMode = false;
+    // HAL_TIM_IC_Stop(&htim2, TIM_CHANNEL_4);
+    HAL_NVIC_DisableIRQ(TIM2_IRQn);
+}
+
+/**
+ * @brief this callback gets called everytime TIM4 overflows.
+ * Increments pulse counter
+*/ 
+void SuperClock::handleOverflowCallback()
+{
+    if (ppqnCallback) ppqnCallback(pulse);
+
+    if (pulse == 0) {
+        if (resetCallback) resetCallback();
+    }
+
+    if (pulse < PPQN - 1) {
+        pulse++;
+    } else {
+        pulse = 0;
+    }
+}
+
+void SuperClock::attachInputCaptureCallback(Callback<void()> func)
+{
+    input_capture_callback = func;
+}
+
+void SuperClock::attachPPQNCallback(Callback<void(uint8_t pulse)> func)
+{
+    ppqnCallback = func;
+}
+
+void SuperClock::attachResetCallback(Callback<void()> func)
+{
+    resetCallback = func;
+}
+
+void SuperClock::RouteOverflowCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim == &htim4)
+    {
+        instance->handleOverflowCallback();
+    }
+}
+
 void SuperClock::RouteCaptureCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM2)
     {
         instance->handleInputCaptureCallback();
     }
-}
-
-/**
-  * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
-*/
-extern "C" void TIM1_UP_TIM10_IRQHandler(void)
-{
-    HAL_TIM_IRQHandler(&htim1);
 }
 
 /**
@@ -251,12 +219,28 @@ extern "C" void TIM2_IRQHandler(void)
 }
 
 /**
- * @brief This callback handles all TIMx overflow interupts (if TIMx was configured in interupt mode)
- * Ideally, you would use this to manage a global / system tick value, which then gets devided down
- * to handle events at a lower frequency.
+  * @brief This function handles TIM4 global interrupt.
 */
+extern "C" void TIM4_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&htim4);
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM5 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @note   Function addionally calls SuperClock static function for instance specific code
+  * @param  htim : TIM handle
+  * @retval None
+  */
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    SuperClock::RouteCallback(htim);
+    SuperClock::RouteOverflowCallback(htim);
+    if (htim->Instance == TIM5)
+    {
+        HAL_IncTick();
+    }
 }
 
 /**

@@ -63,6 +63,9 @@
         "stdbool.h": "c",
         "error_handler.h": "c",
         "stm32f4xx_ll_exti.h": "c",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "variant": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp"
     }
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "main.h"
+#include "okSemaphore.h"
+#include "task_calibration.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
@@ -16,6 +18,15 @@ namespace DEGREE {
     class GlobalControl
     {
     public:
+        
+        enum Mode
+        {
+            DEFAULT,
+            CALIBRATING_1VO,
+            CALIBRATING_BENDER,
+            SET_SEQUENCE_LENGTH
+        };
+
         GlobalControl(
             SuperClock *clock_ptr,
             TouchChannel *chanA_ptr,
@@ -25,8 +36,9 @@ namespace DEGREE {
             CAP1208 *touch_ptr,
             Degrees *degrees_ptr,
             MCP23017 *buttons_ptr,
-            Display *display_ptr) : ioInterrupt(BUTTONS_INT), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0), tempoPot(TEMPO_POT), tempoLED(TEMPO_LED), tempoGate(INT_CLOCK_OUTPUT)
+            Display *display_ptr) : ioInterrupt(BUTTONS_INT, PullUp), touchInterrupt(GLBL_TOUCH_INT), recLED(REC_LED, 0), freezeLED(FREEZE_LED, 0), tempoPot(TEMPO_POT), tempoLED(TEMPO_LED), tempoGate(INT_CLOCK_OUTPUT)
         {
+            mode = DEFAULT;
             clock = clock_ptr;
             channels[0] = chanA_ptr;
             channels[1] = chanB_ptr;
@@ -40,8 +52,9 @@ namespace DEGREE {
             touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
         };
 
+        Mode mode;
         SuperClock *clock;
-        TouchChannel *channels[NUM_DEGREE_CHANNELS];
+        TouchChannel *channels[CHANNEL_COUNT];
         CAP1208 *touchPads;
         Degrees *switches;      // degree 3-stage toggle switches io
         MCP23017 *buttons;      // io for tactile buttons
@@ -50,13 +63,14 @@ namespace DEGREE {
         InterruptIn touchInterrupt; // interupt pin for touch pads
         DigitalOut recLED;
         DigitalOut freezeLED;
+        AnalogHandle tempoPot;
         DigitalOut tempoLED;
         DigitalOut tempoGate;
-        AnalogHandle tempoPot;
 
-        int currPulse;
+        int selectedChannel;
 
         bool recordEnabled;      // global recording flag
+        bool sampleVCO;          // global flag for calibration routine
 
         bool buttonInterupt;        // flag for handling buttons interupt
         uint16_t currButtonsState;
@@ -66,7 +80,7 @@ namespace DEGREE {
         uint16_t prevTempoPotValue;
 
         bool touchDetected;
-        bool gestureFlag;
+        volatile bool gestureFlag;
         uint8_t currTouched;
         uint8_t prevTouched;
 
@@ -75,23 +89,35 @@ namespace DEGREE {
         void pollButtons();
         void pollTouchPads();
         void pollTempoPot();
-        
-        void advanceSequencer();
+
+        void advanceSequencer(uint8_t pulse);
         void resetSequencer();
 
         void handleButtonPress(int pad);
         void handleButtonRelease(int pad);
-        
+
+        void handleChannelGesture(Callback<void(int chan)> callback);
+
         void handleSwitchChange();
         void handleButtonInterupt();
         void handleTouchInterupt();
-        
+
+        void enableVCOCalibration(TouchChannel *channel);
+        void disableVCOCalibration();
+
         void loadCalibrationDataFromFlash();
+        void saveCalibrationDataToFlash();
+        void deleteCalibrationDataFromFlash();
+        void resetCalibrationDataToDefault();
+        void resetCalibration1VO(int chan);
+        int getCalibrationDataPosition(int data_index, int channel_index);
+        int getCalibrationBufferSize();
 
     private:
     private:
         enum PadNames : uint16_t
         { // integers correlate to 8-bit index position
+#ifdef BOARD_REV_V38
             FREEZE = 0x4000,
             RECORD = 0x2000,
             RESET = 0x1000,
@@ -107,12 +133,30 @@ namespace DEGREE {
             CTRL_B = 0x0004,
             CTRL_C = 0x0002,
             CTRL_D = 0x0001
+#else
+            FREEZE = 0x4000,
+            RECORD = 0x2000,
+            RESET = 0x1000,
+            CMODE = 0x0080,
+            CLEAR_BEND = 0x0400,
+            CLEAR_SEQ = 0x0200,
+            BEND_MODE = 0x0040,
+            QUANTIZE_AMOUNT = 0x0800,
+            SEQ_LENGTH = 0x0100,
+            PB_RANGE = 0x0020,
+            SHIFT = 0x0010,
+            CTRL_A = 0x0008,
+            CTRL_B = 0x0004,
+            CTRL_C = 0x0002,
+            CTRL_D = 0x0001
+#endif
         };
 
         enum Gestures : uint16_t
         {
-            CALIBRATE_BENDER = SHIFT | BEND_MODE,                      // SHIFT + BEND_MODE
-            RESET_CALIBRATION_TO_DEFAULT = SHIFT | RECORD | BEND_MODE, // SHIFT + REC + BEND_MODE
+            CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
+            RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
+            CALIBRATE_1VO = SHIFT | CMODE,
             CLEAR_SEQ_A = CLEAR_SEQ | CTRL_A,
             CLEAR_SEQ_B = CLEAR_SEQ | CTRL_B,
             CLEAR_SEQ_C = CLEAR_SEQ | CTRL_C,

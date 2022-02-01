@@ -6,11 +6,14 @@ void TouchChannel::init()
 {
     output.init(); // must init this first (for the dac)
     
+    adc.setFilter(0.1);
+
     sequence.init();
 
     bender->init();
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
+    bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
 
     // initialize channel touch pads
     touchPads->init();
@@ -363,30 +366,57 @@ void TouchChannel::setGate(bool state)
     globalGateOut->write(gateState);
 }
 
+#define RATCHET_DIV_1 PPQN / 1
+#define RATCHET_DIV_2 PPQN / 2
+#define RATCHET_DIV_3 PPQN / 3
+#define RATCHET_DIV_4 PPQN / 4
+#define RATCHET_DIV_6 PPQN / 6
+#define RATCHET_DIV_8 PPQN / 8
+#define RATCHET_DIV_12 PPQN / 12
+#define RATCHET_DIV_16 PPQN / 16
+
 /**
  * @brief Take a 16-bit value and map it to one of the preset Ratchet Rates
 */
-uint8_t TouchChannel::calculateRatchet(uint16_t bend, uint16_t bendZero, uint16_t bendMax)
+uint8_t TouchChannel::calculateRatchet(uint16_t bend)
 {
-    // maxBend - zeroBend / 4
-    if (bend < (bendZero + ((bendMax - bendZero) / 4)) )
+    if (bend > bender->getIdleValue()) // BEND UP == Strait
     {
-        return 96;
+        if (bend < bender->ratchetThresholds[3])
+        {
+            return RATCHET_DIV_1;
+        }
+        else if (bend < bender->ratchetThresholds[2])
+        {
+            return RATCHET_DIV_2;
+        }
+        else if (bend < bender->ratchetThresholds[1])
+        {
+            return RATCHET_DIV_4;
+        }
+        else if (bend < bender->ratchetThresholds[0])
+        {
+            return RATCHET_DIV_8;
+        }
     }
-    // maxBend - zeroBend / 3
-    else if (bend < (bendZero + ((bendMax - bendZero) / 3)) )
+    else if (bend < bender->getIdleValue())  // BEND DOWN == Triplets
     {
-        return 48;
-    }
-    // maxBend - zeroBend / 2
-    else if (bend < (bendZero + ((bendMax - bendZero) / 2)) )
-    {
-        return 24;
-    }
-    // maxBend - zeroBend / 1
-    else if (bend < (bendZero + (bendMax - bendZero)) )
-    {
-        return 12;
+        if (bend > bender->ratchetThresholds[7])
+        {
+            return RATCHET_DIV_3;
+        }
+        else if (bend > bender->ratchetThresholds[6])
+        {
+            return RATCHET_DIV_6;
+        }
+        else if (bend > bender->ratchetThresholds[5])
+        {
+            return RATCHET_DIV_12;
+        }
+        else if (bend > bender->ratchetThresholds[4])
+        {
+            return RATCHET_DIV_16;
+        }
     }
 }
 
@@ -510,6 +540,34 @@ void TouchChannel::benderActiveCallback(uint16_t value)
 void TouchChannel::benderIdleCallback()
 {
     handleBend(bender->currBend, true);
+}
+
+void TouchChannel::benderTriStateCallback(Bender::BendState state)
+{
+    switch (this->benderMode)
+    {
+    case BEND_OFF:
+        break;
+    case PITCH_BEND:
+        break;
+    case RATCHET:
+        break;
+    case RATCHET_PITCH_BEND:
+        break;
+    case BEND_MENU:
+        if (state == Bender::BendState::BEND_UP)
+        {
+            sequence.setLength(sequence.length + 1);
+            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
+        }
+        else if (state == Bender::BendState::BEND_DOWN)
+        {
+            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, false);
+            sequence.setLength(sequence.length - 1);
+            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
+        }
+        break;
+    }
 }
 
 /**

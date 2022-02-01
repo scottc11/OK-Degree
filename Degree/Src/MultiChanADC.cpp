@@ -4,19 +4,77 @@ ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 TIM_HandleTypeDef htim3;
 
-uint16_t DMA_ADC_BUFFER[ADC_DMA_BUFF_SIZE];
-
 void multi_chan_adc_init()
 {
     MX_DMA_Init();
     MX_ADC1_Init();
     MX_TIM3_Init();
+
+    multi_chan_adc_set_sample_rate(&hadc1, &htim3, ADC_SAMPLE_RATE_HZ);
+
+    logger_log("ADC Sample Rate: ");
+    logger_log(multi_chan_adc_get_sample_rate(&hadc1, &htim3));
+    logger_log("\n");
+
+    AnalogHandle::semaphore = xSemaphoreCreateBinary();
+    xTaskCreate(AnalogHandle::sampleReadyTask, "ADC Sample Ready Task", 1024, NULL, RTOS_PRIORITY_MED, NULL);
 }
 
 void multi_chan_adc_start()
 {
     HAL_TIM_Base_Start(&htim3);
-    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)DMA_ADC_BUFFER, ADC_DMA_BUFF_SIZE);
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)AnalogHandle::DMA_BUFFER, ADC_DMA_BUFF_SIZE);
+}
+
+void multi_chan_adc_enable_irq()
+{
+    HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+}
+
+void multi_chan_adc_disable_irq()
+{
+    HAL_NVIC_DisableIRQ(DMA2_Stream0_IRQn);
+}
+
+uint32_t multi_chan_adc_get_sample_rate(ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim)
+{
+    uint32_t tim_overflow_freq = tim_get_overflow_freq(htim);
+    switch (hadc->Init.ClockPrescaler)
+    {
+    case ADC_CLOCK_SYNC_PCLK_DIV2:
+        return tim_overflow_freq / 2;
+    case ADC_CLOCK_SYNC_PCLK_DIV4:
+        return tim_overflow_freq / 4;
+    case ADC_CLOCK_SYNC_PCLK_DIV6:
+        return tim_overflow_freq / 6;
+    case ADC_CLOCK_SYNC_PCLK_DIV8:
+        return tim_overflow_freq / 8;
+    default:
+        return tim_overflow_freq / 2;
+    }
+}
+
+void multi_chan_adc_set_sample_rate(ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim, uint32_t sample_rate_hz)
+{
+    switch (hadc->Init.ClockPrescaler)
+    {
+    case ADC_CLOCK_SYNC_PCLK_DIV2:
+        
+        tim_set_overflow_freq(htim, sample_rate_hz * 2);
+        break;
+    case ADC_CLOCK_SYNC_PCLK_DIV4:
+        tim_set_overflow_freq(htim, sample_rate_hz * 4);
+        break;
+    case ADC_CLOCK_SYNC_PCLK_DIV6:
+        tim_set_overflow_freq(htim, sample_rate_hz * 6);
+        break;
+    case ADC_CLOCK_SYNC_PCLK_DIV8:
+        tim_set_overflow_freq(htim, sample_rate_hz * 8);
+        break;
+    default:
+        tim_set_overflow_freq(htim, sample_rate_hz * 2);
+        break;
+    }
 }
 
 /**
@@ -172,9 +230,9 @@ void MX_TIM3_Init(void)
     TIM_MasterConfigTypeDef sMasterConfig = {0};
 
     htim3.Instance = TIM3;
-    htim3.Init.Prescaler = 100;
+    htim3.Init.Prescaler = ADC_TIM_PRESCALER;
     htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim3.Init.Period = 2000;
+    htim3.Init.Period = ADC_TIM_PERIOD;
     htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
     HAL_TIM_Base_Init(&htim3);
@@ -198,16 +256,8 @@ void MX_DMA_Init(void)
 
     /* DMA interrupt init */
     /* DMA2_Stream0_IRQn interrupt configuration */
-    HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, RTOS_ISR_DEFAULT_PRIORITY, 0);
     HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
-}
-
-/**
- * @brief Overload this function in 
-*/
-__WEAK void ADC1_DMA_Callback(uint16_t values[])
-{
-    // function to be overloaded in main program
 }
 
 /**
@@ -230,6 +280,6 @@ extern "C" void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
     if (hadc->Instance == ADC1)
     {
-        ADC1_DMA_Callback(DMA_ADC_BUFFER);
+        AnalogHandle::RouteConversionCompleteCallback();
     }
 }
