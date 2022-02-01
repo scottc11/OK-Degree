@@ -118,13 +118,11 @@ namespace DEGREE {
         Degrees *degreeSwitches;
         Bender *bender;
         DigitalOut *globalGateOut; // global gate output
-        uint8_t currRatchetRate;   // TODO: you don't need to store this
-
         DigitalOut gateOut; // gate output
         AnalogHandle adc;   // CV input ADC
-        VoltPerOctave output;        
-        
-        uint8_t currRatchetRate;      //
+        VoltPerOctave output;
+
+        uint8_t currRatchetRate;      // TODO: you don't need to store this
         bool gateState;               // state of the gate output
         TouchChannelMode currMode;
         TouchChannelMode prevMode;
