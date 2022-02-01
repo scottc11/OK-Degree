@@ -44,8 +44,6 @@ void taskObtainSignalFrequency(void *params)
     sem_obtain_freq = xSemaphoreCreateBinary();
     sem_calibrate = xSemaphoreCreateBinary();
 
-    // xTaskCreate(taskCalibrate, "calibrate", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, &thCalibrate);
-
     xSemaphoreGive(sem_obtain_freq);
 
     logger_log_task_watermark();
@@ -121,10 +119,7 @@ void taskCalibrate(void *params)
 
     while (1)
     {
-        // this seems like it should be a queue now. Processing the avg frequency when they appear on the queue
-        // this way you could have other tasks listen to the same queue for alternate purposes (ie. Tuner)
-        xSemaphoreTake(sem_calibrate, portMAX_DELAY);
-        currAvgFreq = signalAverageFrequency;
+        xQueueReceive(tuner_queue, &currAvgFreq, portMAX_DELAY);
 
         // handle first iteration of calibrating by finding the frequency in PITCH_FREQ_ARR closest to the currently sampled frequency
         if (iteration == 0)
@@ -169,7 +164,7 @@ void taskCalibrate(void *params)
                 logger_log("\n\n*** CALIBRATION FINISHED ***");
                 channel->display->setChannelLED(channel->channelIndex, 15, true);
                 // send a notification to exitCalibration task
-                xTaskNotify(thController, CTRL_CMNDS::EXIT_1VO_CALIBRATION, eNotifyAction::eNoAction);
+                xTaskNotify(thController, CTRL_CMNDS::EXIT_1VO_CALIBRATION, eNotifyAction::eSetValueWithOverwrite);
             }
 
             calibrationAttemps = 0;

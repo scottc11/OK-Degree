@@ -17,9 +17,15 @@ void task_controller(void *params) {
     while (1)
     {
         // you could bit mask the first 16 bits to determine the command, and the bottom 16 bits to determine the channel to act on.
-        uint32_t command = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        uint32_t notification = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        uint8_t channel = noti_get_channel(notification);
+        uint16_t command = noti_get_command(notification);
+        
         switch (command)
         {
+        case CTRL_CMNDS::ENTER_1VO_CALIBRATION:
+            ctrl_send_command(channel, CTRL_CMNDS::ENTER_VCO_TUNING);
+            break;
         case CTRL_CMNDS::EXIT_1VO_CALIBRATION:
             vTaskDelete(thCalibrate);
             vTaskDelete(thStartCalibration);
@@ -34,16 +40,16 @@ void task_controller(void *params) {
             // do something
             break;
         case CTRL_CMNDS::ENTER_VCO_TUNING:
-            // start frequency detector task
-            xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[0], RTOS_PRIORITY_MED, &thStartCalibration);
-            xTaskCreate(task_tuner, "tuner", RTOS_STACK_SIZE_MIN, controller->channels[0], RTOS_PRIORITY_HIGH, &tuner_task_handle);
+            xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[controller->selectedChannel], RTOS_PRIORITY_MED, &thStartCalibration);
+            xTaskCreate(task_tuner, "tuner", RTOS_STACK_SIZE_MIN, controller->channels[controller->selectedChannel], RTOS_PRIORITY_HIGH, &tuner_task_handle);
             break;
         case CTRL_CMNDS::EXIT_VCO_TUNING:
-            vTaskDelete(thStartCalibration);
             vTaskDelete(tuner_task_handle);
-            controller->display->fill();
+            controller->display->fill(controller->selectedChannel);
             controller->display->flash(3, 200);
-            controller->display->clear();
+            controller->display->clear(controller->selectedChannel);
+            controller->mode = GlobalControl::CALIBRATING_1VO;
+            xTaskCreate(taskCalibrate, "calibrate", RTOS_STACK_SIZE_MIN, controller->channels[controller->selectedChannel], RTOS_PRIORITY_MED, &thCalibrate);
             break;
         default:
             break;

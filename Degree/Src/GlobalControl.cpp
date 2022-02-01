@@ -531,10 +531,9 @@ void GlobalControl::resetSequencer()
     }
 }
 
-void GlobalControl::enableVCOCalibration(TouchChannel *channel) {
-    this->mode = CALIBRATING_1VO;
-    // potentially move task calibrate creation here
-    xTaskCreate(taskObtainSignalFrequency, "taskSampleVCO", RTOS_STACK_SIZE_MIN, channel, RTOS_PRIORITY_MED, NULL);
+void GlobalControl::enableVCOCalibration(TouchChannel *channel)
+{
+    ctrl_send_command(channel->channelIndex, CTRL_CMNDS::ENTER_1VO_CALIBRATION);
 }
 
 void GlobalControl::disableVCOCalibration() {
