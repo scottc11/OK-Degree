@@ -12,15 +12,15 @@ uint32_t create_controller_command(uint16_t channel, uint16_t command)
 
 CTRL_CMNDS noti_get_command(uint32_t notification)
 {
-    return (CTRL_CMNDS)bitwise_first_16_of_32(notification);
+    return (CTRL_CMNDS)bitwise_last_16_of_32(notification);
 }
 
 uint8_t noti_get_channel(uint32_t notification)
 {
-    return (uint8_t)bitwise_last_16_of_32(notification);
+    return (uint8_t)bitwise_first_16_of_32(notification);
 }
 
-void ctrl_send_command(int channel, CTRL_CMNDS command)
+void ctrl_send_command(uint8_t channel, CTRL_CMNDS command)
 {
     uint32_t notification = create_controller_command(channel, command);
     xTaskNotify(thController, notification, eSetValueWithOverwrite);
