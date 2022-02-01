@@ -1,11 +1,11 @@
 #include "task_tuner.h"
 
-static const float TARGET_FREQUENCY_C1 = PITCH_FREQ_ARR[0];
+static const float TUNER_TARGET_FREQUENCIES[3] = {PITCH_FREQ_ARR[0], PITCH_FREQ_ARR[12], PITCH_FREQ_ARR[24]};
 QueueHandle_t tuner_queue;
 TaskHandle_t tuner_task_handle;
 
 void timer_callback() {
-    xTaskNotify(thController, CTRL_CMNDS::EXIT_VCO_TUNING, eSetValueWithoutOverwrite);
+    ctrl_send_command(1, CTRL_CMNDS::EXIT_VCO_TUNING);
 }
 
 void task_tuner(void *params)
@@ -15,13 +15,19 @@ void task_tuner(void *params)
     tuner_queue = xQueueCreate(1, sizeof(float));
     SoftwareTimer timer(timer_callback, 3000, false);
     channel->output.resetDAC();
+    
     while (1)
     {
         // listen for items on queue
         xQueueReceive(tuner_queue, &frequency, portMAX_DELAY);
         channel->display->clear(channel->channelIndex);
         // TODO: determine the distance incoming frequency is relative to target freq and DIM the leds based on this value
-        if (frequency > TARGET_FREQUENCY_C1 + TUNING_TOLERANCE)
+
+        // find the closest target frequence relative to incoming frequency
+        int index = arr_find_closest_float(const_cast<float *>(TUNER_TARGET_FREQUENCIES), 3, frequency);
+        float targetFrequency = TUNER_TARGET_FREQUENCIES[index];
+
+        if (frequency > targetFrequency + TUNING_TOLERANCE)
         {
             channel->display->setChannelLED(channel->channelIndex, 0, true);
             channel->display->setChannelLED(channel->channelIndex, 1, true);
@@ -29,7 +35,7 @@ void task_tuner(void *params)
             channel->display->setChannelLED(channel->channelIndex, 3, true);
             timer.reset();
         }
-        else if (frequency < TARGET_FREQUENCY_C1 - TUNING_TOLERANCE)
+        else if (frequency < targetFrequency - TUNING_TOLERANCE)
         {
             channel->display->setChannelLED(channel->channelIndex, 12, true);
             channel->display->setChannelLED(channel->channelIndex, 13, true);
@@ -37,7 +43,7 @@ void task_tuner(void *params)
             channel->display->setChannelLED(channel->channelIndex, 15, true);
             timer.reset();
         }
-        else if (frequency > TARGET_FREQUENCY_C1 - TUNING_TOLERANCE && frequency < TARGET_FREQUENCY_C1 + TUNING_TOLERANCE)
+        else if (frequency > targetFrequency - TUNING_TOLERANCE && frequency < targetFrequency + TUNING_TOLERANCE)
         {
             
             channel->display->setChannelLED(channel->channelIndex, 4, true);

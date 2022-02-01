@@ -32,8 +32,8 @@ void task_controller(void *params)
             // do something
             break;
         case CTRL_CMNDS::ENTER_VCO_TUNING:
-            xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[controller->selectedChannel], RTOS_PRIORITY_MED, &thStartCalibration);
-            xTaskCreate(task_tuner, "tuner", RTOS_STACK_SIZE_MIN, controller->channels[controller->selectedChannel], RTOS_PRIORITY_HIGH, &tuner_task_handle);
+            xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_MED, &thStartCalibration);
+            xTaskCreate(task_tuner, "tuner", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_HIGH, &tuner_task_handle);
             break;
         case CTRL_CMNDS::EXIT_VCO_TUNING:
             vTaskDelete(tuner_task_handle);
