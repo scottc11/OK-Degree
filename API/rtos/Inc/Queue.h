@@ -1,5 +1,5 @@
 /**
- * @file okQueue.h
+ * @file Queue.h
  * @author Scott Campbell
  * @brief
  * @version 0.1
@@ -20,10 +20,10 @@
 #include "logger.h"
 
 template<class T, unsigned L>
-class okQueue
+class Queue
 {
 public:
-    okQueue() {
+    Queue() {
         handle = xQueueCreate(L, sizeof(T));
         if (handle == NULL) {
             // logger_log("there is insufficient heap RAM available for the queue to be created.");
