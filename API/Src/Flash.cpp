@@ -14,7 +14,7 @@ HAL_StatusTypeDef Flash::unlock(uint32_t sector)
     }
 
     // __disable_irq(); // disable all interupts
-
+    _mutex.lock(); // you want to lock the peripheral with a mutex before unlocking it for use
     status = HAL_FLASH_Unlock();
     return status;
 }
@@ -25,7 +25,10 @@ HAL_StatusTypeDef Flash::unlock(uint32_t sector)
 */
 HAL_StatusTypeDef Flash::lock()
 {
-    return HAL_FLASH_Lock();
+    HAL_StatusTypeDef status;
+    status = HAL_FLASH_Lock();
+    _mutex.unlock(); // unlock the peripheral with a mutex after locking it for use in other threads
+    return status;
 }
 
 /**
@@ -56,7 +59,6 @@ HAL_StatusTypeDef Flash::erase(uint32_t address)
     status = this->lock();
     if (status != HAL_OK)
         return status;
-
     return status;
 }
 

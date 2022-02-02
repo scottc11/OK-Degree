@@ -55,7 +55,7 @@ Example: Erase, Write, Read
 #pragma once
 
 #include "common.h"
-#include <string.h>
+#include "Mutex.h"
 
 /**
  * @brief static class for handling flash read, write, and erase methods
@@ -73,6 +73,7 @@ public:
     uint32_t getSector(uint32_t Address);
 
 private:
+    Mutex _mutex;
     HAL_StatusTypeDef unlock(uint32_t sector);
     HAL_StatusTypeDef lock();
 };
