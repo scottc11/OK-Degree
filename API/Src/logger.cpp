@@ -74,7 +74,9 @@ void logger_log_err(char *str)
  */
 void uart_transmit(uint8_t *data)
 {
+    vTaskSuspendAll();
     HAL_UART_Transmit(&huart3, data, strlen((const char *)data), HAL_MAX_DELAY);
+    xTaskResumeAll();
 }
 
 void logger_log_system_config()
