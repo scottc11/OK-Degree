@@ -126,8 +126,6 @@ void AnalogHandle::sampleReadyCallback(uint16_t sample)
         }
         
     }
-    
-    this->queue.send(currValue, (TickType_t)0); // send sample to queue for other tasks
 }
 
 void AnalogHandle::RouteConversionCompleteCallback() // static
