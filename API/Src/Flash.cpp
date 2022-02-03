@@ -3,7 +3,10 @@
 /**
  * @brief Unlock flash memory write/erase protection.
  * Once the flash memory write/erase protection is disabled, we can perform an erase or write operation.
-*/
+ *
+ * @note For some reason it is recommended to clear all flash error flags prior to using the API
+ * @ref https://community.st.com/s/question/0D50X0000A4qiL0SQI/why-would-flashflagpgperr-and-flashflagpgserr-be-set-after-a-successful-flash-write-and-at-powerup-before-any-flash-write-operations
+ */
 HAL_StatusTypeDef Flash::unlock(uint32_t sector)
 {
     HAL_StatusTypeDef status;
@@ -13,7 +16,13 @@ HAL_StatusTypeDef Flash::unlock(uint32_t sector)
         return HAL_ERROR;
     }
 
-    // __disable_irq(); // disable all interupts
+    __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_NONE);
+    __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_RD);
+    __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_PGS);
+    __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_PGP);
+    __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_PGA);
+    __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_WRP);
+    __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_OPERATION);
 
     status = HAL_FLASH_Unlock();
     return status;
@@ -37,7 +46,7 @@ HAL_StatusTypeDef Flash::erase(uint32_t address)
     HAL_StatusTypeDef status;
     status = this->unlock(address);
     if (status != HAL_OK)
-        return status;
+        logger_log_err("Flash::erase::unlock", status);
 
     FLASH_EraseInitTypeDef eraseConfig = {0};
     uint32_t sectorError;
@@ -47,15 +56,18 @@ HAL_StatusTypeDef Flash::erase(uint32_t address)
     eraseConfig.Sector = this->getSector(address);
     eraseConfig.NbSectors = 1;
     eraseConfig.VoltageRange = FLASH_VOLTAGE_RANGE_3;
-
-    if (HAL_FLASHEx_Erase(&eraseConfig, &sectorError) != HAL_OK)
+    status = HAL_FLASHEx_Erase(&eraseConfig, &sectorError);
+    if (status != HAL_OK)
     {
         flashError = HAL_FLASH_GetError();
+        logger_log("\nFLASH Error Code: ");
+        logger_log(flashError);
+        logger_log_err("Flash::erase::HAL", status);
     }
 
     status = this->lock();
     if (status != HAL_OK)
-        return status;
+        logger_log_err("Flash::erase::lock", status);
 
     return status;
 }
@@ -66,7 +78,7 @@ HAL_StatusTypeDef Flash::write(uint32_t address, uint32_t *data, int size)
     uint32_t flashError = 0;
     status = this->unlock(address);
     if (status != HAL_OK)
-        return status;
+        logger_log_err("Flash::write", status);
 
     /* Note: If an erase operation in Flash memory also concerns data in the data or instruction cache,
      you have to make sure that these data are rewritten before they are accessed during code
