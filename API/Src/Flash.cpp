@@ -15,8 +15,13 @@ HAL_StatusTypeDef Flash::unlock(uint32_t sector)
     {
         return HAL_ERROR;
     }
+    _mutex.lock();   // you want to lock the peripheral with a mutex before unlocking it for use
+    
+    __disable_irq(); // disable all interupts
+    vTaskSuspendAll(); // suspend all rtos tasks
 
-    _mutex.lock(); // you want to lock the peripheral with a mutex before unlocking it for use
+    status = HAL_FLASH_Unlock();
+    // For some reason it is recommended to clear all flash error flags prior to using the API
     __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_NONE);
     __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_RD);
     __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_PGS);
@@ -24,8 +29,6 @@ HAL_StatusTypeDef Flash::unlock(uint32_t sector)
     __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_PGA);
     __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_WRP);
     __HAL_FLASH_CLEAR_FLAG(HAL_FLASH_ERROR_OPERATION);
-
-    status = HAL_FLASH_Unlock();
     return status;
 }
 
@@ -37,6 +40,8 @@ HAL_StatusTypeDef Flash::lock()
 {
     HAL_StatusTypeDef status;
     status = HAL_FLASH_Lock();
+    xTaskResumeAll(); // resume all tasks
+    __enable_irq(); // re-enable interrupts
     _mutex.unlock(); // unlock the peripheral with a mutex after locking it for use in other threads
     return status;
 }
