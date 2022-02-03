@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "okQueue.h"
 
 #ifndef OK_UART_RX
 #define OK_UART_RX (PinName) PC_11
