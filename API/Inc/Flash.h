@@ -56,6 +56,8 @@ Example: Erase, Write, Read
 
 #include "common.h"
 #include "Mutex.h"
+#include <string.h>
+#include "logger.h"
 
 /**
  * @brief static class for handling flash read, write, and erase methods

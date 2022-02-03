@@ -62,9 +62,49 @@ void logger_log(float const f) {
     uart_transmit((uint8_t *)str);
 }
 
-void logger_log_err(char *str)
+void logger_log_err(char const *func_name, HAL_StatusTypeDef error)
 {
-    uart_transmit((uint8_t *)str);
+    logger_log("\n** ERROR ** Function -> ");
+    logger_log(func_name);
+    logger_log(" :: ");
+    switch (error)
+    {
+    case HAL_ERROR:
+        logger_log("HAL_ERROR");
+        while (1)
+        {
+            HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+            HAL_Delay(500);
+            HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+            HAL_Delay(500);
+        }
+        break;
+    case HAL_BUSY:
+        logger_log("HAL_BUSY");
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+        while (1)
+        {
+            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+            HAL_Delay(500);
+            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+            HAL_Delay(500);
+        }
+        break;
+    case HAL_TIMEOUT:
+        logger_log("HAL_TIMEOUT");
+        while (1)
+        {
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+            HAL_Delay(500);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+            HAL_Delay(500);
+        }
+        break;
+    case HAL_OK:
+        break;
+    default:
+        break;
+    }
 }
 
 /**
