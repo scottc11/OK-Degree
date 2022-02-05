@@ -73,6 +73,7 @@ public:
     void read(uint32_t address, uint32_t *rxBuffer, int size);
 
     uint32_t getSector(uint32_t Address);
+    bool validate(uint32_t *data, int size);
 
 private:
     static Mutex _mutex;

@@ -1,5 +1,7 @@
 #include "Flash.h"
 
+Mutex Flash::_mutex;
+
 /**
  * @brief Unlock flash memory write/erase protection.
  * Once the flash memory write/erase protection is disabled, we can perform an erase or write operation.
@@ -137,6 +139,22 @@ void Flash::read(uint32_t address, uint32_t *rxBuffer, int size)
         rxBuffer++;
         size--;
     }
+}
+
+/**
+ * @brief Check if data read from flash has been cleared / not written too by testing contents of buffer
+ *
+ * @param data
+ * @param size
+ * @return bool
+ */
+bool Flash::validate(uint32_t *data, int size)
+{
+    size = size > 65000 ? 65000 : size; // protect
+    uint32_t validator = 0;
+    for (int i = 0; i < size; i++)
+        validator += (uint16_t)data[i]; // uint16 for overflow
+    return validator == size * 0xFFFF ? true : false;
 }
 
 /**
