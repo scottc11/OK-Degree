@@ -75,7 +75,7 @@ public:
     uint32_t getSector(uint32_t Address);
 
 private:
-    Mutex _mutex;
+    static Mutex _mutex;
     HAL_StatusTypeDef unlock(uint32_t sector);
     HAL_StatusTypeDef lock();
 };
