@@ -12,7 +12,7 @@
 ######################################
 TARGET = ok-dev-board
 
-FLASH_SIZE = $$((512 * 1024)) # 512 kB
+FLASH_SIZE = $$((384 * 1024)) # 384 kB
 RAM_SIZE = $$((128 * 1024)) # 128 kB
 
 ######################################
@@ -289,7 +289,7 @@ $(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR)
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	$(AS) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
+$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) STM32F446RETx_FLASH.ld Makefile
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
 	@echo ""
