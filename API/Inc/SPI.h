@@ -33,5 +33,5 @@ private:
     DigitalOut _slaveSelect;
 
     SPI_HandleTypeDef _hspi;
-    Mutex _mutex;
+    static Mutex _mutex;
 };

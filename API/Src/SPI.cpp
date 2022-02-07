@@ -1,5 +1,7 @@
 #include "SPI.h"
 
+Mutex SPI::_mutex;
+
 void SPI::init()
 {
     _mutex.lock();
