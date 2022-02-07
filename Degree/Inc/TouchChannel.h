@@ -194,7 +194,7 @@ namespace DEGREE {
         uint8_t calculateRatchet(uint16_t bend);
         void handleRatchet(int position, uint8_t rate);
 
-        static void taskReceiveVCOSample(void *params);
+        void initializeCalibration();
     };
 } // end namespace
 

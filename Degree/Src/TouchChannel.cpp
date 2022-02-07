@@ -871,3 +871,11 @@ void TouchChannel::disableSequenceRecording()
         }
     }
 }
+
+void TouchChannel::initializeCalibration() {
+    output.resetVoltageMap(); // You should reset prior to tuning
+    output.resetDAC();
+    display->clear();
+    display->drawSpiral(channelIndex, true, 50);
+    display->clear();
+}

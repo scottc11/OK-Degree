@@ -14,7 +14,6 @@ void task_tuner(void *params)
     float frequency;
     tuner_queue = xQueueCreate(1, sizeof(float));
     SoftwareTimer timer(timer_callback, 3000, false);
-    channel->output.resetDAC();
     
     while (1)
     {

@@ -16,6 +16,7 @@ void task_controller(void *params)
         switch (command)
         {
         case CTRL_CMNDS::ENTER_1VO_CALIBRATION:
+            controller->channels[channel]->initializeCalibration();
             ctrl_send_command(channel, CTRL_CMNDS::ENTER_VCO_TUNING);
             break;
         case CTRL_CMNDS::EXIT_1VO_CALIBRATION:
@@ -32,8 +33,8 @@ void task_controller(void *params)
             // do something
             break;
         case CTRL_CMNDS::ENTER_VCO_TUNING:
-            xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_MED, &thStartCalibration);
             xTaskCreate(task_tuner, "tuner", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_HIGH, &tuner_task_handle);
+            xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_MED, &thStartCalibration);
             break;
         case CTRL_CMNDS::EXIT_VCO_TUNING:
             vTaskDelete(tuner_task_handle);
