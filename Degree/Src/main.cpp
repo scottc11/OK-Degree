@@ -106,7 +106,7 @@ int main(void)
   multi_chan_adc_start();
   HAL_Delay(100);
 
-  xTaskCreate(taskMain, "taskMain", 512, NULL, 1, NULL);
+  xTaskCreate(taskMain, "taskMain", 512, NULL, 1, &main_task_handle);
   xTaskCreate(task_controller, "controller", 512, &glblCtrl, RTOS_PRIORITY_HIGH, NULL);
 
   vTaskStartScheduler();

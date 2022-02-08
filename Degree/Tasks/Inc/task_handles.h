@@ -5,6 +5,7 @@
 
 #define TUNING_TOLERANCE 0.1f // tolerable frequency tuning difference
 
+extern TaskHandle_t main_task_handle;
 extern TaskHandle_t thStartCalibration;
 extern TaskHandle_t thExitCalibration;
 extern TaskHandle_t thCalibrate;
