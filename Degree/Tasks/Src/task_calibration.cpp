@@ -188,7 +188,10 @@ void taskCalibrate(void *params)
                 {
                     dacAdjustment = (dacAdjustment / 2) + 1; // + 1 so it never becomes zero
                 }
-                newDacValue -= dacAdjustment;
+                if (newDacValue - dacAdjustment > newDacValue) // catch overflow past 0
+                {
+                    newDacValue -= dacAdjustment;
+                }
             }
 
             else if (currAvgFreq < targetFreq - TUNING_TOLERANCE) // undershot target freq
@@ -197,7 +200,10 @@ void taskCalibrate(void *params)
                 {
                     dacAdjustment = (dacAdjustment / 2) + 1; // so it never becomes zero
                 }
-                newDacValue += dacAdjustment;
+                if (newDacValue + dacAdjustment < newDacValue) // catch overflow above 65535
+                {
+                    newDacValue += dacAdjustment;
+                }
             }
             prevAvgFreq = currAvgFreq;
             calibrationAttemps++;
