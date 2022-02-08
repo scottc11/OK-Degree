@@ -122,6 +122,8 @@ namespace DEGREE {
         AnalogHandle adc;   // CV input ADC
         VoltPerOctave output;        
         
+        TaskHandle_t handleTouchTaskHandle;
+
         uint8_t currRatchetRate;      //
         bool gateState;               // state of the gate output
         TouchChannelMode currMode;
@@ -155,6 +157,7 @@ namespace DEGREE {
         void setMode(TouchChannelMode targetMode);
         void toggleMode();
 
+        void handleTouchInterrupt();
         void onTouch(uint8_t pad);
         void onRelease(uint8_t pad);
         void triggerNote(int degree, int octave, Action action);
@@ -195,6 +198,8 @@ namespace DEGREE {
         void handleRatchet(int position, uint8_t rate);
 
         void initializeCalibration();
+
+        static void taskHandleTouch(void *_this);
     };
 } // end namespace
 

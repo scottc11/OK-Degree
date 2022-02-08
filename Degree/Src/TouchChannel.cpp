@@ -4,6 +4,8 @@ using namespace DEGREE;
 
 void TouchChannel::init()
 {
+    xTaskCreate(TouchChannel::taskHandleTouch, "handleTouch", RTOS_STACK_SIZE_MIN, this, RTOS_PRIORITY_HIGH, &this->handleTouchTaskHandle);
+
     output.init(); // must init this first (for the dac)
     
     adc.setFilter(0.1);
@@ -17,6 +19,7 @@ void TouchChannel::init()
 
     // initialize channel touch pads
     touchPads->init();
+    touchPads->attachInterruptCallback(callback(this, &TouchChannel::handleTouchInterrupt));
     touchPads->attachCallbackTouched(callback(this, &TouchChannel::onTouch));
     touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
     touchPads->enable();
@@ -42,8 +45,6 @@ void TouchChannel::poll()
 {
     if (!freezeChannel)
     {
-        touchPads->poll();
-
         if (tickerFlag)
         {
 
@@ -878,4 +879,34 @@ void TouchChannel::initializeCalibration() {
     display->clear();
     display->drawSpiral(channelIndex, true, 50);
     display->clear();
+}
+
+/**
+ * @brief dedicated high priority task for each touch channel which listens for a notification sent by the touch interrupt
+ *
+ *
+ * @todo Set the MPR121 callback to send a notification
+ * @todo setup task to listen for a notification
+ * @todo when notification recieive, call handleTouch(), which will read the pads via I2C and then trigger
+ * the onTouch and onRelease callbacks, respectively
+ * @todo add task to scheduler
+ * @param touch_chan_ptr TouchChannel pointer
+ */
+void TouchChannel::taskHandleTouch(void *touch_chan_ptr) {
+    TouchChannel *_this = (TouchChannel*)touch_chan_ptr;
+    logger_log_task_watermark();
+    while (1)
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        _this->touchPads->handleTouch(); // this will trigger either onTouch() or onRelease()
+    }
+}
+
+/**
+ * @brief send a notification to the handle touch task
+ */
+void TouchChannel::handleTouchInterrupt() {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xTaskNotifyFromISR(this->handleTouchTaskHandle, 0, eNoAction, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
