@@ -107,7 +107,7 @@ int main(void)
   HAL_Delay(100);
 
   xTaskCreate(taskMain, "taskMain", 512, NULL, 1, &main_task_handle);
-  xTaskCreate(task_controller, "controller", 512, &glblCtrl, RTOS_PRIORITY_HIGH, NULL);
+  xTaskCreate(task_controller, "controller", RTOS_STACK_SIZE_MIN, &glblCtrl, RTOS_PRIORITY_HIGH, NULL);
 
   vTaskStartScheduler();
 

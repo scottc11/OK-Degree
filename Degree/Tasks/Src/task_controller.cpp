@@ -49,5 +49,6 @@ void task_controller(void *params)
         default:
             break;
         }
+        logger_log_task_watermark(); // TODO: delete for production
     }
 }
