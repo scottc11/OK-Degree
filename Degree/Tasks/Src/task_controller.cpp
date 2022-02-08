@@ -17,6 +17,7 @@ void task_controller(void *params)
         {
         case CTRL_CMNDS::ENTER_1VO_CALIBRATION:
             vTaskSuspend(main_task_handle);
+            vTaskSuspend(controller->channels[channel]->handleTouchTaskHandle);
             controller->channels[channel]->initializeCalibration();
             ctrl_send_command(channel, CTRL_CMNDS::ENTER_VCO_TUNING);
             break;
@@ -30,6 +31,7 @@ void task_controller(void *params)
 
             controller->disableVCOCalibration();
             vTaskResume(main_task_handle);
+            vTaskResume(controller->channels[channel]->handleTouchTaskHandle);
             break;
         case CTRL_CMNDS::EXIT_BENDER_CALIBRATION:
             // do something
