@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "Mutex.h"
 #include "gpio_api.h"
 
 class I2C {
@@ -33,5 +34,8 @@ public:
     int read(int address, uint8_t *data, int length, bool repeated = false);
 
 private:
+
+    Mutex mutex;
+
     static I2C_TypeDef *get_i2c_instance(Instance instance);
 };

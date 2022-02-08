@@ -23,7 +23,7 @@ void logger_log(float const f);
 
 void logger_log_arr(int arr[]);
 
-void logger_log_err(char *str);
+void logger_log_err(char const *func_name, HAL_StatusTypeDef error);
 
 void uart_transmit(uint8_t *data);
 

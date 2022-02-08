@@ -1,7 +1,10 @@
 #include "SPI.h"
 
+Mutex SPI::_mutex;
+
 void SPI::init()
 {
+    _mutex.lock();
     /* Peripheral clock enable */
     __HAL_RCC_SPI2_CLK_ENABLE();
 
@@ -39,6 +42,7 @@ void SPI::init()
     HAL_StatusTypeDef status;
     status = HAL_SPI_Init(&_hspi);
     error_handler(status);
+    _mutex.unlock();
 }
 
 void SPI::mode(int mode)
@@ -66,8 +70,10 @@ void SPI::mode(int mode)
 
 void SPI::write(uint8_t *data, int length)
 {
+    _mutex.lock();
     HAL_StatusTypeDef status;
     _slaveSelect.write(0);
     status = HAL_SPI_Transmit(&_hspi, (uint8_t *)data, length, HAL_MAX_DELAY);
     _slaveSelect.write(1);
+    _mutex.unlock();
 }
