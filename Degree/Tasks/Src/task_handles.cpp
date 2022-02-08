@@ -1,5 +1,6 @@
 #include "task_handles.h"
 
+TaskHandle_t main_task_handle;
 TaskHandle_t thStartCalibration;
 TaskHandle_t thExitCalibration;
 TaskHandle_t thCalibrate;

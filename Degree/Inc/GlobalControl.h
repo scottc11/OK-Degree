@@ -111,7 +111,6 @@ namespace DEGREE {
         void resetCalibrationDataToDefault();
         void resetCalibration1VO(int chan);
         int getCalibrationDataPosition(int data_index, int channel_index);
-        int getCalibrationBufferSize();
 
     private:
     private:

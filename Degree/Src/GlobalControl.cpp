@@ -2,6 +2,8 @@
 
 using namespace DEGREE;
 
+uint32_t SETTINGS_BUFFER[SETTINGS_BUFFER_SIZE];
+
 void GlobalControl::init() {
     this->loadCalibrationDataFromFlash();
 
@@ -351,18 +353,15 @@ void GlobalControl::handleButtonRelease(int pad)
 */ 
 void GlobalControl::loadCalibrationDataFromFlash()
 {
-    uint32_t buffer[this->getCalibrationBufferSize()];
     Flash flash;
-    flash.read(FLASH_CONFIG_ADDR, (uint32_t *)buffer, this->getCalibrationBufferSize());
+    flash.read(FLASH_CONFIG_ADDR, (uint32_t *)SETTINGS_BUFFER, SETTINGS_BUFFER_SIZE);
 
-    // check if calibration data exists by testing contents of buffer
-    uint32_t count = 0;
-    for (int i = 0; i < 4; i++)
-        count += (uint16_t)buffer[i];
+    bool dataIsClean = flash.validate(SETTINGS_BUFFER, 4);
 
-    if (count == 4 * 0xFFFF) // if all data is equal to 0xFFFF, than no calibration exists
+    if (dataIsClean)
     {
         // load default 1VO values
+        logger_log("\nLoading default values");
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             channels[chan]->output.resetVoltageMap();
@@ -372,15 +371,16 @@ void GlobalControl::loadCalibrationDataFromFlash()
     }
     else
     { // if it does, load the data from flash
+        logger_log("\nLoading calibration data from flash");
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
             {
                 int index = this->getCalibrationDataPosition(i, chan);
-                channels[chan]->output.dacVoltageMap[i] = (uint16_t)buffer[index];
+                channels[chan]->output.dacVoltageMap[i] = (uint16_t)SETTINGS_BUFFER[index];
             }
-            channels[chan]->bender->setMinBend(buffer[this->getCalibrationDataPosition(BENDER_MIN_CAL_INDEX, chan)]);
-            channels[chan]->bender->setMaxBend(buffer[this->getCalibrationDataPosition(BENDER_MAX_CAL_INDEX, chan)]);
+            channels[chan]->bender->setMinBend(SETTINGS_BUFFER[this->getCalibrationDataPosition(BENDER_MIN_CAL_INDEX, chan)]);
+            channels[chan]->bender->setMaxBend(SETTINGS_BUFFER[this->getCalibrationDataPosition(BENDER_MAX_CAL_INDEX, chan)]);
         }
     }
 }
@@ -395,23 +395,22 @@ void GlobalControl::saveCalibrationDataToFlash()
 {
     // disable interupts?
     this->display->fill();
-    uint32_t buffer[this->getCalibrationBufferSize()]; // move this off the... stack?
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
     {
         for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)   // dac array iterrator
         {
             buffer_position = this->getCalibrationDataPosition(i, chan);
-            buffer[buffer_position] = channels[chan]->output.dacVoltageMap[i]; // copy values into buffer
+            SETTINGS_BUFFER[buffer_position] = channels[chan]->output.dacVoltageMap[i]; // copy values into buffer
         }
         // load max and min Bender calibration data into buffer (two 16bit chars)
-        buffer[this->getCalibrationDataPosition(BENDER_MIN_CAL_INDEX, chan)] = channels[chan]->bender->getMinBend();
-        buffer[this->getCalibrationDataPosition(BENDER_MAX_CAL_INDEX, chan)] = channels[chan]->bender->getMaxBend();
+        SETTINGS_BUFFER[this->getCalibrationDataPosition(BENDER_MIN_CAL_INDEX, chan)] = channels[chan]->bender->getMinBend();
+        SETTINGS_BUFFER[this->getCalibrationDataPosition(BENDER_MAX_CAL_INDEX, chan)] = channels[chan]->bender->getMaxBend();
     }
     // now load this buffer into flash memory
     Flash flash;
     flash.erase(FLASH_CONFIG_ADDR);
-    flash.write(FLASH_CONFIG_ADDR, buffer, this->getCalibrationBufferSize());
+    flash.write(FLASH_CONFIG_ADDR, SETTINGS_BUFFER, SETTINGS_BUFFER_SIZE);
     // flash the grid of leds on and off for a sec then exit
     this->display->flash(3, 300);
     this->display->clear();
@@ -453,16 +452,6 @@ void GlobalControl::resetCalibration1VO(int chan)
 int GlobalControl::getCalibrationDataPosition(int data_index, int channel_index)
 {
     return (data_index + CALIBRATION_ARR_SIZE * channel_index);
-}
-
-/**
- * @brief get the total size of the calibration buffer
- * 
- * @return int 
- */
-int GlobalControl::getCalibrationBufferSize()
-{
-    return CALIBRATION_ARR_SIZE * CHANNEL_COUNT;
 }
 
 /**

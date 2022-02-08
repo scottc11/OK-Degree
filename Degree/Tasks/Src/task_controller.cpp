@@ -16,6 +16,9 @@ void task_controller(void *params)
         switch (command)
         {
         case CTRL_CMNDS::ENTER_1VO_CALIBRATION:
+            vTaskSuspend(main_task_handle);
+            vTaskSuspend(controller->channels[channel]->handleTouchTaskHandle);
+            controller->channels[channel]->initializeCalibration();
             ctrl_send_command(channel, CTRL_CMNDS::ENTER_VCO_TUNING);
             break;
         case CTRL_CMNDS::EXIT_1VO_CALIBRATION:
@@ -27,13 +30,15 @@ void task_controller(void *params)
             controller->saveCalibrationDataToFlash();
 
             controller->disableVCOCalibration();
+            vTaskResume(main_task_handle);
+            vTaskResume(controller->channels[channel]->handleTouchTaskHandle);
             break;
         case CTRL_CMNDS::EXIT_BENDER_CALIBRATION:
             // do something
             break;
         case CTRL_CMNDS::ENTER_VCO_TUNING:
-            xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_MED, &thStartCalibration);
             xTaskCreate(task_tuner, "tuner", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_HIGH, &tuner_task_handle);
+            xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_MED, &thStartCalibration);
             break;
         case CTRL_CMNDS::EXIT_VCO_TUNING:
             vTaskDelete(tuner_task_handle);
@@ -46,5 +51,6 @@ void task_controller(void *params)
         default:
             break;
         }
+        logger_log_task_watermark(); // TODO: delete for production
     }
 }

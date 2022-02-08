@@ -2,6 +2,7 @@
 
 void I2C::init()
 {
+    mutex.lock();
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     HAL_StatusTypeDef status;
 
@@ -56,10 +57,12 @@ void I2C::init()
     if (status != HAL_OK) {
         error_handler(status);
     }
+    mutex.unlock();
 }
 
 HAL_StatusTypeDef I2C::write(int address, uint8_t *data, int length, bool repeated /*=false*/)
 {
+    mutex.lock();
     HAL_StatusTypeDef status;
     
     while (HAL_I2C_GetState(&_hi2c) != HAL_I2C_STATE_READY)
@@ -72,12 +75,13 @@ HAL_StatusTypeDef I2C::write(int address, uint8_t *data, int length, bool repeat
     {
         error_handler(status);
     }
-
+    mutex.unlock();
     return status;
 }
 
 int I2C::read(int address, uint8_t *data, int length, bool repeated /*=false*/)
 {
+    mutex.lock();
     HAL_StatusTypeDef status;
     
     while (HAL_I2C_GetState(&_hi2c) != HAL_I2C_STATE_READY)
@@ -89,6 +93,7 @@ int I2C::read(int address, uint8_t *data, int length, bool repeated /*=false*/)
     if (status != HAL_OK) {
         error_handler(status);
     }
+    mutex.unlock();
     return status;
 }
 

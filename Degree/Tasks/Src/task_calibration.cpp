@@ -26,10 +26,6 @@ void taskObtainSignalFrequency(void *params)
     float vcoFrequency = 0;          // the calculated frequency sample
     int frequencySampleCounter = 0;  // index for storing new frequency sample into freqSamples array
     float avgFrequencySum = 0;       // the sum of all new frequency samples (for calculating a running average afterwards)
-
-    channel->display->clear();
-    channel->display->drawSpiral(channel->channelIndex, true, 50);
-    channel->display->clear();
     
     channel->adc.disableFilter(); // must not filter ADC input
 
@@ -113,18 +109,24 @@ void taskCalibrate(void *params)
     int targetFreqIndex;        // current voltage map iteration + initial pitch index
     int iteration = 0;          // the current interation in the voltage map array
     int initialPitchIndex;      // the index of the initial target frequency in PITCH_FREQ_ARR
-
-    channel->output.resetDAC(); // start at the lowest possible dac voltage
-
+    bool initialized = false;   //
+    
     while (1)
     {
         xQueueReceive(tuner_queue, &currAvgFreq, portMAX_DELAY);
 
         // handle first iteration of calibrating by finding the frequency in PITCH_FREQ_ARR closest to the currently sampled frequency
-        if (iteration == 0)
+        if (iteration == 0 && !initialized)
         {
+            newDacValue = channel->output.dacVoltageMap[iteration]; // initialize the dac value
             initialPitchIndex = arr_find_closest_float(const_cast<float *>(PITCH_FREQ_ARR), NUM_PITCH_FREQENCIES, currAvgFreq);
-            logger_log("\nInitial Target Frequency: ");
+            initialized = true;
+            logger_log("\n** CALIBRATION BEGIN ** ");
+            logger_log("\nStarting Frequency: ");
+            logger_log(currAvgFreq);
+            logger_log("\nStarting DAC Value: ");
+            logger_log(newDacValue);
+            logger_log("\nTarget Frequency: ");
             logger_log(PITCH_FREQ_ARR[initialPitchIndex]);
 
             if (initialPitchIndex + DAC_1VO_ARR_SIZE > NUM_PITCH_FREQENCIES) // if the starting PITCH_FREQ_ARR index is too high, you will overshoot the array. Must notify the UI to lower VCO input frequency
@@ -151,9 +153,11 @@ void taskCalibrate(void *params)
             logger_log(iteration);
             logger_log(" :: x= ");
             logger_log(targetFreqIndex);
-            logger_log(" :: target= ");
+            logger_log(" :: dac= ");
+            logger_log(newDacValue);
+            logger_log(" :: target freq= ");
             logger_log(targetFreq);
-            logger_log(" :: actual= ");
+            logger_log(" :: actual freq= ");
             logger_log(currAvgFreq);
             logger_log(" :: attempts= ");
             logger_log(calibrationAttemps);
@@ -184,7 +188,10 @@ void taskCalibrate(void *params)
                 {
                     dacAdjustment = (dacAdjustment / 2) + 1; // + 1 so it never becomes zero
                 }
-                newDacValue -= dacAdjustment;
+                if (newDacValue - dacAdjustment > newDacValue) // catch overflow past 0
+                {
+                    newDacValue -= dacAdjustment;
+                }
             }
 
             else if (currAvgFreq < targetFreq - TUNING_TOLERANCE) // undershot target freq
@@ -193,7 +200,10 @@ void taskCalibrate(void *params)
                 {
                     dacAdjustment = (dacAdjustment / 2) + 1; // so it never becomes zero
                 }
-                newDacValue += dacAdjustment;
+                if (newDacValue + dacAdjustment < newDacValue) // catch overflow above 65535
+                {
+                    newDacValue += dacAdjustment;
+                }
             }
             prevAvgFreq = currAvgFreq;
             calibrationAttemps++;

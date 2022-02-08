@@ -91,6 +91,7 @@ API/Src/DigitalOut.cpp \
 API/Src/SuperClock.cpp \
 API/Src/tim_api.cpp \
 API/rtos/Src/SoftwareTimer.cpp \
+API/rtos/Src/Mutex.cpp \
 Degree/Src/AnalogHandle.cpp \
 Degree/Src/main.cpp \
 Degree/Src/Bender.cpp \
@@ -328,7 +329,7 @@ CHIPSET ?= stm32f4x
 FLASH_ADDRESS ?= 0x08000000
 
 OCD=openocd
-OCD_DIR ?= /usr/local/share/openocd/scripts
+OCD_DIR ?= /usr/local/share/openocd/scripts # this value works, but for some reason this folder only exists at path -> /opt/homebrew/Cellar/open-ocd/0.11.0/share/openocd/scripts
 PGM_DEVICE ?= interface/stlink.cfg
 OCDFLAGS = -f $(PGM_DEVICE) -f target/$(CHIPSET).cfg
 

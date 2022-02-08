@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "DigitalOut.h"
+#include "Mutex.h"
 
 class SPI {
 public:
@@ -32,4 +33,5 @@ private:
     DigitalOut _slaveSelect;
 
     SPI_HandleTypeDef _hspi;
+    static Mutex _mutex;
 };

@@ -120,9 +120,11 @@ namespace DEGREE {
         DigitalOut *globalGateOut; // global gate output
         DigitalOut gateOut; // gate output
         AnalogHandle adc;   // CV input ADC
-        VoltPerOctave output;
+        VoltPerOctave output;        
+        
+        TaskHandle_t handleTouchTaskHandle;
 
-        uint8_t currRatchetRate;      // TODO: you don't need to store this
+        uint8_t currRatchetRate;      //
         bool gateState;               // state of the gate output
         TouchChannelMode currMode;
         TouchChannelMode prevMode;
@@ -155,6 +157,7 @@ namespace DEGREE {
         void setMode(TouchChannelMode targetMode);
         void toggleMode();
 
+        void handleTouchInterrupt();
         void onTouch(uint8_t pad);
         void onRelease(uint8_t pad);
         void triggerNote(int degree, int octave, Action action);
@@ -195,7 +198,9 @@ namespace DEGREE {
         uint8_t calculateRatchet(uint16_t bend);
         void handleRatchet(int position, uint8_t rate);
 
-        static void taskReceiveVCOSample(void *params);
+        void initializeCalibration();
+
+        static void taskHandleTouch(void *_this);
     };
 } // end namespace
 
