@@ -31,7 +31,6 @@ public:
 
     SuperSeq(){};
 
-    SequenceNode events[PPQN * MAX_SEQ_LENGTH];
     QuantizeAmount quantizeAmount;
 
     int length;           // how many steps the sequence contains
@@ -81,10 +80,6 @@ public:
     uint8_t setStatusBits(bool status, uint8_t byte);
     uint8_t readStatusBits(uint8_t byte);
 
-    /**
-     * @brief advance the sequencer to a specific step
-    */
-    void advanceToStep(int step) {
-
-    };
+private:
+    SequenceNode events[PPQN * MAX_SEQ_LENGTH];
 };
