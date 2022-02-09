@@ -102,7 +102,7 @@ void Bender::updateDAC(uint16_t value)
 
 bool Bender::isIdle(uint16_t bend)
 {
-    if (bend > zeroBend + idleDebounce || bend < zeroBend - idleDebounce)
+    if (bend > this->getIdleValue() + BENDER_NOISE_THRESHOLD || bend < this->getIdleValue() - BENDER_NOISE_THRESHOLD)
     {
         return false;
     }

@@ -97,13 +97,12 @@ void SuperSeq::clearBend()
 
 /**
  * @brief clear an event in event array at given position
+ * @todo BENDER_ZERO needs to be a member of each SuperSeq instance as this value varies
  * @param position sequence position (ie. index)
 */ 
 void SuperSeq::clearEvent(int position)
 {
-    events[position].noteIndex = NULL_NOTE_INDEX;
-    events[position].active = false;
-    events[position].gate = LOW;
+    events[position].data = 0x00;
     events[position].bend = BENDER_ZERO;
 }
 
@@ -131,29 +130,25 @@ void SuperSeq::createEvent(int position, int noteIndex, bool gate)
     // if the previous event was a GATE HIGH event, re-position its succeeding GATE LOW event to the new events position - 1
     // NOTE: you will also have to trigger the GATE LOW, so that the new event will generate a trigger event
     // TODO: intsead of "position - 1", do "position - (quantizeAmount / 2)"
-    if (events[prevEventPos].gate == HIGH)
+    if (readGateBits(events[prevEventPos].data) == HIGH)
     {
         int newPosition = quantizedPosition == 0 ? lengthPPQN - 1 : quantizedPosition - 1;
-        events[newPosition].noteIndex = events[prevEventPos].noteIndex;
-        events[newPosition].gate = LOW;
-        events[newPosition].active = true;
+        uint8_t prevNoteIndex = readDegreeBits(events[prevEventPos].data);
+        events[newPosition].data = constructEventData(prevNoteIndex, LOW, true);
         prevEventPos = newPosition; // pretend like this event got executed
     }
 
     // if this new event is a GATE LOW event, and after quantization there exists an event at the same position in the sequence,
     // move this new event to the next available position @ the curr quantize level divided by 2 (to not interfere with next event), which will also have to be checked for any existing events.
     // If there is an existing GATE HIGH event at the next position, this new event will have to be placed right before it executes, regardless of quantization
-    if (gate == LOW && events[quantizedPosition].active && events[quantizedPosition].gate == HIGH)
+    if (gate == LOW && readStatusBits(events[quantizedPosition].data) && readGateBits(events[quantizedPosition].data) == HIGH)
     {
         int move = quantizeAmount == 0 ? PPQN / 2 : quantizeAmount / 2;
         quantizedPosition = quantizedPosition + (move);
     }
 
     newEventPos = quantizedPosition; // store new events position
-
-    events[quantizedPosition].noteIndex = noteIndex;
-    events[quantizedPosition].gate = gate;
-    events[quantizedPosition].active = true;
+    events[newEventPos].data = constructEventData(noteIndex, gate, true);
 };
 
 void SuperSeq::createBendEvent(int position, uint16_t bend)
@@ -174,7 +169,7 @@ void SuperSeq::createChordEvent(int position, uint8_t degrees)
     }
 
     events[position].activeDegrees = degrees;
-    events[position].active = true;
+    events[position].data = setStatusBits(true, events[position].data);
 };
 
 /**
@@ -239,3 +234,66 @@ int SuperSeq::quantizePosition(int pos, QuantizeAmount target)
     }
     return newPosition;
 };
+
+/**
+ * @brief contruct an 8-bit value which holds the degree index, gate state, and status of a sequence event.
+ * 
+ * @param index the degree index
+ * @param gate the state of the gate output (high or low)
+ * @param status the status of the event
+ * @return uint8_t 
+ */
+uint8_t SuperSeq::constructEventData(uint8_t index, bool gate, bool status)
+{
+    uint8_t data = 0x00;
+    data = setIndexBits(index, data);
+    data = setGateBits(gate, data);
+    data = setStatusBits(status, data);
+    return data;
+}
+
+
+uint8_t SuperSeq::setIndexBits(uint8_t index, uint8_t byte)
+{
+    return byte | index;
+}
+
+uint8_t SuperSeq::readDegreeBits(uint8_t byte)
+{
+    return byte & SEQ_NODE_INDEX_BIT_MASK;
+}
+
+uint8_t SuperSeq::setGateBits(bool state, uint8_t byte)
+{
+    return state ? bitSet(byte, SEQ_NODE_GATE_BIT) : bitClear(byte, SEQ_NODE_GATE_BIT);
+}
+
+uint8_t SuperSeq::readGateBits(uint8_t byte)
+{
+    return bitRead(byte, SEQ_NODE_GATE_BIT);
+}
+
+uint8_t SuperSeq::setStatusBits(bool status, uint8_t byte)
+{
+    return status ? bitSet(byte, SEQ_NODE_STATUS_BIT) : bitClear(byte, SEQ_NODE_STATUS_BIT);
+}
+
+uint8_t SuperSeq::readStatusBits(uint8_t byte)
+{
+    return bitRead(byte, SEQ_NODE_STATUS_BIT);
+}
+
+uint8_t SuperSeq::getEventDegree(int position)
+{
+    return readDegreeBits(events[position].data);
+}
+
+bool SuperSeq::getEventGate(int position)
+{
+    return readGateBits(events[position].data);
+}
+
+bool SuperSeq::getEventStatus(int position)
+{
+    return readStatusBits(events[position].data);
+}

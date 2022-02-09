@@ -4,14 +4,15 @@
 #include "ArrayMethods.h"
 
 #define NULL_NOTE_INDEX 99 // used to identify a 'null' or 'deleted' sequence event
+#define SEQ_NODE_STATUS_BIT 5
+#define SEQ_NODE_GATE_BIT   4
+#define SEQ_NODE_INDEX_BIT_MASK 0b00001111
 
 typedef struct SequenceNode
 {
     uint8_t activeDegrees; // byte for holding active/inactive notes for a chord
-    uint8_t noteIndex;     // note index between 0 and 7 NOTE: you could tag on some extra data in the bottom most bits, like gate on / off for example
+    uint8_t data;          // bits 0..3: Degree Index || bit 4: Gate || bit 5: status 
     uint16_t bend;         // raw ADC value from pitch bend
-    bool gate;             // set gate HIGH or LOW
-    bool active;           // this will tell the loop whether to trigger an event or not
 } SequenceNode;
 
 class SuperSeq {
@@ -48,36 +49,33 @@ public:
     bool containsEvents;  // flag to determine when a sequence is cleared / empty
 
     void init();
-
     void reset();
-
     void resetStep();
-
     void clear();
-
     void clearBend();
-
     void clearEvent(int position);
-
     void createEvent(int position, int noteIndex, bool gate);
-
     void createBendEvent(int position, uint16_t bend);
-
     void createChordEvent(int position, uint8_t notes);
-
     void setLength(int steps);
-
     int getLength();
-
     void setQuantizeAmount(QuantizeAmount value);
-
     int quantizePosition(int pos, QuantizeAmount target);
-
     int getNextPosition(int position);
-
     void advance();
-
     void advanceStep();
+
+    uint8_t constructEventData(uint8_t index, bool gate, bool status);
+    uint8_t getEventDegree(int position);
+    bool getEventGate(int position);
+    bool getEventStatus(int position);
+
+    uint8_t setIndexBits(uint8_t index, uint8_t byte);
+    uint8_t readDegreeBits(uint8_t byte);
+    uint8_t setGateBits(bool state, uint8_t byte);
+    uint8_t readGateBits(uint8_t byte);
+    uint8_t setStatusBits(bool status, uint8_t byte);
+    uint8_t readStatusBits(uint8_t byte);
 
     /**
      * @brief advance the sequencer to a specific step

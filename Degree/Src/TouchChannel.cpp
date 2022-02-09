@@ -440,6 +440,14 @@ void TouchChannel::handleRatchet(int position, uint8_t rate)
  * ------------------ BENDER ------------------
 */
 
+/**
+ * @brief 
+ * 
+ * @todo inversion of bend amount might be problematic now that value does not use negative integer values
+ * 
+ * @param bend 
+ * @param benderIsIdle 
+ */
 void TouchChannel::handleBend(uint16_t bend, bool benderIsIdle)
 {
     switch (benderMode)
@@ -451,15 +459,15 @@ void TouchChannel::handleBend(uint16_t bend, bool benderIsIdle)
             output.setPitchBend(0);
         } else {
             // Pitch Bend UP
-            if (bend > bender->zeroBend && bend < bender->maxBend)
+            if (bend > bender->getIdleValue() && bend < bender->getMaxBend())
             {
-                bend = output.calculatePitchBend(bend, bender->zeroBend, bender->maxBend);
+                bend = output.calculatePitchBend(bend, bender->getIdleValue(), bender->getMaxBend());
                 output.setPitchBend(bend); // non-inverted
             }
             // Pitch Bend DOWN
-            else if (bend < bender->zeroBend && bend > bender->minBend)
+            else if (bend < bender->getIdleValue() && bend > bender->getMinBend())
             {
-                bend = output.calculatePitchBend(bend, bender->zeroBend, bender->minBend); // NOTE: inverted mapping
+                bend = output.calculatePitchBend(bend, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
                 output.setPitchBend(bend * -1);                                            // inverted
             }
         }
@@ -468,7 +476,7 @@ void TouchChannel::handleBend(uint16_t bend, bool benderIsIdle)
         if (benderIsIdle) {
             setLED(CHANNEL_RATCHET_LED, ON);
         } else {
-            currRatchetRate = calculateRatchet(bend, bender->zeroBend, bender->maxBend);
+            currRatchetRate = calculateRatchet(bend);
             handleRatchet(sequence.currStepPosition, currRatchetRate);
         }
         break;
@@ -764,7 +772,7 @@ void TouchChannel::handleSequence(int position)
     switch (currMode)
     {
     case MONO_LOOP:
-        if (sequence.events[position].active)
+        if (sequence.readStatusBits(sequence.events[position].data))
         {
             // Handle Sequence Overdubing
             if (sequence.overdub && position != sequence.newEventPos) // when a node is being created (touched degree has not yet been released), this flag gets set to true so that the sequence handler clears existing nodes
@@ -775,29 +783,29 @@ void TouchChannel::handleSequence(int position)
             // Handle Sequence Events
             else
             {
-                if (sequence.events[position].gate == HIGH)
+                if (sequence.readGateBits(sequence.events[position].data) == HIGH)
                 {
                     sequence.prevEventPos = position;                                 // store position into variable
-                    triggerNote(sequence.events[position].noteIndex, currOctave, NOTE_ON); // trigger note ON
+                    triggerNote(sequence.readDegreeBits(sequence.events[position].data), currOctave, NOTE_ON); // trigger note ON
                 }
                 else
                 {
                     // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
-                    if (sequence.events[sequence.prevEventPos].noteIndex != sequence.events[position].noteIndex)
+                    if (sequence.readDegreeBits(sequence.events[sequence.prevEventPos].data) != sequence.readDegreeBits(sequence.events[position].data))
                     {
                         sequence.clearEvent(position);
                     }
                     else // set event.gate LOW
                     {
                         sequence.prevEventPos = position;                         // store position into variable
-                        triggerNote(sequence.events[position].noteIndex, currOctave, NOTE_OFF); // trigger note OFF
+                        triggerNote(sequence.readDegreeBits(sequence.events[position].data), currOctave, NOTE_OFF); // trigger note OFF
                     }
                 }
             }
         }
         break;
     case QUANTIZER_LOOP:
-        if (sequence.events[position].active)
+        if (sequence.readStatusBits(sequence.events[position].data))
         {
             if (sequence.overdub)
             {
@@ -886,13 +894,7 @@ void TouchChannel::initializeCalibration() {
 
 /**
  * @brief dedicated high priority task for each touch channel which listens for a notification sent by the touch interrupt
- *
- *
- * @todo Set the MPR121 callback to send a notification
- * @todo setup task to listen for a notification
- * @todo when notification recieive, call handleTouch(), which will read the pads via I2C and then trigger
- * the onTouch and onRelease callbacks, respectively
- * @todo add task to scheduler
+ * 
  * @param touch_chan_ptr TouchChannel pointer
  */
 void TouchChannel::taskHandleTouch(void *touch_chan_ptr) {
