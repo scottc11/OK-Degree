@@ -762,7 +762,7 @@ void TouchChannel::handleSequence(int position)
     switch (currMode)
     {
     case MONO_LOOP:
-        if (sequence.events[position].active)
+        if (sequence.getEventStatus(position)) // if event is active
         {
             // Handle Sequence Overdubing
             if (sequence.overdub && position != sequence.newEventPos) // when a node is being created (touched degree has not yet been released), this flag gets set to true so that the sequence handler clears existing nodes
@@ -773,29 +773,29 @@ void TouchChannel::handleSequence(int position)
             // Handle Sequence Events
             else
             {
-                if (sequence.events[position].gate == HIGH)
+                if (sequence.getEventGate(position) == HIGH)
                 {
                     sequence.prevEventPos = position;                                 // store position into variable
-                    triggerNote(sequence.events[position].noteIndex, currOctave, NOTE_ON); // trigger note ON
+                    triggerNote(sequence.getEventDegree(position), currOctave, NOTE_ON); // trigger note ON
                 }
                 else
                 {
                     // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
-                    if (sequence.events[sequence.prevEventPos].noteIndex != sequence.events[position].noteIndex)
+                    if (sequence.getEventDegree(sequence.prevEventPos) != sequence.getEventDegree(position))
                     {
                         sequence.clearEvent(position);
                     }
                     else // set event.gate LOW
                     {
                         sequence.prevEventPos = position;                         // store position into variable
-                        triggerNote(sequence.events[position].noteIndex, currOctave, NOTE_OFF); // trigger note OFF
+                        triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
                     }
                 }
             }
         }
         break;
     case QUANTIZER_LOOP:
-        if (sequence.events[position].active)
+        if (sequence.getEventStatus(position))
         {
             if (sequence.overdub)
             {
@@ -803,7 +803,7 @@ void TouchChannel::handleSequence(int position)
             }
             else
             {
-                setActiveDegrees(sequence.events[position].activeDegrees);
+                setActiveDegrees(sequence.getActiveDegrees(position));
             }
         }
         break;
