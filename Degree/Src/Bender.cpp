@@ -17,7 +17,7 @@ void Bender::init()
     dac->init();
     
     setRatchetThresholds();
-    updateDAC(BENDER_ZERO);
+    updateDAC(BENDER_DAC_ZERO);
 }
 
 // polling should no longer check if the bender is idle. It should just update the DAC and call the activeCallback
@@ -31,7 +31,7 @@ void Bender::handleBend(uint16_t value, bool triggerCallbacks) {
     if (this->isIdle(value))
     {
         currState = BENDING_IDLE;
-        currBend = BENDER_ZERO;
+        currBend = BENDER_DAC_ZERO;
         this->updateDAC(currBend);
         
         // these callbacks should be moved outside, so that you can "handle" a bend event without triggering any callbacks
@@ -72,7 +72,7 @@ uint16_t Bender::calculateOutput(uint16_t value)
         currState = BENDING_UP;
 
         output = (((float)dacOutputRange / (this->getMaxBend() - this->getIdleValue())) * (value - this->getIdleValue()));
-        return (BENDER_ZERO - output); // inverted
+        return (BENDER_DAC_ZERO - output); // inverted
     }
 
     // BEND DOWN
@@ -80,7 +80,7 @@ uint16_t Bender::calculateOutput(uint16_t value)
     {
         currState = BENDING_DOWN;
         output = (((float)dacOutputRange / (this->getMinBend() - this->getIdleValue())) * (value - this->getIdleValue()));
-        return (BENDER_ZERO + output); // non-inverted
+        return (BENDER_DAC_ZERO + output); // non-inverted
     }
     // ELSE executes when a bender is poorly calibrated, and exceeds its max or min bend
     else

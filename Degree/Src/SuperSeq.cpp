@@ -85,7 +85,6 @@ void SuperSeq::clear()
 
 /**
  * @brief clear all bend events in sequence
- * @todo BENDER_ZERO needs to be a member of each SuperSeq instance as this value varies
  */
 void SuperSeq::clearBend()
 {
@@ -98,7 +97,6 @@ void SuperSeq::clearBend()
 
 /**
  * @brief clear an event in event array at given position
- * @todo BENDER_ZERO needs to be a member of each SuperSeq instance as this value varies
  * @param position sequence position (ie. index)
  */
 void SuperSeq::clearEvent(int position)

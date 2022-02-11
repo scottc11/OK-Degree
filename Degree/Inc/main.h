@@ -28,8 +28,8 @@
 #define DEFAULT_SEQ_LENGTH 32
 #define MAX_SEQ_LENGTH 32
 
-#define BENDER_ZERO            32767
-#define BENDER_NOISE_THRESHOLD 500
+#define BENDER_DAC_ZERO        32767
+#define BENDER_NOISE_THRESHOLD 1000
 
 #define DISPLAY_MAX_CURRENT    127   // for managing current
 
