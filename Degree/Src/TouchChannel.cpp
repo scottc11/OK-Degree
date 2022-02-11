@@ -528,8 +528,10 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
 }
 
 /**
- * apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
-*/
+ * @brief callback that executes when a bender is not in its idle state
+ * 
+ * @param value the raw ADC value from the bender instance
+ */
 void TouchChannel::benderActiveCallback(uint16_t value)
 {
     // you need to disable the sequencer bend handler inside this callback, because this callback
@@ -541,7 +543,7 @@ void TouchChannel::benderActiveCallback(uint16_t value)
     {
         sequence.createBendEvent(sequence.currPosition, value);
     }
-    
+    sequence.bendEnabled = false;
     this->handleBend(value);
 }
 
@@ -836,8 +838,10 @@ void TouchChannel::handleSequence(int position)
     }
 
     // Handle Bend Events
-    this->handleBend(sequence.getBend(position));
-    this->bender->handleBend(sequence.getBend(position), false);
+    if (sequence.bendEnabled) {
+        this->handleBend(sequence.getBend(position));
+        this->bender->handleBend(sequence.getBend(position), false);
+    }
 }
 
 /**
