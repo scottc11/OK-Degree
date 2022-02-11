@@ -188,6 +188,7 @@ namespace DEGREE {
 
         // Bender methods
         void handleBend(uint16_t value);
+        void handlePitchBend(uint16_t value);
         int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();

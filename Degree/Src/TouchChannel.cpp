@@ -427,10 +427,13 @@ uint8_t TouchChannel::calculateRatchet(uint16_t bend)
 void TouchChannel::handleRatchet(int position, uint16_t value)
 {
     currRatchetRate = calculateRatchet(value);
-    if (position % rate == 0) {
+    if (position % currRatchetRate == 0)
+    {
         setGate(HIGH);
         setLED(CHANNEL_RATCHET_LED, ON);
-    } else {
+    }
+    else
+    {
         setGate(LOW);
         setLED(CHANNEL_RATCHET_LED, OFF);
     }
@@ -448,27 +451,33 @@ void TouchChannel::handleBend(uint16_t value) {
         // do nothing, bender instance will update its DAC on its own
         break;
     case PITCH_BEND:
-        uint16_t pitchbend;
-        // Pitch Bend UP
-        if (bender->currState == Bender::BEND_UP)
-        {
-            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
-            output.setPitchBend(bend); // non-inverted
-        }
-        // Pitch Bend DOWN
-        else if (bender->currState == Bender::BEND_DOWN)
-        {
-            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
-            output.setPitchBend(bend * -1);                                                        // inverted
-        }
+        handlePitchBend(value);
         break;
     case RATCHET:
         handleRatchet(sequence.currStepPosition, value);
         break;
     case RATCHET_PITCH_BEND:
+        handleRatchet(sequence.currStepPosition, value);
+        handlePitchBend(value);
         break;
     case BEND_MENU:
         break;
+    }
+}
+
+void TouchChannel::handlePitchBend(uint16_t value) {
+    uint16_t pitchbend;
+    // Pitch Bend UP
+    if (bender->currState == Bender::BEND_UP)
+    {
+        pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
+        output.setPitchBend(pitchbend); // non-inverted
+    }
+    // Pitch Bend DOWN
+    else if (bender->currState == Bender::BEND_DOWN)
+    {
+        pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
+        output.setPitchBend(pitchbend * -1);                                                        // inverted
     }
 }
 
