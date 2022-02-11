@@ -85,24 +85,26 @@ void SuperSeq::clear()
 
 /**
  * @brief clear all bend events in sequence
-*/ 
+ * @todo BENDER_ZERO needs to be a member of each SuperSeq instance as this value varies
+ */
 void SuperSeq::clearBend()
 {
     // deactivate all events in list
     for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
     {
-        events[i].bend = BENDER_ZERO;
+        events[i].bend = bender->getIdleValue();
     }
 };
 
 /**
  * @brief clear an event in event array at given position
+ * @todo BENDER_ZERO needs to be a member of each SuperSeq instance as this value varies
  * @param position sequence position (ie. index)
-*/ 
+ */
 void SuperSeq::clearEvent(int position)
 {
     events[position].data = 0x00;
-    events[position].bend = BENDER_ZERO;
+    events[position].bend = bender->getIdleValue();
 }
 
 /**
@@ -278,6 +280,10 @@ bool SuperSeq::getEventStatus(int position)
 void SuperSeq::setEventStatus(int position, bool status)
 {
     events[position].data = setStatusBits(status, events[position].data);
+}
+
+uint16_t SuperSeq::getBend(int position) {
+    return events[position].bend;
 }
 
 uint8_t SuperSeq::setIndexBits(uint8_t degree, uint8_t byte)

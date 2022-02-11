@@ -24,27 +24,26 @@ void Bender::init()
 // there are no cycles being saved either way.
 void Bender::poll()
 {
-    handleBend(this->read());
+    handleBend(this->read(), true);
 }
 
-void Bender::handleBend(uint16_t value) {
+void Bender::handleBend(uint16_t value, bool triggerCallbacks) {
     if (this->isIdle(value))
     {
         currState = BENDING_IDLE;
         currBend = BENDER_ZERO;
         this->updateDAC(currBend);
         
-        if (idleCallback)
+        // these callbacks should be moved outside, so that you can "handle" a bend event without triggering any callbacks
+        if (idleCallback && triggerCallbacks)
             idleCallback();
     }
     else
     {
         currBend = calculateOutput(value);
         this->updateDAC(currBend);
-        if (activeCallback)
-        {
+        if (activeCallback && triggerCallbacks)
             activeCallback(value);
-        }
     }
 
     // handle tri-state

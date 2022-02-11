@@ -89,7 +89,7 @@ namespace DEGREE {
             Bender *_bender,
             PinName adc_pin,
             PinName gatePin,
-            DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan, &adc)
+            DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan, &adc), sequence(_bender)
         {
             channelIndex = _index;
             display = display_ptr;

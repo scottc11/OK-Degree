@@ -10,12 +10,13 @@ void TouchChannel::init()
     
     adc.setFilter(0.1);
 
-    sequence.init();
 
     bender->init();
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
     bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
+
+    sequence.init(); // really important sequencer initializes after the bender gets initialized
 
     // initialize channel touch pads
     touchPads->init();
@@ -468,13 +469,13 @@ void TouchChannel::handleBend(uint16_t value) {
 void TouchChannel::handlePitchBend(uint16_t value) {
     uint16_t pitchbend;
     // Pitch Bend UP
-    if (bender->currState == Bender::BEND_UP)
+    if (bender->currState == Bender::BENDING_UP)
     {
         pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
         output.setPitchBend(pitchbend); // non-inverted
     }
     // Pitch Bend DOWN
-    else if (bender->currState == Bender::BEND_DOWN)
+    else if (bender->currState == Bender::BENDING_DOWN)
     {
         pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
         output.setPitchBend(pitchbend * -1);                                                        // inverted
@@ -533,19 +534,21 @@ void TouchChannel::benderActiveCallback(uint16_t value)
 {
     // you need to disable the sequencer bend handler inside this callback, because this callback
     // will trigger independant what the sequencer is doing, yet if record enabled, you want to
-    // overdub existing bend events, and when record disabled (but sequencer still ON), you want to
-    // override existng bend events
 
-    // should you have a bender override flag?
+    // overdub existing bend events when record enabled
+    // override existng bend events when record disabled (but sequencer still ON)
     if (sequence.recordEnabled)
     {
         sequence.createBendEvent(sequence.currPosition, value);
     }
+    
     this->handleBend(value);
 }
 
 void TouchChannel::benderIdleCallback()
 {
+    sequence.bendEnabled = true;
+    
     switch (this->benderMode)
     {
     case BEND_OFF:
@@ -577,12 +580,12 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
     case RATCHET_PITCH_BEND:
         break;
     case BEND_MENU:
-        if (state == Bender::BendState::BEND_UP)
+        if (state == Bender::BendState::BENDING_UP)
         {
             sequence.setLength(sequence.length + 1);
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
         }
-        else if (state == Bender::BendState::BEND_DOWN)
+        else if (state == Bender::BendState::BENDING_DOWN)
         {
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, false);
             sequence.setLength(sequence.length - 1);
@@ -832,7 +835,9 @@ void TouchChannel::handleSequence(int position)
         break;
     }
 
-    triggerNote(currDegree, currOctave, BEND_PITCH); // always handle pitch bend value
+    // Handle Bend Events
+    this->handleBend(sequence.getBend(position));
+    this->bender->handleBend(sequence.getBend(position), false);
 }
 
 /**

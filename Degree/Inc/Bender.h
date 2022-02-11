@@ -57,7 +57,7 @@ public:
 
     void init();
     void poll();
-    void handleBend(uint16_t value);
+    void handleBend(uint16_t value, bool triggerCallbacks);
     uint16_t read();
     uint16_t getIdleValue();
     uint16_t getMaxBend();

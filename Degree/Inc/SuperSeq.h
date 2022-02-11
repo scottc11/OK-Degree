@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main.h"
+#include "Bender.h"
 #include "ArrayMethods.h"
 
 #define NULL_NOTE_INDEX 99 // used to identify a 'null' or 'deleted' sequence event
@@ -29,8 +30,11 @@ public:
         QUANT_128th = PPQN / 32
     };
 
-    SuperSeq(){};
+    SuperSeq(Bender *benderPtr) {
+        bender = benderPtr;
+    };
 
+    Bender *bender;       // you need the instance of a bender for determing its idle value when clearing / initializing bender events
     QuantizeAmount quantizeAmount;
 
     int length;           // how many steps the sequence contains
@@ -46,6 +50,7 @@ public:
     bool recordEnabled;   // when true, sequence will create and new events to the event list
     bool playbackEnabled; // when true, sequence will playback event list
     bool containsEvents;  // flag to determine when a sequence is cleared / empty
+    bool bendEnabled;     // flag used for overriding current recorded bend with active bend
 
     void init();
     void reset();
@@ -71,6 +76,8 @@ public:
     uint8_t getActiveDegrees(int position);
     bool getEventGate(int position);
     bool getEventStatus(int position);
+    uint16_t getBend(int position);
+    
     void setEventStatus(int position, bool status);
 
     uint8_t setIndexBits(uint8_t degree, uint8_t byte);
