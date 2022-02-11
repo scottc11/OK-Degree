@@ -424,8 +424,9 @@ uint8_t TouchChannel::calculateRatchet(uint16_t bend)
 /**
  * @brief based on the current position of the sequencer clock, toggle gate on / off
 */
-void TouchChannel::handleRatchet(int position, uint8_t rate)
+void TouchChannel::handleRatchet(int position, uint16_t value)
 {
+    currRatchetRate = calculateRatchet(value);
     if (position % rate == 0) {
         setGate(HIGH);
         setLED(CHANNEL_RATCHET_LED, ON);
@@ -439,6 +440,37 @@ void TouchChannel::handleRatchet(int position, uint8_t rate)
  * ============================================ 
  * ------------------ BENDER ------------------
 */
+
+void TouchChannel::handleBend(uint16_t value) {
+    switch (this->benderMode)
+    {
+    case BEND_OFF:
+        // do nothing, bender instance will update its DAC on its own
+        break;
+    case PITCH_BEND:
+        uint16_t pitchbend;
+        // Pitch Bend UP
+        if (bender->currState == Bender::BEND_UP)
+        {
+            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
+            output.setPitchBend(bend); // non-inverted
+        }
+        // Pitch Bend DOWN
+        else if (bender->currState == Bender::BEND_DOWN)
+        {
+            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
+            output.setPitchBend(bend * -1);                                                        // inverted
+        }
+        break;
+    case RATCHET:
+        handleRatchet(sequence.currStepPosition, value);
+        break;
+    case RATCHET_PITCH_BEND:
+        break;
+    case BEND_MENU:
+        break;
+    }
+}
 
 /**
  * Set Bender Mode
@@ -490,35 +522,17 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
 */
 void TouchChannel::benderActiveCallback(uint16_t value)
 {
-    switch (this->benderMode)
+    // you need to disable the sequencer bend handler inside this callback, because this callback
+    // will trigger independant what the sequencer is doing, yet if record enabled, you want to
+    // overdub existing bend events, and when record disabled (but sequencer still ON), you want to
+    // override existng bend events
+
+    // should you have a bender override flag?
+    if (sequence.recordEnabled)
     {
-    case BEND_OFF:
-        // do nothing
-        break;
-    case PITCH_BEND:
-        uint16_t bend;
-        // Pitch Bend UP
-        if (bender->currState == Bender::BEND_UP)
-        {
-            bend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
-            output.setPitchBend(bend); // non-inverted
-        }
-        // Pitch Bend DOWN
-        else if (bender->currState == Bender::BEND_DOWN)
-        {
-            bend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
-            output.setPitchBend(bend * -1);                                           // inverted
-        }
-        break;
-    case RATCHET:
-        currRatchetRate = calculateRatchet(value);
-        handleRatchet(sequence.currStepPosition, currRatchetRate);
-        break;
-    case RATCHET_PITCH_BEND:
-        break;
-    case BEND_MENU:
-        break;
+        sequence.createBendEvent(sequence.currPosition, value);
     }
+    this->handleBend(value);
 }
 
 void TouchChannel::benderIdleCallback()

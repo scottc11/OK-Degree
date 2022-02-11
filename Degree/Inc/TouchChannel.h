@@ -187,6 +187,7 @@ namespace DEGREE {
         void clearTickerFlag() { tickerFlag = false; };
 
         // Bender methods
+        void handleBend(uint16_t value);
         int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();
@@ -195,7 +196,7 @@ namespace DEGREE {
         // Gate Output Methods
         void setGate(bool state);
         uint8_t calculateRatchet(uint16_t bend);
-        void handleRatchet(int position, uint8_t rate);
+        void handleRatchet(int position, uint16_t value);
 
         void initializeCalibration();
 
