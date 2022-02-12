@@ -4,7 +4,7 @@ void SuperSeq::init()
 {
     this->setLength(DEFAULT_SEQ_LENGTH);
     this->setQuantizeAmount(QUANT_NONE);
-    this->clear();
+    this->clearAllEvents();
 };
 
 /**
@@ -73,47 +73,59 @@ void SuperSeq::resetStep()
 /**
  * @brief Deactivate all events in event array and set empty flag
 */
-void SuperSeq::clear()
+void SuperSeq::clearAllEvents()
 {
     
     for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
     {
-        clearEvent(i);
+        clearTouchEvent(i);
+        clearBendEvent(i);
     }
     containsEvents = false; // after deactivating all events in list, set this flag to false
 };
 
+void SuperSeq::clearAllTouchEvents()
+{
+    for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
+    {
+        clearTouchEvent(i);
+    }
+}
+
+void SuperSeq::clearAllBendEvents() {
+    for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
+    {
+        clearBendEvent(i);
+    }
+}
+
 /**
  * @brief clear all bend events in sequence
  */
-void SuperSeq::clearBend()
+void SuperSeq::clearBendEvent(int position)
 {
-    // deactivate all events in list
-    for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
-    {
-        events[i].bend = bender->getIdleValue();
-    }
+    events[position].bend = bender->getIdleValue();
 };
 
 /**
  * @brief clear an event in event array at given position
  * @param position sequence position (ie. index)
  */
-void SuperSeq::clearEvent(int position)
+void SuperSeq::clearTouchEvent(int position)
 {
     events[position].data = 0x00;
-    events[position].bend = bender->getIdleValue();
 }
 
 /**
  * @brief Create new event at position
 */
-void SuperSeq::createEvent(int position, int noteIndex, bool gate)
+void SuperSeq::createTouchEvent(int position, int noteIndex, bool gate)
 {
     if (containsEvents == false)
-    {
         containsEvents = true;
-    }
+
+    if (containsTouchEvents == false)
+        containsTouchEvents = true;
 
     // handle quantization first, for overdubbing purposes
     // int quantizedPosition = (currStep * PPQN) + quantizePosition(position, quantizeAmount);
@@ -151,10 +163,11 @@ void SuperSeq::createEvent(int position, int noteIndex, bool gate)
 
 void SuperSeq::createBendEvent(int position, uint16_t bend)
 {
-    if (containsEvents == false)
-    {
+    if (!containsEvents)
         containsEvents = true;
-    }
+
+    if (!containsBendEvents)
+        containsBendEvents = true;
 
     events[position].bend = bend;
 }
@@ -162,9 +175,10 @@ void SuperSeq::createBendEvent(int position, uint16_t bend)
 void SuperSeq::createChordEvent(int position, uint8_t degrees)
 {
     if (containsEvents == false)
-    {
         containsEvents = true;
-    }
+
+    if (containsTouchEvents == false)
+        containsTouchEvents = true;
 
     events[position].activeDegrees = degrees;
     setEventStatus(position, true);

@@ -142,7 +142,7 @@ void TouchChannel::onTouch(uint8_t pad)
                 if (sequence.recordEnabled)
                 {
                     sequence.overdub = true;
-                    sequence.createEvent(sequence.currPosition, pad, HIGH);
+                    sequence.createTouchEvent(sequence.currPosition, pad, HIGH);
                 }
                 // when record is disabled, this block will freeze the sequence and output the curr touched degree until touch is released
                 else {
@@ -181,7 +181,7 @@ void TouchChannel::onRelease(uint8_t pad)
             case MONO_LOOP:
                 if (sequence.recordEnabled)
                 {
-                    sequence.createEvent(sequence.currPosition, pad, LOW);
+                    sequence.createTouchEvent(sequence.currPosition, pad, LOW);
                     sequence.overdub = false;
                 }
                 else
@@ -787,60 +787,68 @@ void TouchChannel::handleSequence(int position)
         return;
     }
 
-    switch (currMode)
+    // Handle Touch Events (degrees)
+    if (sequence.containsTouchEvents)
     {
-    case MONO_LOOP:
-        if (sequence.getEventStatus(position)) // if event is active
+        switch (currMode)
         {
-            // Handle Sequence Overdubing
-            if (sequence.overdub && position != sequence.newEventPos) // when a node is being created (touched degree has not yet been released), this flag gets set to true so that the sequence handler clears existing nodes
+        case MONO_LOOP:
+            if (sequence.getEventStatus(position)) // if event is active
             {
-                // if new event overlaps succeeding events, clear those events
-                sequence.clearEvent(position);
-            }
-            // Handle Sequence Events
-            else
-            {
-                if (sequence.getEventGate(position) == HIGH)
+                // Handle Sequence Overdubing
+                if (sequence.overdub && position != sequence.newEventPos) // when a node is being created (touched degree has not yet been released), this flag gets set to true so that the sequence handler clears existing nodes
                 {
-                    sequence.prevEventPos = position;                                 // store position into variable
-                    triggerNote(sequence.getEventDegree(position), currOctave, NOTE_ON); // trigger note ON
+                    // if new event overlaps succeeding events, clear those events
+                    sequence.clearTouchEvent(position);
+                }
+                // Handle Sequence Events
+                else
+                {
+                    if (sequence.getEventGate(position) == HIGH)
+                    {
+                        sequence.prevEventPos = position;                                    // store position into variable
+                        triggerNote(sequence.getEventDegree(position), currOctave, NOTE_ON); // trigger note ON
+                    }
+                    else
+                    {
+                        // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
+                        if (sequence.getEventDegree(sequence.prevEventPos) != sequence.getEventDegree(position))
+                        {
+                            sequence.clearTouchEvent(position);
+                        }
+                        else // set event.gate LOW
+                        {
+                            sequence.prevEventPos = position;                                     // store position into variable
+                            triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
+                        }
+                    }
+                }
+            }
+            break;
+        case QUANTIZER_LOOP:
+            if (sequence.getEventStatus(position))
+            {
+                if (sequence.overdub)
+                {
+                    sequence.clearTouchEvent(position);
                 }
                 else
                 {
-                    // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
-                    if (sequence.getEventDegree(sequence.prevEventPos) != sequence.getEventDegree(position))
-                    {
-                        sequence.clearEvent(position);
-                    }
-                    else // set event.gate LOW
-                    {
-                        sequence.prevEventPos = position;                         // store position into variable
-                        triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
-                    }
+                    setActiveDegrees(sequence.getActiveDegrees(position));
                 }
             }
+            break;
         }
-        break;
-    case QUANTIZER_LOOP:
-        if (sequence.getEventStatus(position))
-        {
-            if (sequence.overdub)
-            {
-                sequence.clearEvent(position);
-            }
-            else
-            {
-                setActiveDegrees(sequence.getActiveDegrees(position));
-            }
-        }
-        break;
     }
 
     // Handle Bend Events
-    if (sequence.bendEnabled) {
-        this->handleBend(sequence.getBend(position));
-        this->bender->handleBend(sequence.getBend(position), false);
+    if (sequence.containsBendEvents)
+    {
+        if (sequence.bendEnabled)
+        {
+            this->handleBend(sequence.getBend(position));
+            this->bender->handleBend(sequence.getBend(position), false);
+        }
     }
 }
 

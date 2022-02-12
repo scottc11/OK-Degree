@@ -249,7 +249,7 @@ void GlobalControl::handleButtonPress(int pad)
         }
         break;
 
-    case CLEAR_SEQ:
+    case CLEAR_SEQ_TOUCH:
         logger_log_task_watermark();
         break;
 
@@ -309,28 +309,32 @@ void GlobalControl::handleButtonRelease(int pad)
         // channels[2]->disableUIMode();
         // channels[3]->disableUIMode();
         break;
-    case CLEAR_SEQ:
+    case CLEAR_SEQ_TOUCH:
         if (!gestureFlag)
         {
             for (int i = 0; i < 4; i++)
             {
-                channels[i]->sequence.clear();
+                channels[i]->sequence.clearAllTouchEvents();
                 channels[i]->disableSequenceRecording();
             }
         }
         else // clear only curr touched channels sequences
         {
-            for (int i = 0; i < 4; i++)
-            {
-                if (touchPads->padIsTouched(i, currTouched, prevTouched))
-                {
-                    channels[i]->sequence.clear();
-                    channels[i]->disableSequenceRecording();
-                }
-            }
-            gestureFlag = false;
+            channels[getTouchedChannel()]->sequence.clearAllTouchEvents();
+            channels[getTouchedChannel()]->disableSequenceRecording();
         }
-
+        break;
+    case CLEAR_SEQ_BEND:
+        if (!gestureFlag) {
+            for (int i = 0; i < CHANNEL_COUNT; i++)
+            {
+                channels[i]->sequence.clearAllBendEvents();
+                channels[i]->disableSequenceRecording();
+            }
+        } else {
+            channels[getTouchedChannel()]->sequence.clearAllBendEvents();
+            channels[getTouchedChannel()]->disableSequenceRecording();
+        }
         break;
     case SEQ_LENGTH:
         this->display->clear();
@@ -539,4 +543,23 @@ void GlobalControl::handleChannelGesture(Callback<void(int chan)> callback)
             break;
         }
     }
+}
+
+/**
+ * @brief return the currently touched channel
+ * 
+ * @return int 
+ */
+int GlobalControl::getTouchedChannel() {
+    int channel = 0;
+    for (int i = 0; i < CHANNEL_COUNT; i++)
+    {
+        if (touchPads->padIsTouched(i, currTouched, prevTouched))
+        {
+            channel = i;
+            break;
+        }
+    }
+    gestureFlag = false;
+    return channel;
 }

@@ -97,6 +97,7 @@ namespace DEGREE {
         void handleButtonRelease(int pad);
 
         void handleChannelGesture(Callback<void(int chan)> callback);
+        int getTouchedChannel();
 
         void handleSwitchChange();
         void handleButtonInterupt();
@@ -137,8 +138,8 @@ namespace DEGREE {
             RECORD = 0x2000,
             RESET = 0x1000,
             CMODE = 0x0080,
-            CLEAR_BEND = 0x0400,
-            CLEAR_SEQ = 0x0200,
+            CLEAR_SEQ_BEND = 0x0400,
+            CLEAR_SEQ_TOUCH = 0x0200,
             BEND_MODE = 0x0040,
             QUANTIZE_AMOUNT = 0x0800,
             SEQ_LENGTH = 0x0100,
@@ -156,14 +157,7 @@ namespace DEGREE {
             CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
             RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
             CALIBRATE_1VO = SHIFT | CMODE,
-            CLEAR_SEQ_A = CLEAR_SEQ | CTRL_A,
-            CLEAR_SEQ_B = CLEAR_SEQ | CTRL_B,
-            CLEAR_SEQ_C = CLEAR_SEQ | CTRL_C,
-            CLEAR_SEQ_D = CLEAR_SEQ | CTRL_D,
-            CLEAR_BEND_SEQ_A = 0x2008,
-            CLEAR_BEND_SEQ_B = 0x2004,
-            CLEAR_BEND_SEQ_C = 0x2002,
-            CLEAR_BEND_SEQ_D = 0x2001
+            CLEAR_SEQ_ALL = CLEAR_SEQ_BEND | CLEAR_SEQ_TOUCH
         };
     };
 }
