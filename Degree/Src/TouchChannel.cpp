@@ -779,7 +779,7 @@ void TouchChannel::handleSequence(int position)
     }
 
     // break out if there are no sequence events
-    if (sequence.containsEvents == false) {
+    if (sequence.containsEvents() == false) {
         return;
     }
 
@@ -799,7 +799,7 @@ void TouchChannel::handleSequence(int position)
                 if (sequence.overdub && position != sequence.newEventPos) // when a node is being created (touched degree has not yet been released), this flag gets set to true so that the sequence handler clears existing nodes
                 {
                     // if new event overlaps succeeding events, clear those events
-                    sequence.clearTouchEvent(position);
+                    sequence.clearTouchAtPosition(position);
                 }
                 // Handle Sequence Events
                 else
@@ -814,7 +814,7 @@ void TouchChannel::handleSequence(int position)
                         // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
                         if (sequence.getEventDegree(sequence.prevEventPos) != sequence.getEventDegree(position))
                         {
-                            sequence.clearTouchEvent(position);
+                            sequence.clearTouchAtPosition(position);
                         }
                         else // set event.gate LOW
                         {
@@ -830,7 +830,7 @@ void TouchChannel::handleSequence(int position)
             {
                 if (sequence.overdub)
                 {
-                    sequence.clearTouchEvent(position);
+                    sequence.clearTouchAtPosition(position);
                 }
                 else
                 {
@@ -860,7 +860,7 @@ void TouchChannel::handleSequence(int position)
 void TouchChannel::resetSequence()
 {
     sequence.reset();
-    if (sequence.containsEvents)
+    if (sequence.containsEvents())
     {
         display->stepSequenceLED(channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
         handleSequence(sequence.currPosition);
@@ -895,7 +895,7 @@ void TouchChannel::disableSequenceRecording()
     sequence.recordEnabled = false;
     
     // if a touch event was recorded, remain in loop mode
-    if (sequence.containsEvents)
+    if (sequence.containsEvents())
     {
         return;
     }

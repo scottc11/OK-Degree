@@ -46,22 +46,23 @@ public:
     int prevPosition;
     int prevEventPos;        // represents the position of the last event which got triggered (either HIGH or LOW)
     int newEventPos;         // when a new event is created, we store the position in this variable in case we need it for something (ie. sequence overdubing)
+
     bool overdub;            // flag gets set to true so that the sequence handler clears/overdubs existing events
     bool recordEnabled;      // when true, sequence will create and new events to the event list
     bool playbackEnabled;    // when true, sequence will playback event list
-    bool containsEvents;     // flag to determine when a sequence is cleared / empty
+    bool bendEnabled;        // flag used for overriding current recorded bend with active bend    
     bool containsTouchEvents;// flag indicating if a sequence has any touch events
     bool containsBendEvents; // flag indicating if a sequence has any bend events
-    bool bendEnabled;        // flag used for overriding current recorded bend with active bend
 
     void init();
     void reset();
     void resetStep();
+    bool containsEvents();
     void clearAllEvents();
     void clearAllTouchEvents();
     void clearAllBendEvents();
-    void clearBendEvent(int position);
-    void clearTouchEvent(int position);
+    void clearBendAtPosition(int position);
+    void clearTouchAtPosition(int position);
     void createTouchEvent(int position, int noteIndex, bool gate);
     void createBendEvent(int position, uint16_t bend);
     void createChordEvent(int position, uint8_t notes);

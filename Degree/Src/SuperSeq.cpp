@@ -71,38 +71,50 @@ void SuperSeq::resetStep()
 }
 
 /**
+ * @brief determines if the sequence contains either touch or bend events
+ * 
+ * @return true 
+ * @return false 
+ */
+bool SuperSeq::containsEvents() {
+    return containsBendEvents || containsTouchEvents ? true : false;
+}
+
+/**
  * @brief Deactivate all events in event array and set empty flag
 */
 void SuperSeq::clearAllEvents()
 {
-    
     for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
     {
-        clearTouchEvent(i);
-        clearBendEvent(i);
+        clearTouchAtPosition(i);
+        clearBendAtPosition(i);
     }
-    containsEvents = false; // after deactivating all events in list, set this flag to false
+    containsBendEvents = false;
+    containsTouchEvents = false;
 };
 
 void SuperSeq::clearAllTouchEvents()
 {
     for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
     {
-        clearTouchEvent(i);
+        clearTouchAtPosition(i);
     }
+    containsTouchEvents = false;
 }
 
 void SuperSeq::clearAllBendEvents() {
     for (int i = 0; i < PPQN * MAX_SEQ_LENGTH; i++)
     {
-        clearBendEvent(i);
+        clearBendAtPosition(i);
     }
+    containsBendEvents = false;
 }
 
 /**
  * @brief clear all bend events in sequence
  */
-void SuperSeq::clearBendEvent(int position)
+void SuperSeq::clearBendAtPosition(int position)
 {
     events[position].bend = bender->getIdleValue();
 };
@@ -111,7 +123,7 @@ void SuperSeq::clearBendEvent(int position)
  * @brief clear an event in event array at given position
  * @param position sequence position (ie. index)
  */
-void SuperSeq::clearTouchEvent(int position)
+void SuperSeq::clearTouchAtPosition(int position)
 {
     events[position].data = 0x00;
 }
@@ -121,10 +133,7 @@ void SuperSeq::clearTouchEvent(int position)
 */
 void SuperSeq::createTouchEvent(int position, int noteIndex, bool gate)
 {
-    if (containsEvents == false)
-        containsEvents = true;
-
-    if (containsTouchEvents == false)
+    if (!containsTouchEvents)
         containsTouchEvents = true;
 
     // handle quantization first, for overdubbing purposes
@@ -161,11 +170,14 @@ void SuperSeq::createTouchEvent(int position, int noteIndex, bool gate)
     setEventData(newEventPos, noteIndex, gate, true);
 };
 
+/**
+ * @brief set the bend value at a certain position in the events array
+ * 
+ * @param position 
+ * @param bend 
+ */
 void SuperSeq::createBendEvent(int position, uint16_t bend)
 {
-    if (!containsEvents)
-        containsEvents = true;
-
     if (!containsBendEvents)
         containsBendEvents = true;
 
@@ -174,10 +186,7 @@ void SuperSeq::createBendEvent(int position, uint16_t bend)
 
 void SuperSeq::createChordEvent(int position, uint8_t degrees)
 {
-    if (containsEvents == false)
-        containsEvents = true;
-
-    if (containsTouchEvents == false)
+    if (!containsTouchEvents)
         containsTouchEvents = true;
 
     events[position].activeDegrees = degrees;

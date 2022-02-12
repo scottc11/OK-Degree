@@ -340,7 +340,7 @@ void GlobalControl::handleButtonRelease(int pad)
         this->display->clear();
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
-            if (channels[chan]->sequence.containsEvents)
+            if (channels[chan]->sequence.containsEvents())
             {
                 display->setSequenceLEDs(chan, channels[chan]->sequence.length, 2, true);
             }
