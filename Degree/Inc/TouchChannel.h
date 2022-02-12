@@ -89,7 +89,7 @@ namespace DEGREE {
             Bender *_bender,
             PinName adc_pin,
             PinName gatePin,
-            DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan, &adc)
+            DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan, &adc), sequence(_bender)
         {
             channelIndex = _index;
             display = display_ptr;
@@ -187,6 +187,8 @@ namespace DEGREE {
         void clearTickerFlag() { tickerFlag = false; };
 
         // Bender methods
+        void handleBend(uint16_t value);
+        void handlePitchBend(uint16_t value);
         int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();
@@ -195,7 +197,7 @@ namespace DEGREE {
         // Gate Output Methods
         void setGate(bool state);
         uint8_t calculateRatchet(uint16_t bend);
-        void handleRatchet(int position, uint8_t rate);
+        void handleRatchet(int position, uint16_t value);
 
         void initializeCalibration();
 

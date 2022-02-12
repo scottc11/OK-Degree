@@ -10,12 +10,13 @@ void TouchChannel::init()
     
     adc.setFilter(0.1);
 
-    sequence.init();
 
     bender->init();
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
     bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
+
+    sequence.init(); // really important sequencer initializes after the bender gets initialized
 
     // initialize channel touch pads
     touchPads->init();
@@ -141,7 +142,7 @@ void TouchChannel::onTouch(uint8_t pad)
                 if (sequence.recordEnabled)
                 {
                     sequence.overdub = true;
-                    sequence.createEvent(sequence.currPosition, pad, HIGH);
+                    sequence.createTouchEvent(sequence.currPosition, pad, HIGH);
                 }
                 // when record is disabled, this block will freeze the sequence and output the curr touched degree until touch is released
                 else {
@@ -180,7 +181,7 @@ void TouchChannel::onRelease(uint8_t pad)
             case MONO_LOOP:
                 if (sequence.recordEnabled)
                 {
-                    sequence.createEvent(sequence.currPosition, pad, LOW);
+                    sequence.createTouchEvent(sequence.currPosition, pad, LOW);
                     sequence.overdub = false;
                 }
                 else
@@ -424,12 +425,16 @@ uint8_t TouchChannel::calculateRatchet(uint16_t bend)
 /**
  * @brief based on the current position of the sequencer clock, toggle gate on / off
 */
-void TouchChannel::handleRatchet(int position, uint8_t rate)
+void TouchChannel::handleRatchet(int position, uint16_t value)
 {
-    if (position % rate == 0) {
+    currRatchetRate = calculateRatchet(value);
+    if (position % currRatchetRate == 0)
+    {
         setGate(HIGH);
         setLED(CHANNEL_RATCHET_LED, ON);
-    } else {
+    }
+    else
+    {
         setGate(LOW);
         setLED(CHANNEL_RATCHET_LED, OFF);
     }
@@ -439,6 +444,43 @@ void TouchChannel::handleRatchet(int position, uint8_t rate)
  * ============================================ 
  * ------------------ BENDER ------------------
 */
+
+void TouchChannel::handleBend(uint16_t value) {
+    switch (this->benderMode)
+    {
+    case BEND_OFF:
+        // do nothing, bender instance will update its DAC on its own
+        break;
+    case PITCH_BEND:
+        handlePitchBend(value);
+        break;
+    case RATCHET:
+        handleRatchet(sequence.currStepPosition, value);
+        break;
+    case RATCHET_PITCH_BEND:
+        handleRatchet(sequence.currStepPosition, value);
+        handlePitchBend(value);
+        break;
+    case BEND_MENU:
+        break;
+    }
+}
+
+void TouchChannel::handlePitchBend(uint16_t value) {
+    uint16_t pitchbend;
+    // Pitch Bend UP
+    if (bender->currState == Bender::BENDING_UP)
+    {
+        pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
+        output.setPitchBend(pitchbend); // non-inverted
+    }
+    // Pitch Bend DOWN
+    else if (bender->currState == Bender::BENDING_DOWN)
+    {
+        pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
+        output.setPitchBend(pitchbend * -1);                                                        // inverted
+    }
+}
 
 /**
  * Set Bender Mode
@@ -486,43 +528,29 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
 }
 
 /**
- * apply the pitch bend by mapping the ADC value to a value between PB Range value and the current note being outputted
-*/
+ * @brief callback that executes when a bender is not in its idle state
+ * 
+ * @param value the raw ADC value from the bender instance
+ */
 void TouchChannel::benderActiveCallback(uint16_t value)
 {
-    switch (this->benderMode)
+    // you need to disable the sequencer bend handler inside this callback, because this callback
+    // will trigger independant what the sequencer is doing, yet if record enabled, you want to
+
+    // overdub existing bend events when record enabled
+    // override existng bend events when record disabled (but sequencer still ON)
+    if (sequence.recordEnabled)
     {
-    case BEND_OFF:
-        // do nothing
-        break;
-    case PITCH_BEND:
-        uint16_t bend;
-        // Pitch Bend UP
-        if (bender->currState == Bender::BEND_UP)
-        {
-            bend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
-            output.setPitchBend(bend); // non-inverted
-        }
-        // Pitch Bend DOWN
-        else if (bender->currState == Bender::BEND_DOWN)
-        {
-            bend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
-            output.setPitchBend(bend * -1);                                           // inverted
-        }
-        break;
-    case RATCHET:
-        currRatchetRate = calculateRatchet(value);
-        handleRatchet(sequence.currStepPosition, currRatchetRate);
-        break;
-    case RATCHET_PITCH_BEND:
-        break;
-    case BEND_MENU:
-        break;
+        sequence.createBendEvent(sequence.currPosition, value);
     }
+    sequence.bendEnabled = false;
+    this->handleBend(value);
 }
 
 void TouchChannel::benderIdleCallback()
 {
+    sequence.bendEnabled = true;
+    
     switch (this->benderMode)
     {
     case BEND_OFF:
@@ -554,12 +582,12 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
     case RATCHET_PITCH_BEND:
         break;
     case BEND_MENU:
-        if (state == Bender::BendState::BEND_UP)
+        if (state == Bender::BendState::BENDING_UP)
         {
             sequence.setLength(sequence.length + 1);
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
         }
-        else if (state == Bender::BendState::BEND_DOWN)
+        else if (state == Bender::BendState::BENDING_DOWN)
         {
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, false);
             sequence.setLength(sequence.length - 1);
@@ -751,7 +779,7 @@ void TouchChannel::handleSequence(int position)
     }
 
     // break out if there are no sequence events
-    if (sequence.containsEvents == false) {
+    if (sequence.containsEvents() == false) {
         return;
     }
 
@@ -759,57 +787,69 @@ void TouchChannel::handleSequence(int position)
         return;
     }
 
-    switch (currMode)
+    // Handle Touch Events (degrees)
+    if (sequence.containsTouchEvents)
     {
-    case MONO_LOOP:
-        if (sequence.getEventStatus(position)) // if event is active
+        switch (currMode)
         {
-            // Handle Sequence Overdubing
-            if (sequence.overdub && position != sequence.newEventPos) // when a node is being created (touched degree has not yet been released), this flag gets set to true so that the sequence handler clears existing nodes
+        case MONO_LOOP:
+            if (sequence.getEventStatus(position)) // if event is active
             {
-                // if new event overlaps succeeding events, clear those events
-                sequence.clearEvent(position);
-            }
-            // Handle Sequence Events
-            else
-            {
-                if (sequence.getEventGate(position) == HIGH)
+                // Handle Sequence Overdubing
+                if (sequence.overdub && position != sequence.newEventPos) // when a node is being created (touched degree has not yet been released), this flag gets set to true so that the sequence handler clears existing nodes
                 {
-                    sequence.prevEventPos = position;                                 // store position into variable
-                    triggerNote(sequence.getEventDegree(position), currOctave, NOTE_ON); // trigger note ON
+                    // if new event overlaps succeeding events, clear those events
+                    sequence.clearTouchAtPosition(position);
+                }
+                // Handle Sequence Events
+                else
+                {
+                    if (sequence.getEventGate(position) == HIGH)
+                    {
+                        sequence.prevEventPos = position;                                    // store position into variable
+                        triggerNote(sequence.getEventDegree(position), currOctave, NOTE_ON); // trigger note ON
+                    }
+                    else
+                    {
+                        // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
+                        if (sequence.getEventDegree(sequence.prevEventPos) != sequence.getEventDegree(position))
+                        {
+                            sequence.clearTouchAtPosition(position);
+                        }
+                        else // set event.gate LOW
+                        {
+                            sequence.prevEventPos = position;                                     // store position into variable
+                            triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
+                        }
+                    }
+                }
+            }
+            break;
+        case QUANTIZER_LOOP:
+            if (sequence.getEventStatus(position))
+            {
+                if (sequence.overdub)
+                {
+                    sequence.clearTouchAtPosition(position);
                 }
                 else
                 {
-                    // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
-                    if (sequence.getEventDegree(sequence.prevEventPos) != sequence.getEventDegree(position))
-                    {
-                        sequence.clearEvent(position);
-                    }
-                    else // set event.gate LOW
-                    {
-                        sequence.prevEventPos = position;                         // store position into variable
-                        triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
-                    }
+                    setActiveDegrees(sequence.getActiveDegrees(position));
                 }
             }
+            break;
         }
-        break;
-    case QUANTIZER_LOOP:
-        if (sequence.getEventStatus(position))
-        {
-            if (sequence.overdub)
-            {
-                sequence.clearEvent(position);
-            }
-            else
-            {
-                setActiveDegrees(sequence.getActiveDegrees(position));
-            }
-        }
-        break;
     }
 
-    triggerNote(currDegree, currOctave, BEND_PITCH); // always handle pitch bend value
+    // Handle Bend Events
+    if (sequence.containsBendEvents)
+    {
+        if (sequence.bendEnabled)
+        {
+            this->handleBend(sequence.getBend(position));
+            this->bender->handleBend(sequence.getBend(position), false);
+        }
+    }
 }
 
 /**
@@ -820,7 +860,7 @@ void TouchChannel::handleSequence(int position)
 void TouchChannel::resetSequence()
 {
     sequence.reset();
-    if (sequence.containsEvents)
+    if (sequence.containsEvents())
     {
         display->stepSequenceLED(channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
         handleSequence(sequence.currPosition);
@@ -855,7 +895,7 @@ void TouchChannel::disableSequenceRecording()
     sequence.recordEnabled = false;
     
     // if a touch event was recorded, remain in loop mode
-    if (sequence.containsEvents)
+    if (sequence.containsEvents())
     {
         return;
     }

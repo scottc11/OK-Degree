@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main.h"
+#include "Bender.h"
 #include "ArrayMethods.h"
 
 #define NULL_NOTE_INDEX 99 // used to identify a 'null' or 'deleted' sequence event
@@ -29,31 +30,40 @@ public:
         QUANT_128th = PPQN / 32
     };
 
-    SuperSeq(){};
+    SuperSeq(Bender *benderPtr) {
+        bender = benderPtr;
+    };
 
+    Bender *bender;       // you need the instance of a bender for determing its idle value when clearing / initializing bender events
     QuantizeAmount quantizeAmount;
 
-    int length;           // how many steps the sequence contains
-    int lengthPPQN;       // how many PPQN the sequence contains
-    int currStepPosition; // the number of PPQN that have passed since the last step was advanced
-    int currStep;         // current sequence step
-    int prevStep;         // the previous step executed in the sequence
-    int currPosition;     // current position of sequence (in PPQN)
+    int length;              // how many steps the sequence contains
+    int lengthPPQN;          // how many PPQN the sequence contains
+    int currStepPosition;    // the number of PPQN that have passed since the last step was advanced
+    int currStep;            // current sequence step
+    int prevStep;            // the previous step executed in the sequence
+    int currPosition;        // current position of sequence (in PPQN)
     int prevPosition;
-    int prevEventPos;     // represents the position of the last event which got triggered (either HIGH or LOW)
-    int newEventPos;      // when a new event is created, we store the position in this variable in case we need it for something (ie. sequence overdubing)
-    bool overdub;         // flag gets set to true so that the sequence handler clears/overdubs existing events
-    bool recordEnabled;   // when true, sequence will create and new events to the event list
-    bool playbackEnabled; // when true, sequence will playback event list
-    bool containsEvents;  // flag to determine when a sequence is cleared / empty
+    int prevEventPos;        // represents the position of the last event which got triggered (either HIGH or LOW)
+    int newEventPos;         // when a new event is created, we store the position in this variable in case we need it for something (ie. sequence overdubing)
+
+    bool overdub;            // flag gets set to true so that the sequence handler clears/overdubs existing events
+    bool recordEnabled;      // when true, sequence will create and new events to the event list
+    bool playbackEnabled;    // when true, sequence will playback event list
+    bool bendEnabled;        // flag used for overriding current recorded bend with active bend    
+    bool containsTouchEvents;// flag indicating if a sequence has any touch events
+    bool containsBendEvents; // flag indicating if a sequence has any bend events
 
     void init();
     void reset();
     void resetStep();
-    void clear();
-    void clearBend();
-    void clearEvent(int position);
-    void createEvent(int position, int noteIndex, bool gate);
+    bool containsEvents();
+    void clearAllEvents();
+    void clearAllTouchEvents();
+    void clearAllBendEvents();
+    void clearBendAtPosition(int position);
+    void clearTouchAtPosition(int position);
+    void createTouchEvent(int position, int noteIndex, bool gate);
     void createBendEvent(int position, uint16_t bend);
     void createChordEvent(int position, uint8_t notes);
     void setLength(int steps);
@@ -71,6 +81,8 @@ public:
     uint8_t getActiveDegrees(int position);
     bool getEventGate(int position);
     bool getEventStatus(int position);
+    uint16_t getBend(int position);
+    
     void setEventStatus(int position, bool status);
 
     uint8_t setIndexBits(uint8_t degree, uint8_t byte);

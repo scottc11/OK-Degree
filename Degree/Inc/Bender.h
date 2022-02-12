@@ -26,9 +26,9 @@ class Bender
 public:
     enum BendState
     {
-        BEND_UP,
-        BEND_DOWN,
-        BEND_IDLE
+        BENDING_UP,
+        BENDING_DOWN,
+        BENDING_IDLE
     };
 
     DAC8554 *dac;              // pointer to Pitch Bends DAC
@@ -57,6 +57,7 @@ public:
 
     void init();
     void poll();
+    void handleBend(uint16_t value, bool triggerCallbacks);
     uint16_t read();
     uint16_t getIdleValue();
     uint16_t getMaxBend();
@@ -66,7 +67,7 @@ public:
 
     void setRatchetThresholds();
     void updateDAC(uint16_t value);
-    bool isIdle();
+    bool isIdle(uint16_t value);
     int setMode(int targetMode = 0);
     uint16_t calculateOutput(uint16_t value);
     void attachIdleCallback(Callback<void()> func);

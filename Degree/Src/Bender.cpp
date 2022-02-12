@@ -17,31 +17,33 @@ void Bender::init()
     dac->init();
     
     setRatchetThresholds();
-    updateDAC(BENDER_ZERO);
+    updateDAC(BENDER_DAC_ZERO);
 }
 
 // polling should no longer check if the bender is idle. It should just update the DAC and call the activeCallback
 // there are no cycles being saved either way.
 void Bender::poll()
 {
-    currBend = this->read();
+    handleBend(this->read(), true);
+}
 
-    if (this->isIdle())
+void Bender::handleBend(uint16_t value, bool triggerCallbacks) {
+    if (this->isIdle(value))
     {
-        updateDAC(BENDER_ZERO);
-        currState = BEND_IDLE;
-        if (idleCallback)
+        currState = BENDING_IDLE;
+        currBend = BENDER_DAC_ZERO;
+        this->updateDAC(currBend);
+        
+        // these callbacks should be moved outside, so that you can "handle" a bend event without triggering any callbacks
+        if (idleCallback && triggerCallbacks)
             idleCallback();
     }
     else
     {
-        // determine direction of bend
-        calculateOutput(currBend);
-
-        if (activeCallback) {
-            activeCallback(currBend);
-        }
-            
+        currBend = calculateOutput(value);
+        this->updateDAC(currBend);
+        if (activeCallback && triggerCallbacks)
+            activeCallback(value);
     }
 
     // handle tri-state
@@ -62,29 +64,28 @@ void Bender::poll()
 */
 uint16_t Bender::calculateOutput(uint16_t value)
 {
+    uint16_t output;
+    
     // BEND UP
-    uint16_t val;
     if (value > this->getIdleValue() && value < this->getMaxBend())
     {
-        currState = BEND_UP;
-        //     inverted
-        val = (((float)dacOutputRange / (this->getMaxBend() - this->getIdleValue())) * (value - this->getIdleValue()));
-        this->updateDAC(BENDER_ZERO - val);
-        return val;
+        currState = BENDING_UP;
+
+        output = (((float)dacOutputRange / (this->getMaxBend() - this->getIdleValue())) * (value - this->getIdleValue()));
+        return (BENDER_DAC_ZERO - output); // inverted
     }
+
     // BEND DOWN
     else if (value < this->getIdleValue() && value > this->getMinBend())
     {
-        currState = BEND_DOWN;
-        //      non-inverted
-        val = (((float)dacOutputRange / (this->getMinBend() - this->getIdleValue())) * (value - this->getIdleValue()));
-        this->updateDAC(BENDER_ZERO + val);
-        return val;
+        currState = BENDING_DOWN;
+        output = (((float)dacOutputRange / (this->getMinBend() - this->getIdleValue())) * (value - this->getIdleValue()));
+        return (BENDER_DAC_ZERO + output); // non-inverted
     }
     // ELSE executes when a bender is poorly calibrated, and exceeds its max or min bend
     else
     {
-        return currOutput; // return whatever the last calulated output was.
+        return currBend; // return whatever the last calulated output was.
     }
 }
 
@@ -100,9 +101,9 @@ void Bender::updateDAC(uint16_t value)
     dac->write(dacChan, currOutput);
 }
 
-bool Bender::isIdle()
+bool Bender::isIdle(uint16_t value)
 {
-    if (currBend > this->getIdleValue() + BENDER_NOISE_THRESHOLD || currBend < this->getIdleValue() - BENDER_NOISE_THRESHOLD)
+    if (value > this->getIdleValue() + BENDER_NOISE_THRESHOLD || value < this->getIdleValue() - BENDER_NOISE_THRESHOLD)
     {
         return false;
     }
