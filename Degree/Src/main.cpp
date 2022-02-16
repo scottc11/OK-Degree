@@ -79,10 +79,6 @@ void taskMain(void *pvParameters)
 
   glblCtrl.init();
 
-  superClock.initTIM2(40, 0xFFFFFFFF - 1); // precaler value handles BPM range 40..240
-  superClock.initTIM4(40, 10000 - 1);
-  superClock.start();
-
   logger_log_task_watermark();
   
   while (1)
