@@ -254,16 +254,13 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case CLEAR_SEQ_TOUCH:
-        logger_log_task_watermark();
         break;
 
     case PB_RANGE:
-        xTaskNotify(thController, CTRL_CMNDS::ENTER_VCO_TUNING, eNotifyAction::eSetValueWithOverwrite);
-        // xTaskNotify(thController, 0, eNotifyAction::eSetValueWithOverwrite);
-        // channels[0]->enableUIMode(TouchChannel::PB_RANGE_UI);
-        // channels[1]->enableUIMode(TouchChannel::PB_RANGE_UI);
-        // channels[2]->enableUIMode(TouchChannel::PB_RANGE_UI);
-        // channels[3]->enableUIMode(TouchChannel::PB_RANGE_UI);
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+        {
+            channels[i]->setUIMode(TouchChannel::UIMode::UI_PITCH_BEND_RANGE);
+        }
         break;
     case SEQ_LENGTH:
         this->display->clear();
@@ -308,10 +305,10 @@ void GlobalControl::handleButtonRelease(int pad)
     case RESET:
         break;
     case PB_RANGE:
-        // channels[0]->disableUIMode();
-        // channels[1]->disableUIMode();
-        // channels[2]->disableUIMode();
-        // channels[3]->disableUIMode();
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+        {
+            channels[i]->setUIMode(TouchChannel::UIMode::UI_DEFAULT);
+        }
         break;
     case CLEAR_SEQ_TOUCH:
         if (!gestureFlag)

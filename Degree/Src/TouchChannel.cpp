@@ -34,7 +34,7 @@ void TouchChannel::init()
         setLED(i, OFF);
     }
 
-    setMode(MONO);
+    setPlaybackMode(MONO);
     setBenderMode(PITCH_BEND);
 }
 
@@ -44,32 +44,62 @@ void TouchChannel::init()
 */
 void TouchChannel::poll()
 {
-    if (!freezeChannel)
+    if (uiMode == UIMode::UI_DEFAULT)
     {
-        if (tickerFlag)
+        if (!freezeChannel)
         {
-
-            bender->poll();
-
-            if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
+            if (tickerFlag)
             {
-                handleCVInput();
-            }
 
-            if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP)
-            {
-                handleSequence(sequence.currPosition);
-            }
+                bender->poll();
 
-            clearTickerFlag();
+                if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
+                {
+                    handleCVInput();
+                }
+
+                if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP)
+                {
+                    handleSequence(sequence.currPosition);
+                }
+
+                clearTickerFlag();
+            }
         }
+    }
+    
+}
+
+void TouchChannel::setUIMode(UIMode targetMode) {
+    this->uiMode = targetMode;
+    switch (targetMode)
+    {
+    case UIMode::UI_DEFAULT:
+        setPlaybackMode(playbackMode);
+        break;
+    case UIMode::UI_PITCH_BEND_RANGE:
+        setAllOctaveLeds(LedState::OFF);
+        handlePitchBendRangeUI();
+        break;
+    }
+}
+
+/**
+ * @brief determine current pitch bend range index and update LEDs accordingly
+*/
+void TouchChannel::handlePitchBendRangeUI()
+{
+    setAllDegreeLeds(LedState::OFF);
+    for (int i = 0; i < output.getPitchBendRange() + 1; i++)
+    {
+        setDegreeLed(i, LedState::ON);
     }
 }
 
 /**
  * @brief set the channels mode
 */ 
-void TouchChannel::setMode(PlaybackMode targetMode)
+void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
 {
     playbackMode = targetMode;
 
@@ -116,11 +146,11 @@ void TouchChannel::toggleMode()
 {
     if (playbackMode == MONO || playbackMode == MONO_LOOP)
     {
-        setMode(QUANTIZER);
+        setPlaybackMode(QUANTIZER);
     }
     else
     {
-        setMode(MONO);
+        setPlaybackMode(MONO);
     }
 }
 
@@ -131,10 +161,24 @@ void TouchChannel::toggleMode()
  */
 void TouchChannel::onTouch(uint8_t pad)
 {
-    handleSequenceTouchEvent(pad);
+    switch (uiMode)
+    {
+    case UIMode::UI_DEFAULT:
+        handleTouchPlaybackEvent(pad);
+        break;
+    case UIMode::UI_PITCH_BEND_RANGE:
+        // take incoming pad and update the pitch bend range accordingly.
+        output.setPitchBendRange(pad);
+        handlePitchBendRangeUI();
+        break;
+    }
 }
 
-void TouchChannel::handleSequenceTouchEvent(uint8_t pad)
+void TouchChannel::handleTouchUIEvent(uint8_t pad) {
+
+}
+
+void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
 {
     if (pad < 8)  // handle degree pads
     {
@@ -316,6 +360,27 @@ void TouchChannel::setDegreeLed(int degree, LedState state) {
 
 void TouchChannel::setOctaveLed(int octave, LedState state) {
     setLED(OCTAVE_LED_PINS[octave], state);
+}
+
+/**
+ * @brief set all degree leds
+ */
+void TouchChannel::setAllDegreeLeds(LedState state)
+{
+    for (int i = 0; i < DEGREE_COUNT; i++)
+    {
+        setDegreeLed(i, state);
+    }
+}
+
+/**
+ * @brief set all octave leds
+ */
+void TouchChannel::setAllOctaveLeds(LedState state) {
+    for (int i = 0; i < OCTAVE_COUNT; i++)
+    {
+        setOctaveLed(i, state);
+    }
 }
 
 void TouchChannel::updateOctaveLeds(int octave)
@@ -879,11 +944,11 @@ void TouchChannel::enableSequenceRecording()
     display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
     if (playbackMode == MONO)
     {
-        setMode(MONO_LOOP);
+        setPlaybackMode(MONO_LOOP);
     }
     else if (playbackMode == QUANTIZER)
     {
-        setMode(QUANTIZER_LOOP);
+        setPlaybackMode(QUANTIZER_LOOP);
     }
 }
 
@@ -910,11 +975,11 @@ void TouchChannel::disableSequenceRecording()
         display->setSequenceLEDs(channelIndex, sequence.length, 2, false);
         if (playbackMode == MONO_LOOP)
         {
-            setMode(MONO);
+            setPlaybackMode(MONO);
         }
         else if (playbackMode == QUANTIZER_LOOP)
         {
-            setMode(QUANTIZER);
+            setPlaybackMode(QUANTIZER);
         }
     }
 }
@@ -954,4 +1019,13 @@ void TouchChannel::handleTouchInterrupt() {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     xTaskNotifyFromISR(this->handleTouchTaskHandle, 0, eNoAction, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+
+void taskHandleLEDs(void *params) {
+    while (1)
+    {
+        // handle incoming events from a queue
+        // update LEDs depending on the channels UI mode
+    }
 }
