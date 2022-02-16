@@ -59,7 +59,12 @@ namespace DEGREE {
             BEND_MENU = 5
         };
 
-        enum TouchChannelMode
+        enum UIMode {
+            UI_DEFAULT,
+            UI_PITCH_BEND_RANGE
+        };
+
+        enum PlaybackMode
         {
             MONO,
             MONO_LOOP,
@@ -98,9 +103,8 @@ namespace DEGREE {
             degreeSwitches = degrees;
             bender = _bender;
             globalGateOut = global_gate_ptr;
-
-            currMode = MONO;
-            prevMode = MONO;
+            uiMode = UIMode::UI_DEFAULT;
+            playbackMode = PlaybackMode::MONO;
             benderMode = PITCH_BEND;
             currDegree = 0;
             currOctave = 0;
@@ -126,8 +130,9 @@ namespace DEGREE {
 
         uint8_t currRatchetRate;      //
         bool gateState;               // state of the gate output
-        TouchChannelMode currMode;
-        TouchChannelMode prevMode;
+
+        UIMode uiMode;
+        PlaybackMode playbackMode;
 
         int benderMode;
 
@@ -154,22 +159,29 @@ namespace DEGREE {
 
         void init();
         void poll();
-        void setMode(TouchChannelMode targetMode);
+        void setUIMode(UIMode targetMode);
+        void setPlaybackMode(PlaybackMode targetMode);
         void toggleMode();
 
         void handleTouchInterrupt();
+        void handleTouchUIEvent(uint8_t pad);
+        void handleTouchPlaybackEvent(uint8_t pad);
         void onTouch(uint8_t pad);
         void onRelease(uint8_t pad);
         void triggerNote(int degree, int octave, Action action);
         void freeze(bool state);
         void updateDegrees();
 
+        void handlePitchBendRangeUI();
+
         void setOctave(int octave);
         void updateOctaveLeds(int octave);
 
         void setLED(int io_pin, LedState state);
         void setDegreeLed(int degree, LedState state);
+        void setAllDegreeLeds(LedState state);
         void setOctaveLed(int octave, LedState state);
+        void setAllOctaveLeds(LedState state);
 
         // Quantizer methods
         void initQuantizer();

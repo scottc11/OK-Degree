@@ -17,9 +17,13 @@ void VoltPerOctave::setPitchBendRange(int value)
 {
     if (value < 8)
     {
-        pbRangeIndex = value;
+        pbRangeIndex = 7 - value; // temp hack: inverting
         maxPitchBend = dacSemitone * PB_RANGE_MAP[pbRangeIndex]; // multiply semitone DAC value by the max desired number of semitones to be bent
     }
+}
+
+int VoltPerOctave::getPitchBendRange() {
+    return pbRangeIndex;
 }
 
 void VoltPerOctave::setPitchBend(uint16_t value)

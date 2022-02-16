@@ -52,6 +52,7 @@ namespace DEGREE {
         void updateDAC(int index, uint16_t pitchBend);
         void resetDAC();
         void setPitchBendRange(int value);
+        int getPitchBendRange();
         void setPitchBend(uint16_t value);
         void bend(uint16_t value);
         uint16_t calculatePitchBend(int input, int min, int max);
