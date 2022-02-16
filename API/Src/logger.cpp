@@ -152,16 +152,25 @@ void logger_log_task_watermark(TaskHandle_t task_handle) {
     logger_log("\n");
 }
 
-void logger_queue_message() {
-
+static QueueHandle_t logger_queue = NULL;
+void logger_queue_message(uint16_t message) {
+    BaseType_t xHigherPriorityTaskWoken;
+    xHigherPriorityTaskWoken = pdFALSE;
+    uint16_t _message = message;
+    xQueueSendFromISR(logger_queue, (void *)&message, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void TASK_logger(void *params) {
-    logger_init();
-    logger_log_system_config();
-    char * str;
+    uint16_t pulse;
+    logger_queue = xQueueCreate(32, sizeof(uint16_t));
     while (1)
     {
-
+        if (xQueueReceive(logger_queue, &pulse, portMAX_DELAY))
+        {
+            logger_log("\n");
+            logger_log(pulse);
+        }
+        
     }   
 }
