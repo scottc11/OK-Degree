@@ -5,6 +5,11 @@ TIM_HandleTypeDef htim4;
 
 SuperClock *SuperClock::instance = NULL;
 
+void SuperClock::init() {
+    this->initTIM2(40, 0xFFFFFFFF - 1); // precaler value handles BPM range 40..240
+    this->initTIM4(40, 10000 - 1);
+}
+
 void SuperClock::start()
 {
     HAL_StatusTypeDef status;
@@ -26,7 +31,7 @@ void SuperClock::initTIM2(uint16_t prescaler, uint32_t period) // isn't TIM2 a 3
     gpio_config_input_capture(EXT_CLOCK_INPUT); // config PA3 in input capture mode
 
     /* TIM2 interrupt Init */
-    HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(TIM2_IRQn, RTOS_ISR_DEFAULT_PRIORITY, 0);
     HAL_NVIC_EnableIRQ(TIM2_IRQn);
 
     TIM_ClockConfigTypeDef sClockSourceConfig = {0};
@@ -70,7 +75,7 @@ void SuperClock::initTIM4(uint16_t prescaler, uint16_t period)
 {
     __HAL_RCC_TIM4_CLK_ENABLE();
 
-    HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(TIM4_IRQn, RTOS_ISR_DEFAULT_PRIORITY, 0);
     HAL_NVIC_EnableIRQ(TIM4_IRQn);
 
     TIM_ClockConfigTypeDef sClockSourceConfig = {0};
@@ -134,14 +139,23 @@ void SuperClock::setPulseFrequency(uint32_t ticks)
  */
 void SuperClock::handleInputCaptureCallback()
 {
-    pulse = 0;
+    // almost always, there will need to be at least 1 pulse not yet executed prior to an input capture, 
+    // so you must execute all remaining until
+    // if (pulse > PPQN_ERROR)
+    // {
+    //     while (pulse < PPQN)
+    //     {
+    //         this->handleOverflowCallback();
+    //     }
+    // }
+
     __HAL_TIM_SetCounter(&htim2, 0); // reset after each input capture
     __HAL_TIM_SetCounter(&htim4, 0); // reset after each input capture
+    __HAL_TIM_ENABLE(&htim4);        // re-enable TIM4 (it gets disabled should the pulse count overtake PPQN before a new input capture event occurs)
     uint32_t inputCapture = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_4);
-    uint16_t pulse = inputCapture / PPQN;
-    this->setPulseFrequency(pulse);
+    this->setPulseFrequency(inputCapture / PPQN);
+    this->pulse = 0;
     this->handleOverflowCallback();
-    // setFrequency(inputCapture);
 
     if (input_capture_callback) input_capture_callback();
 }
@@ -166,16 +180,25 @@ void SuperClock::disableInputCaptureISR()
 */ 
 void SuperClock::handleOverflowCallback()
 {
-    if (ppqnCallback) ppqnCallback(pulse);
+    if (ppqnCallback)
+        ppqnCallback(pulse); // when clock inits, this ensures the 0ith pulse will get handled
 
-    if (pulse == 0) {
-        if (resetCallback) resetCallback();
-    }
+    // by checking this first, you have the chance to reset any sequences prior to executing their 0ith pulse
+    // if (pulse == 0) {
+    //     if (resetCallback)
+    //         resetCallback();
+    // }
 
     if (pulse < PPQN - 1) {
         pulse++;
     } else {
-        pulse = 0;
+        if (externalInputMode)
+        {
+            __HAL_TIM_DISABLE(&htim4); // halt TIM4
+            // external input will reset pulse to 0 and resume TIM4 in input capture callback
+        } else {
+            pulse = 0;
+        }
     }
 }
 
