@@ -59,7 +59,7 @@ namespace DEGREE {
             BEND_MENU = 5
         };
 
-        enum TouchChannelMode
+        enum PlaybackMode
         {
             MONO,
             MONO_LOOP,
@@ -99,8 +99,7 @@ namespace DEGREE {
             bender = _bender;
             globalGateOut = global_gate_ptr;
 
-            currMode = MONO;
-            prevMode = MONO;
+            playbackMode = MONO;
             benderMode = PITCH_BEND;
             currDegree = 0;
             currOctave = 0;
@@ -126,8 +125,7 @@ namespace DEGREE {
 
         uint8_t currRatchetRate;      //
         bool gateState;               // state of the gate output
-        TouchChannelMode currMode;
-        TouchChannelMode prevMode;
+        PlaybackMode playbackMode;
 
         int benderMode;
 
@@ -154,10 +152,12 @@ namespace DEGREE {
 
         void init();
         void poll();
-        void setMode(TouchChannelMode targetMode);
+        void setMode(PlaybackMode targetMode);
         void toggleMode();
 
         void handleTouchInterrupt();
+        void handleUITouchEvent(uint8_t pad);
+        void handleSequenceTouchEvent(uint8_t pad);
         void onTouch(uint8_t pad);
         void onRelease(uint8_t pad);
         void triggerNote(int degree, int octave, Action action);

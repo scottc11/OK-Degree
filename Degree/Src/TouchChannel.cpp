@@ -51,12 +51,12 @@ void TouchChannel::poll()
 
             bender->poll();
 
-            if (currMode == QUANTIZER || currMode == QUANTIZER_LOOP)
+            if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
             {
                 handleCVInput();
             }
 
-            if (currMode == MONO_LOOP || currMode == QUANTIZER_LOOP)
+            if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP)
             {
                 handleSequence(sequence.currPosition);
             }
@@ -69,10 +69,9 @@ void TouchChannel::poll()
 /**
  * @brief set the channels mode
 */ 
-void TouchChannel::setMode(TouchChannelMode targetMode)
+void TouchChannel::setMode(PlaybackMode targetMode)
 {
-    prevMode = currMode;
-    currMode = targetMode;
+    playbackMode = targetMode;
 
     // start from a clean slate by setting all the LEDs LOW
     for (int i = 0; i < DEGREE_COUNT; i++) {
@@ -83,7 +82,7 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
     setLED(CHANNEL_QUANT_LED, OFF);
     sequence.playbackEnabled = false;
 
-    switch (currMode)
+    switch (playbackMode)
     {
     case MONO:
         triggerNote(currDegree, currOctave, SUSTAIN);
@@ -115,7 +114,7 @@ void TouchChannel::setMode(TouchChannelMode targetMode)
 **/
 void TouchChannel::toggleMode()
 {
-    if (currMode == MONO || currMode == MONO_LOOP)
+    if (playbackMode == MONO || playbackMode == MONO_LOOP)
     {
         setMode(QUANTIZER);
     }
@@ -126,14 +125,21 @@ void TouchChannel::toggleMode()
 }
 
 /**
- * TODO: Is this function getting called inside an interrupt?
-*/ 
+ * @brief Called when a pad is touched
+ *
+ * @param pad pad that was touched
+ */
 void TouchChannel::onTouch(uint8_t pad)
+{
+    handleSequenceTouchEvent(pad);
+}
+
+void TouchChannel::handleSequenceTouchEvent(uint8_t pad)
 {
     if (pad < 8)  // handle degree pads
     {
         pad = CHAN_TOUCH_PADS[pad]; // remap
-        switch (currMode) {
+        switch (playbackMode) {
             case MONO:
                 triggerNote(pad, currOctave, NOTE_ON);
                 break;
@@ -174,7 +180,7 @@ void TouchChannel::onRelease(uint8_t pad)
     if (pad < 8) // handle degree pads
     {
         pad = CHAN_TOUCH_PADS[pad]; // remap
-        switch (currMode) {
+        switch (playbackMode) {
             case MONO:
                 triggerNote(pad, currOctave, NOTE_OFF);
                 break;
@@ -219,7 +225,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
 
     switch (action) {
         case NOTE_ON:
-            if (currMode == MONO || currMode == MONO_LOOP) {
+            if (playbackMode == MONO || playbackMode == MONO_LOOP) {
                 setDegreeLed(prevDegree, OFF); // set the 'previous' active note led LOW
                 setDegreeLed(degree, ON); // new active note HIGH
             }
@@ -232,7 +238,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
             setGate(LOW);
             break;
         case SUSTAIN:
-            if (currMode == MONO || currMode == MONO_LOOP)
+            if (playbackMode == MONO || playbackMode == MONO_LOOP)
             {
                 setDegreeLed(degree, ON);      // new active note HIGH
             }
@@ -259,7 +265,7 @@ void TouchChannel::freeze(bool state)
 
 void TouchChannel::updateDegrees()
 {
-    switch (currMode)
+    switch (playbackMode)
     {
     case MONO:
         triggerNote(currDegree, currOctave, SUSTAIN);
@@ -335,7 +341,7 @@ void TouchChannel::setOctave(int octave)
     prevOctave = currOctave;
     currOctave = octave;
 
-    switch (currMode)
+    switch (playbackMode)
     {
     case MONO:
         updateOctaveLeds(currOctave);
@@ -790,7 +796,7 @@ void TouchChannel::handleSequence(int position)
     // Handle Touch Events (degrees)
     if (sequence.containsTouchEvents)
     {
-        switch (currMode)
+        switch (playbackMode)
         {
         case MONO_LOOP:
             if (sequence.getEventStatus(position)) // if event is active
@@ -871,11 +877,11 @@ void TouchChannel::enableSequenceRecording()
 {
     sequence.recordEnabled = true;
     display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
-    if (currMode == MONO)
+    if (playbackMode == MONO)
     {
         setMode(MONO_LOOP);
     }
-    else if (currMode == QUANTIZER)
+    else if (playbackMode == QUANTIZER)
     {
         setMode(QUANTIZER_LOOP);
     }
@@ -902,11 +908,11 @@ void TouchChannel::disableSequenceRecording()
     else // if no touch event recorded, revert to previous mode
     { 
         display->setSequenceLEDs(channelIndex, sequence.length, 2, false);
-        if (currMode == MONO_LOOP)
+        if (playbackMode == MONO_LOOP)
         {
             setMode(MONO);
         }
-        else if (currMode == QUANTIZER_LOOP)
+        else if (playbackMode == QUANTIZER_LOOP)
         {
             setMode(QUANTIZER);
         }
