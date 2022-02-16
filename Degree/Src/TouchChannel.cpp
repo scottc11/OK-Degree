@@ -934,7 +934,6 @@ void TouchChannel::initializeCalibration() {
  */
 void TouchChannel::taskHandleTouch(void *touch_chan_ptr) {
     TouchChannel *_this = (TouchChannel*)touch_chan_ptr;
-    logger_log_task_watermark();
     while (1)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);

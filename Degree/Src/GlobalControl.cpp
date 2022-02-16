@@ -39,9 +39,13 @@ void GlobalControl::init() {
     tempoPot.log_noise_threshold_to_console("Tempo Pot");
     tempoPot.invertReadings();
 
+    // initialize tempo
+    clock->init();
     clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
+    clock->disableInputCaptureISR(); // pollTempoPot() will re-enable should pot be in teh right position
     this->pollTempoPot();
+    clock->start();
 }
 
 void GlobalControl::poll()

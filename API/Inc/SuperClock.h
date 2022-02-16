@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "logger.h"
 #include "tim_api.h"
 #include "Callback.h"
 #include "Algorithms.h"
@@ -8,6 +9,8 @@
 #ifndef PPQN
 #define PPQN 96
 #endif
+
+#define PPQN_ERROR (PPQN - (PPQN / 6))
 
 #ifndef EXT_CLOCK_INPUT
 #define EXT_CLOCK_INPUT PA_3
@@ -47,7 +50,7 @@ public:
         ticksPerPulse = ticksPerStep / PPQN;
     };
 
-
+    void init();
     void initTIM2(uint16_t prescaler, uint32_t period);
     void initTIM4(uint16_t prescaler, uint16_t period);
     void start();

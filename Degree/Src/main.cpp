@@ -79,10 +79,6 @@ void taskMain(void *pvParameters)
 
   glblCtrl.init();
 
-  superClock.initTIM2(40, 0xFFFFFFFF - 1); // precaler value handles BPM range 40..240
-  superClock.initTIM4(40, 10000 - 1);
-  superClock.start();
-
   logger_log_task_watermark();
   
   while (1)
@@ -106,6 +102,7 @@ int main(void)
   multi_chan_adc_start();
   HAL_Delay(100);
 
+  xTaskCreate(TASK_logger, "logger", RTOS_STACK_SIZE_MIN, NULL, RTOS_PRIORITY_LOW, NULL);
   xTaskCreate(taskMain, "taskMain", 512, NULL, 1, &main_task_handle);
   xTaskCreate(task_controller, "controller", RTOS_STACK_SIZE_MIN, &glblCtrl, RTOS_PRIORITY_HIGH, NULL);
 

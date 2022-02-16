@@ -17,14 +17,13 @@
 #pragma once
 
 #include "cmsis_os.h"
-#include "logger.h"
 
-template<class T, unsigned L>
+template <class T, uint32_t queue_sz>
 class okQueue
 {
 public:
     okQueue() {
-        handle = xQueueCreate(L, sizeof(T));
+        handle = xQueueCreate(queue_sz, sizeof(T));
         if (handle == NULL) {
             // logger_log("there is insufficient heap RAM available for the queue to be created.");
         }
