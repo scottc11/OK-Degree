@@ -44,8 +44,9 @@ void TouchChannel::init()
 */
 void TouchChannel::poll()
 {
-    if (uiMode == UIMode::UI_DEFAULT)
+    switch (uiMode)
     {
+    case UI_DEFAULT:
         if (!freezeChannel)
         {
             if (tickerFlag)
@@ -66,6 +67,15 @@ void TouchChannel::poll()
                 clearTickerFlag();
             }
         }
+        break;
+    case UI_PITCH_BEND_RANGE:
+        break;
+    case UI_SEQUENCE_LENGTH:
+        if (tickerFlag)
+        {
+            bender->poll();
+            clearTickerFlag();
+        }
     }
     
 }
@@ -80,6 +90,8 @@ void TouchChannel::setUIMode(UIMode targetMode) {
     case UIMode::UI_PITCH_BEND_RANGE:
         setAllOctaveLeds(LedState::OFF);
         handlePitchBendRangeUI();
+        break;
+    case UI_SEQUENCE_LENGTH:
         break;
     }
 }

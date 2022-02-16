@@ -61,7 +61,8 @@ namespace DEGREE {
 
         enum UIMode {
             UI_DEFAULT,
-            UI_PITCH_BEND_RANGE
+            UI_PITCH_BEND_RANGE,
+            UI_SEQUENCE_LENGTH
         };
 
         enum PlaybackMode
