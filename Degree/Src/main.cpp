@@ -67,6 +67,9 @@ TouchChannel chanD(3, &display, &touchD, &ledsD, &degrees, &dac1, DAC8554::CHAN_
 
 GlobalControl glblCtrl(&superClock, &chanA, &chanB, &chanC, &chanD, &globalTouch, &degrees, &buttons, &display);
 
+// Example for getting settings FLASH address from linker script
+extern void* _settings_start;
+
 /**
  * @brief
  * NOTE: The stack used by a task will grow and shrink as the task executes and interrupts are processed.
@@ -97,6 +100,9 @@ int main(void)
   logger_init();
   logger_log("\nLogger Initialized\n");
   logger_log_system_config();
+
+  // Example for getting settings FLASH address from linker script
+  uint32_t settings_start_address = (uint32_t)(&_settings_start);
 
   multi_chan_adc_init();
   multi_chan_adc_start();

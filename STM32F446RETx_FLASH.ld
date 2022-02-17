@@ -62,7 +62,8 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 512K
+FLASH (rx)     : ORIGIN = 0x08000000, LENGTH = 384K
+SETTINGS (rx)  : ORIGIN = 0x08060000, LENGTH = 128K 
 }
 
 /* Define output sections */
@@ -173,7 +174,12 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
-  
+  /* Placeholder for defining settings start address symbol */
+  .settings : 
+  {
+    . = ALIGN(4);
+    _settings_start = .; /* create a global symbol at settings start */
+  } >SETTINGS
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
