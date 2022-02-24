@@ -175,13 +175,6 @@ void GlobalControl::handleButtonPress(int pad)
         }
         break;
     case SHIFT:
-        // for (int i = 0; i < 4; i++)
-        // {
-        //     if (touch.padIsTouched(i, currTouched, prevTouched))
-        //     {
-        //         calibrateChannel(i);
-        //     }
-        // }
         break;
     case FREEZE:
         freezeLED.write(HIGH);
@@ -266,6 +259,7 @@ void GlobalControl::handleButtonPress(int pad)
         this->display->clear();
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
+            channels[chan]->setUIMode(TouchChannel::UIMode::UI_SEQUENCE_LENGTH);
             channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
         }
         break;
@@ -346,6 +340,7 @@ void GlobalControl::handleButtonRelease(int pad)
                 display->setSequenceLEDs(chan, channels[chan]->sequence.length, 2, true);
             }
             channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_OFF);
+            channels[chan]->setUIMode(TouchChannel::UIMode::UI_DEFAULT);
         }
         break;
     case RECORD:
