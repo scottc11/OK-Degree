@@ -167,6 +167,7 @@ namespace DEGREE {
         void handleTouchInterrupt();
         void handleTouchUIEvent(uint8_t pad);
         void handleTouchPlaybackEvent(uint8_t pad);
+        void handleReleasePlaybackEvent(uint8_t pad);
         void onTouch(uint8_t pad);
         void onRelease(uint8_t pad);
         void triggerNote(int degree, int octave, Action action);

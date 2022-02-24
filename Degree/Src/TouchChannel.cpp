@@ -173,6 +173,7 @@ void TouchChannel::toggleMode()
  */
 void TouchChannel::onTouch(uint8_t pad)
 {
+    // pad is touched, disable bendering
     switch (uiMode)
     {
     case UIMode::UI_DEFAULT:
@@ -182,6 +183,18 @@ void TouchChannel::onTouch(uint8_t pad)
         // take incoming pad and update the pitch bend range accordingly.
         output.setPitchBendRange(pad);
         handlePitchBendRangeUI();
+        break;
+    }
+}
+
+void TouchChannel::onRelease(uint8_t pad)
+{
+    switch (uiMode)
+    {
+    case UIMode::UI_DEFAULT:
+        handleReleasePlaybackEvent(pad);
+        break;
+    case UIMode::UI_PITCH_BEND_RANGE:
         break;
     }
 }
@@ -231,33 +244,34 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
     }
 }
 
-void TouchChannel::onRelease(uint8_t pad)
+void TouchChannel::handleReleasePlaybackEvent(uint8_t pad)
 {
     if (pad < 8) // handle degree pads
     {
         pad = CHAN_TOUCH_PADS[pad]; // remap
-        switch (playbackMode) {
-            case MONO:
-                triggerNote(pad, currOctave, NOTE_OFF);
-                break;
-            case MONO_LOOP:
-                if (sequence.recordEnabled)
-                {
-                    sequence.createTouchEvent(sequence.currPosition, pad, LOW);
-                    sequence.overdub = false;
-                }
-                else
-                {
-                    sequence.playbackEnabled = true;
-                }
-                triggerNote(pad, currOctave, NOTE_OFF);
-                break;
-            case QUANTIZER:
-                break;
-            case QUANTIZER_LOOP:
-                break;
-            default:
-                break;
+        switch (playbackMode)
+        {
+        case MONO:
+            triggerNote(pad, currOctave, NOTE_OFF);
+            break;
+        case MONO_LOOP:
+            if (sequence.recordEnabled)
+            {
+                sequence.createTouchEvent(sequence.currPosition, pad, LOW);
+                sequence.overdub = false;
+            }
+            else
+            {
+                sequence.playbackEnabled = true;
+            }
+            triggerNote(pad, currOctave, NOTE_OFF);
+            break;
+        case QUANTIZER:
+            break;
+        case QUANTIZER_LOOP:
+            break;
+        default:
+            break;
         }
     }
     else
