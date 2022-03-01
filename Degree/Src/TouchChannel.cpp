@@ -173,7 +173,6 @@ void TouchChannel::toggleMode()
  */
 void TouchChannel::onTouch(uint8_t pad)
 {
-    // pad is touched, disable bendering
     switch (uiMode)
     {
     case UIMode::UI_DEFAULT:
@@ -188,7 +187,7 @@ void TouchChannel::onTouch(uint8_t pad)
 }
 
 void TouchChannel::onRelease(uint8_t pad)
-{
+{   
     switch (uiMode)
     {
     case UIMode::UI_DEFAULT:
@@ -564,19 +563,23 @@ void TouchChannel::handleBend(uint16_t value) {
 }
 
 void TouchChannel::handlePitchBend(uint16_t value) {
-    uint16_t pitchbend;
-    // Pitch Bend UP
-    if (bender->currState == Bender::BENDING_UP)
+    if (!touchPads->padIsTouched()) // only apply pitch bend when all pads have been released
     {
-        pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
-        output.setPitchBend(pitchbend); // non-inverted
+        uint16_t pitchbend;
+        // Pitch Bend UP
+        if (bender->currState == Bender::BENDING_UP)
+        {
+            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
+            output.setPitchBend(pitchbend); // non-inverted
+        }
+        // Pitch Bend DOWN
+        else if (bender->currState == Bender::BENDING_DOWN)
+        {
+            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
+            output.setPitchBend(pitchbend * -1);                                                        // inverted
+        }
     }
-    // Pitch Bend DOWN
-    else if (bender->currState == Bender::BENDING_DOWN)
-    {
-        pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
-        output.setPitchBend(pitchbend * -1);                                                        // inverted
-    }
+    
 }
 
 /**
