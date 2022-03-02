@@ -9,6 +9,12 @@ void GlobalControl::init() {
 
     display->init();
     display->clear();
+    for (int i = 0; i < 4; i++)
+    {
+        display->drawSpiral(i, true, 25);
+    }
+    display->flash(3, 100);
+    display->clear();
 
     switches->init();
     switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
