@@ -34,6 +34,8 @@ void TouchChannel::init()
         setLED(i, OFF);
     }
 
+    display->drawSpiral(channelIndex, true, 25);
+
     setPlaybackMode(MONO);
     setBenderMode(PITCH_BEND);
 }

@@ -9,12 +9,6 @@ void GlobalControl::init() {
 
     display->init();
     display->clear();
-    for (int i = 0; i < 4; i++)
-    {
-        display->drawSpiral(i, true, 25);
-    }
-    display->flash(3, 100);
-    display->clear();
 
     switches->init();
     switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
@@ -36,6 +30,7 @@ void GlobalControl::init() {
     channels[1]->init();
     channels[2]->init();
     channels[3]->init();
+    display->clear();
 
     // Tempo Pot ADC Noise: 1300ish w/ 100nF
     tempoPot.setFilter(0.01);
