@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main.h"
+#include "Callback.h"
 #include "filters.h"
 #include "okSemaphore.h"
 #include "okQueue.h"
@@ -29,6 +30,8 @@ public:
     uint16_t inputMax = ADC_DEFAULT_INPUT_MAX; // highest read value from signal
     uint16_t inputMin = ADC_DEFAULT_INPUT_MIN; // lowest read value from signal
 
+    Callback<void(uint16_t progress)> samplingProgressCallback;
+
     uint16_t read_u16();
     void setFilter(float value);
     void enableFilter() { filter = true; }
@@ -51,6 +54,7 @@ public:
     uint16_t getInputMedian(void) { return inputMin + ((inputMax - inputMin) / 2); }
 
     void sampleReadyCallback(uint16_t sample);
+    void attachSamplingProgressCallback(Callback<void(uint16_t progress)> func);
 
     static void sampleReadyTask(void *params);
     static void RouteConversionCompleteCallback();

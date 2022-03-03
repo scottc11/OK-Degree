@@ -10,8 +10,9 @@ void TouchChannel::init()
     
     adc.setFilter(0.1);
 
-
+    bender->adc.attachSamplingProgressCallback(callback(this, &TouchChannel::displayProgressCallback));
     bender->init();
+    display->clear(channelIndex);
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
     bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
@@ -1059,4 +1060,11 @@ void taskHandleLEDs(void *params) {
         // handle incoming events from a queue
         // update LEDs depending on the channels UI mode
     }
+}
+
+void TouchChannel::displayProgressCallback(uint16_t progress)
+{
+    // map the incoming progress to a value between 0..16
+    progress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, 15);
+    this->display->setChannelLED(this->channelIndex, progress, true);
 }

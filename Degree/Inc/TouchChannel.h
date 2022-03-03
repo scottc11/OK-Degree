@@ -185,6 +185,9 @@ namespace DEGREE {
         void setOctaveLed(int octave, LedState state);
         void setAllOctaveLeds(LedState state);
 
+        // Display Methods
+        void displayProgressCallback(uint16_t progress);
+
         // Quantizer methods
         void initQuantizer();
         void handleCVInput();
