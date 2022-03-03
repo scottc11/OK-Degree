@@ -42,7 +42,7 @@ public:
     void log_min_max(char const *source_id);
 
     okSemaphore * initDenoising();
-    void calculateSignalNoise(uint16_t sample);
+    void sampleSignalNoise(uint16_t sample);
 
     okSemaphore * beginMinMaxSampling(uint16_t numSamples);
     void resetMinMax();
@@ -55,6 +55,7 @@ public:
 
     void sampleReadyCallback(uint16_t sample);
     void attachSamplingProgressCallback(Callback<void(uint16_t progress)> func);
+    void detachSamplingProgressCallback();
 
     static void sampleReadyTask(void *params);
     static void RouteConversionCompleteCallback();

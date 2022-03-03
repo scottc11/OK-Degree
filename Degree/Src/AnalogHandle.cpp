@@ -67,7 +67,7 @@ okSemaphore* AnalogHandle::initDenoising() {
 }
 
 // set this as a task so that in the main loop you block with a semaphore until this task gives the semaphore back (once it has completed)
-void AnalogHandle::calculateSignalNoise(uint16_t sample)
+void AnalogHandle::sampleSignalNoise(uint16_t sample)
 {
     // get max read, get min read, get avg read
     if (sampleCounter < ADC_SAMPLE_COUNTER_LIMIT)
@@ -86,10 +86,6 @@ void AnalogHandle::calculateSignalNoise(uint16_t sample)
             }
         }
         sampleCounter++;
-        if (samplingProgressCallback)
-        {
-            samplingProgressCallback(sampleCounter);
-        }
     }
     else
     {
@@ -115,7 +111,8 @@ void AnalogHandle::sampleReadyCallback(uint16_t sample)
     }
     if (samplingNoise)
     {
-        this->calculateSignalNoise(currValue);
+        this->sampleSignalNoise(currValue);
+        if (samplingProgressCallback) samplingProgressCallback(sampleCounter);
     }
     if (this->samplingMinMax) // execute if task has a semaphore?
     {
@@ -238,4 +235,9 @@ void AnalogHandle::sampleMinMax(uint16_t sample)
 void AnalogHandle::attachSamplingProgressCallback(Callback<void(uint16_t progress)> func)
 {
     samplingProgressCallback = func;
+}
+
+void AnalogHandle::detachSamplingProgressCallback()
+{
+    samplingProgressCallback = NULL;
 }

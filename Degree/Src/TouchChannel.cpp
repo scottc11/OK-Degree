@@ -12,6 +12,7 @@ void TouchChannel::init()
 
     bender->adc.attachSamplingProgressCallback(callback(this, &TouchChannel::displayProgressCallback));
     bender->init();
+    bender->adc.detachSamplingProgressCallback();
     display->clear(channelIndex);
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
