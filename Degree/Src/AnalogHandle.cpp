@@ -67,7 +67,7 @@ okSemaphore* AnalogHandle::initDenoising() {
 }
 
 // set this as a task so that in the main loop you block with a semaphore until this task gives the semaphore back (once it has completed)
-void AnalogHandle::calculateSignalNoise(uint16_t sample)
+void AnalogHandle::sampleSignalNoise(uint16_t sample)
 {
     // get max read, get min read, get avg read
     if (sampleCounter < ADC_SAMPLE_COUNTER_LIMIT)
@@ -111,7 +111,8 @@ void AnalogHandle::sampleReadyCallback(uint16_t sample)
     }
     if (samplingNoise)
     {
-        this->calculateSignalNoise(currValue);
+        this->sampleSignalNoise(currValue);
+        if (samplingProgressCallback) samplingProgressCallback(sampleCounter);
     }
     if (this->samplingMinMax) // execute if task has a semaphore?
     {
@@ -130,6 +131,11 @@ void AnalogHandle::sampleReadyCallback(uint16_t sample)
     this->queue.send(currValue, (TickType_t)0); // send sample to queue for other tasks
 }
 
+
+/**
+ * @brief A static member function which gets called as an ISR whenever the ADC DMA Conversion is completed
+ * 
+ */
 void AnalogHandle::RouteConversionCompleteCallback() // static
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -137,6 +143,13 @@ void AnalogHandle::RouteConversionCompleteCallback() // static
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+/**
+ * @brief This task waits for a semaphore to be made available by the RouteConversionCompleteCallback()
+ * When it takes the semaphore, the task will trigger a callback function for every AnalogHandle 
+ * instance that exists.
+ *
+ * @param params
+ */
 void AnalogHandle::sampleReadyTask(void *params) {
     while (1)
     {
@@ -217,4 +230,14 @@ void AnalogHandle::sampleMinMax(uint16_t sample)
     {
         this->setInputMin(sample);
     }
+}
+
+void AnalogHandle::attachSamplingProgressCallback(Callback<void(uint16_t progress)> func)
+{
+    samplingProgressCallback = func;
+}
+
+void AnalogHandle::detachSamplingProgressCallback()
+{
+    samplingProgressCallback = NULL;
 }

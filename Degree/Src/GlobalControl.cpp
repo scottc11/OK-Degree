@@ -30,6 +30,7 @@ void GlobalControl::init() {
     channels[1]->init();
     channels[2]->init();
     channels[3]->init();
+    display->clear();
 
     // Tempo Pot ADC Noise: 1300ish w/ 100nF
     tempoPot.setFilter(0.01);
@@ -522,7 +523,7 @@ void GlobalControl::resetSequencer()
 
 void GlobalControl::enableVCOCalibration(TouchChannel *channel)
 {
-    ctrl_send_command(channel->channelIndex, CTRL_CMNDS::ENTER_1VO_CALIBRATION);
+    ctrl_dispatch(CTRL_ACTION::ENTER_1VO_CALIBRATION, channel->channelIndex, 0);
 }
 
 void GlobalControl::disableVCOCalibration() {

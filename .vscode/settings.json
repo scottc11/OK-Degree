@@ -66,6 +66,7 @@
         "chrono": "cpp",
         "variant": "cpp",
         "forward_list": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "condition_variable": "cpp"
     }
 }

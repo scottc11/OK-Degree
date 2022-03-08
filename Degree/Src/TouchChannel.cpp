@@ -10,8 +10,10 @@ void TouchChannel::init()
     
     adc.setFilter(0.1);
 
-
+    bender->adc.attachSamplingProgressCallback(callback(this, &TouchChannel::displayProgressCallback));
     bender->init();
+    bender->adc.detachSamplingProgressCallback();
+    display->clear(channelIndex);
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
     bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
@@ -33,6 +35,8 @@ void TouchChannel::init()
         _leds->ledConfig(i);
         setLED(i, OFF);
     }
+
+    display->drawSpiral(channelIndex, true, 25);
 
     setPlaybackMode(MONO);
     setBenderMode(PITCH_BEND);
@@ -186,6 +190,18 @@ void TouchChannel::onTouch(uint8_t pad)
     }
 }
 
+void TouchChannel::onRelease(uint8_t pad)
+{   
+    switch (uiMode)
+    {
+    case UIMode::UI_DEFAULT:
+        handleReleasePlaybackEvent(pad);
+        break;
+    case UIMode::UI_PITCH_BEND_RANGE:
+        break;
+    }
+}
+
 void TouchChannel::handleTouchUIEvent(uint8_t pad) {
 
 }
@@ -231,33 +247,34 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
     }
 }
 
-void TouchChannel::onRelease(uint8_t pad)
+void TouchChannel::handleReleasePlaybackEvent(uint8_t pad)
 {
     if (pad < 8) // handle degree pads
     {
         pad = CHAN_TOUCH_PADS[pad]; // remap
-        switch (playbackMode) {
-            case MONO:
-                triggerNote(pad, currOctave, NOTE_OFF);
-                break;
-            case MONO_LOOP:
-                if (sequence.recordEnabled)
-                {
-                    sequence.createTouchEvent(sequence.currPosition, pad, LOW);
-                    sequence.overdub = false;
-                }
-                else
-                {
-                    sequence.playbackEnabled = true;
-                }
-                triggerNote(pad, currOctave, NOTE_OFF);
-                break;
-            case QUANTIZER:
-                break;
-            case QUANTIZER_LOOP:
-                break;
-            default:
-                break;
+        switch (playbackMode)
+        {
+        case MONO:
+            triggerNote(pad, currOctave, NOTE_OFF);
+            break;
+        case MONO_LOOP:
+            if (sequence.recordEnabled)
+            {
+                sequence.createTouchEvent(sequence.currPosition, pad, LOW);
+                sequence.overdub = false;
+            }
+            else
+            {
+                sequence.playbackEnabled = true;
+            }
+            triggerNote(pad, currOctave, NOTE_OFF);
+            break;
+        case QUANTIZER:
+            break;
+        case QUANTIZER_LOOP:
+            break;
+        default:
+            break;
         }
     }
     else
@@ -550,19 +567,23 @@ void TouchChannel::handleBend(uint16_t value) {
 }
 
 void TouchChannel::handlePitchBend(uint16_t value) {
-    uint16_t pitchbend;
-    // Pitch Bend UP
-    if (bender->currState == Bender::BENDING_UP)
+    if (!touchPads->padIsTouched()) // only apply pitch bend when all pads have been released
     {
-        pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
-        output.setPitchBend(pitchbend); // non-inverted
+        uint16_t pitchbend;
+        // Pitch Bend UP
+        if (bender->currState == Bender::BENDING_UP)
+        {
+            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
+            output.setPitchBend(pitchbend); // non-inverted
+        }
+        // Pitch Bend DOWN
+        else if (bender->currState == Bender::BENDING_DOWN)
+        {
+            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
+            output.setPitchBend(pitchbend * -1);                                                        // inverted
+        }
     }
-    // Pitch Bend DOWN
-    else if (bender->currState == Bender::BENDING_DOWN)
-    {
-        pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
-        output.setPitchBend(pitchbend * -1);                                                        // inverted
-    }
+    
 }
 
 /**
@@ -1040,4 +1061,11 @@ void taskHandleLEDs(void *params) {
         // handle incoming events from a queue
         // update LEDs depending on the channels UI mode
     }
+}
+
+void TouchChannel::displayProgressCallback(uint16_t progress)
+{
+    // map the incoming progress to a value between 0..16
+    progress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, 15);
+    this->display->setChannelLED(this->channelIndex, progress, true);
 }
