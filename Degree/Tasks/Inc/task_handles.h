@@ -14,17 +14,18 @@ extern TaskHandle_t tuner_task_handle;
 
 extern QueueHandle_t tuner_queue;
 
-enum CTRL_CMNDS
+enum CTRL_ACTION
 {
     ENTER_1VO_CALIBRATION = 0,
     EXIT_1VO_CALIBRATION = 1,
     EXIT_BENDER_CALIBRATION = 2,
     ENTER_VCO_TUNING = 3,
-    EXIT_VCO_TUNING = 4
+    EXIT_VCO_TUNING = 4,
+    ADC_SAMPLING_PROGRESS = 5
 };
-typedef enum CTRL_CMNDS CTRL_CMNDS;
+typedef enum CTRL_ACTION CTRL_ACTION;
 
-uint32_t create_controller_command(uint16_t channel, uint16_t command);
-CTRL_CMNDS noti_get_command(uint32_t notification);
+CTRL_ACTION noti_get_command(uint32_t notification);
 uint8_t noti_get_channel(uint32_t notification);
-void ctrl_send_command(uint8_t channel, CTRL_CMNDS command);
+
+void ctrl_dispatch(CTRL_ACTION action, uint8_t channel, uint16_t data);

@@ -523,7 +523,7 @@ void GlobalControl::resetSequencer()
 
 void GlobalControl::enableVCOCalibration(TouchChannel *channel)
 {
-    ctrl_send_command(channel->channelIndex, CTRL_CMNDS::ENTER_1VO_CALIBRATION);
+    ctrl_dispatch(CTRL_ACTION::ENTER_1VO_CALIBRATION, channel->channelIndex, 0);
 }
 
 void GlobalControl::disableVCOCalibration() {

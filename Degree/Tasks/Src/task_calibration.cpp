@@ -169,7 +169,7 @@ void taskCalibrate(void *params)
             if (iteration == DAC_1VO_ARR_SIZE - 1) {
                 logger_log("\n\n*** CALIBRATION FINISHED ***");
                 // send a notification to exitCalibration task
-                ctrl_send_command(channel->channelIndex, CTRL_CMNDS::EXIT_1VO_CALIBRATION);
+                ctrl_dispatch(CTRL_ACTION::EXIT_1VO_CALIBRATION, channel->channelIndex, 0);
             }
 
             calibrationAttemps = 0;

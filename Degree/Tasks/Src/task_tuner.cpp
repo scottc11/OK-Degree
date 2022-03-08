@@ -5,7 +5,7 @@ QueueHandle_t tuner_queue;
 TaskHandle_t tuner_task_handle;
 
 void timer_callback() {
-    ctrl_send_command(1, CTRL_CMNDS::EXIT_VCO_TUNING);
+    ctrl_dispatch(CTRL_ACTION::EXIT_VCO_TUNING, 0, 0);
 }
 
 void task_tuner(void *params)
