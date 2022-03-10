@@ -247,6 +247,10 @@ void GlobalControl::handleButtonPress(int pad)
             this->enableVCOCalibration(channels[selectedChannel]);
         }
         break;
+    
+    case Gestures::FULL_SYSTEM_RESET:
+        HAL_NVIC_SystemReset();
+        break;
 
     case BEND_MODE:
         // iterate over currTouched and setChannelBenderMode if touched
