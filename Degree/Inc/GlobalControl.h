@@ -93,6 +93,8 @@ namespace DEGREE {
         void advanceSequencer(uint8_t pulse);
         void resetSequencer();
 
+        void handleTempoAdjustment(uint16_t value);
+
         void handleButtonPress(int pad);
         void handleButtonRelease(int pad);
 
