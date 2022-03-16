@@ -45,7 +45,9 @@ void GlobalControl::init() {
     clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
     clock->disableInputCaptureISR(); // pollTempoPot() will re-enable should pot be in teh right position
-    this->pollTempoPot();
+    currTempoPotValue = tempoPot.read_u16();
+    handleTempoAdjustment(currTempoPotValue);
+    prevTempoPotValue = currTempoPotValue;
     clock->start();
 }
 
@@ -100,15 +102,25 @@ void GlobalControl::pollTempoPot()
 {
     currTempoPotValue = tempoPot.read_u16();
     if (currTempoPotValue > prevTempoPotValue + 600 || currTempoPotValue < prevTempoPotValue - 600) {
-        if (currTempoPotValue > 1000)
-        {
-            if (clock->externalInputMode) { clock->disableInputCaptureISR(); }
-            clock->setPulseFrequency(clock->convertADCReadToTicks(1000, BIT_MAX_16, currTempoPotValue));
-        } else {
-            // change clock source to input mode by enabling input capture ISR
-            clock->enableInputCaptureISR();
-        }
+        handleTempoAdjustment(currTempoPotValue);
         prevTempoPotValue = currTempoPotValue;
+    }
+}
+
+void GlobalControl::handleTempoAdjustment(uint16_t value)
+{
+    if (value > 1000)
+    {
+        if (clock->externalInputMode)
+        {
+            clock->disableInputCaptureISR();
+        }
+        clock->setPulseFrequency(clock->convertADCReadToTicks(1000, BIT_MAX_16, value));
+    }
+    else
+    {
+        // change clock source to input mode by enabling input capture ISR
+        clock->enableInputCaptureISR();
     }
 }
 
@@ -234,6 +246,10 @@ void GlobalControl::handleButtonPress(int pad)
             gestureFlag = false;
             this->enableVCOCalibration(channels[selectedChannel]);
         }
+        break;
+    
+    case Gestures::FULL_SYSTEM_RESET:
+        HAL_NVIC_SystemReset();
         break;
 
     case BEND_MODE:

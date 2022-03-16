@@ -93,6 +93,8 @@ namespace DEGREE {
         void advanceSequencer(uint8_t pulse);
         void resetSequencer();
 
+        void handleTempoAdjustment(uint16_t value);
+
         void handleButtonPress(int pad);
         void handleButtonRelease(int pad);
 
@@ -157,7 +159,8 @@ namespace DEGREE {
             CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
             RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
             CALIBRATE_1VO = SHIFT | CMODE,
-            CLEAR_SEQ_ALL = CLEAR_SEQ_BEND | CLEAR_SEQ_TOUCH
+            CLEAR_SEQ_ALL = CLEAR_SEQ_BEND | CLEAR_SEQ_TOUCH,
+            FULL_SYSTEM_RESET = SHIFT | SEQ_LENGTH | QUANTIZE_AMOUNT | CMODE
         };
     };
 }
