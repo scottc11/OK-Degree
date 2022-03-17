@@ -1021,7 +1021,8 @@ void TouchChannel::initializeCalibration() {
     output.resetVoltageMap(); // You should reset prior to tuning
     output.resetDAC();
     display->clear();
-    display->drawSpiral(channelIndex, true, 50);
+    display->drawSpiral(channelIndex, true, 0);
+    display->flash(3, 200);
     display->clear();
 }
 

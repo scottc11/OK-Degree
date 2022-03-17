@@ -59,6 +59,20 @@ void Display::setLED(int index, bool state, uint8_t pwm /*=OK_PWM_HIGH*/) {
 }
 
 /**
+ * @brief Set a column of LEDs
+ * @param column value between 0..15
+ * @param state on or off
+ * @param pwm brightness
+ */
+void Display::setColumn(int column, bool state, uint8_t pwm/*=OK_PWM_HIGH*/)
+{
+    this->setLED(column, state, pwm);
+    this->setLED(column + 16, state, pwm);
+    this->setLED(column + 32, state, pwm);
+    this->setLED(column + 48, state, pwm);
+}
+
+/**
  * @brief set an LED in a channels 4x4 grid
  *
  * @param chan index of the target channel

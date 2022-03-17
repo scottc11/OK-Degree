@@ -57,6 +57,7 @@ public:
     void fill(int chan);
     void setGlobalCurrent(uint8_t value);
     void setLED(int index, bool state, uint8_t pwm=OK_PWM_HIGH);
+    void setColumn(int column, bool state, uint8_t pwm=OK_PWM_HIGH);
     void setChannelLED(int chan, int index, bool on);
     void setSequenceLEDs(int chan, int length, int diviser, bool on);
     void stepSequenceLED(int chan, int currStep, int prevStep, int length);
