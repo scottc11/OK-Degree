@@ -8,12 +8,12 @@ TaskHandle_t thController;
 
 CTRL_ACTION noti_get_command(uint32_t notification)
 {
-    return (CTRL_ACTION)bitwise_slice(notification, 8, 8);
+    return (CTRL_ACTION)bitwise_slice(notification, 0, 8);
 }
 
 uint8_t noti_get_channel(uint32_t notification)
 {
-    return (uint8_t)bitwise_slice(notification, 0, 8);
+    return (uint8_t)bitwise_slice(notification, 8, 8);
 }
 
 uint16_t noti_get_data(uint32_t notification) {
