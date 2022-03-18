@@ -55,10 +55,12 @@ void task_tuner(void *params)
         {
             if (sampledFrequency < prevFrequency)
             {
+                // definetely blink the LEDs when it reaches this point.
                 channel->display->setColumn(0, true, OK_PWM_MID);
                 channel->display->setColumn(1, true, OK_PWM_LOW);
             } else {
-                sampledColumn = map_num_in_range<float>(sampledFrequency, prevFrequency, targetFrequency, 0, 6);
+                // maybe increase the blink frequency the closer you get to target?
+                sampledColumn = map_num_in_range<float>(sampledFrequency, prevFrequency, targetFrequency, 0, 7);
                 channel->display->setColumn(sampledColumn, true, OK_PWM_MID);
             }
             timer.reset();

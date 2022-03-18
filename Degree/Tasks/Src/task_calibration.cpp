@@ -162,8 +162,8 @@ void taskCalibrate(void *params)
             logger_log(" :: attempts= ");
             logger_log(calibrationAttemps);
 
-            int ledIndex = map_num_in_range<int>(iteration, 0, DAC_1VO_ARR_SIZE, 0, 15);
-            channel->display->setChannelLED(channel->channelIndex, ledIndex, true);
+            int ledIndex = map_num_in_range<int>(iteration, 0, DAC_1VO_ARR_SIZE, 0, 63);
+            channel->display->setLED(ledIndex, true);
 
             // if we are on the final iteration, then some how breakout of all this crap.
             if (iteration == DAC_1VO_ARR_SIZE - 1) {
@@ -245,20 +245,5 @@ void taskTuner(void *params) {
     
 }
 
-// void taskCalibrationHandler(void *params) {
-//     while (1)
-//     {
-//         // take freq_sample_ready semaphore
-//         switch (notification)
-//         {
-//         case TUNE_VCO:
-//             // give tuning semaphore
-//             break;
-//         case CALIBRATE_VCO:
-//             // give calibrate semaphore
-//             break;
-//         default:
-//             break;
-//         }
-//     }
-// }
+// during calibration, you should light the whole display very dim, and then blink all the LEDs which have
+// not yet been reached and turn all LEDs which have been reach solid and bright
