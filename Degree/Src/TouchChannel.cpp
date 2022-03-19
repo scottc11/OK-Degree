@@ -546,7 +546,7 @@ void TouchChannel::handleRatchet(int position, uint16_t value)
 */
 
 void TouchChannel::handleBend(uint16_t value) {
-    switch (this->benderMode)
+    switch (this->currBenderMode)
     {
     case BEND_OFF:
         // do nothing, bender instance will update its DAC on its own
@@ -592,19 +592,23 @@ void TouchChannel::handlePitchBend(uint16_t value) {
 */
 int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
 {
+    if (targetMode != INCREMENT_BENDER_MODE || targetMode != BEND_MENU) {
+        prevBenderMode = currBenderMode;
+    }
+
     if (targetMode != INCREMENT_BENDER_MODE)
     {
-        benderMode = targetMode;
+        currBenderMode = targetMode;
     }
-    else if (benderMode < 3)
+    else if (currBenderMode < 3)
     {
-        benderMode += 1;
+        currBenderMode += 1;
     }
     else
     {
-        benderMode = 0;
+        currBenderMode = 0;
     }
-    switch (benderMode)
+    switch (currBenderMode)
     {
     case BEND_OFF:
         setLED(CHANNEL_RATCHET_LED, OFF);
@@ -628,7 +632,7 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
         display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
         break;
     }
-    return benderMode;
+    return currBenderMode;
 }
 
 /**
@@ -662,7 +666,7 @@ void TouchChannel::benderIdleCallback()
     }
     
 
-    switch (this->benderMode) // do you need this? Or can you call handleBend()?
+    switch (this->currBenderMode) // do you need this? Or can you call handleBend()?
     {
     case BEND_OFF:
         break;
@@ -682,7 +686,7 @@ void TouchChannel::benderIdleCallback()
 
 void TouchChannel::benderTriStateCallback(Bender::BendState state)
 {
-    switch (this->benderMode)
+    switch (this->currBenderMode)
     {
     case BEND_OFF:
         break;
