@@ -695,13 +695,13 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
     case BEND_MENU:
         if (state == Bender::BendState::BENDING_UP)
         {
-            sequence.setLength(sequence.length + 1);
+            sequence.setLength(sequence.length + 2);
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
         }
         else if (state == Bender::BendState::BENDING_DOWN)
         {
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, false);
-            sequence.setLength(sequence.length - 1);
+            sequence.setLength(sequence.length - 2);
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
         }
         break;
