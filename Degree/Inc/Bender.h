@@ -57,7 +57,6 @@ public:
 
     void init();
     void poll();
-    void handleBend(uint16_t value, bool triggerCallbacks);
     uint16_t read();
     uint16_t getIdleValue();
     uint16_t getMaxBend();
@@ -67,7 +66,7 @@ public:
 
     void setRatchetThresholds();
     void updateDAC(uint16_t value);
-    bool isIdle(uint16_t value);
+    bool isIdle();
     int setMode(int targetMode = 0);
     uint16_t calculateOutput(uint16_t value);
     void attachIdleCallback(Callback<void()> func);

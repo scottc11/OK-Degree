@@ -25,7 +25,7 @@
 #define OCTAVE_COUNT 4
 #define DEGREE_COUNT 8
 
-#define DEFAULT_SEQ_LENGTH 32
+#define DEFAULT_SEQ_LENGTH 8
 #define MAX_SEQ_LENGTH 32
 
 #define BENDER_DAC_ZERO        32767

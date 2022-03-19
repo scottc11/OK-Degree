@@ -22,28 +22,20 @@ void Bender::init()
 
 // polling should no longer check if the bender is idle. It should just update the DAC and call the activeCallback
 // there are no cycles being saved either way.
-void Bender::poll()
-{
-    handleBend(this->read(), true);
-}
-
-void Bender::handleBend(uint16_t value, bool triggerCallbacks) {
-    if (this->isIdle(value))
+void Bender::poll() {
+    if (this->isIdle())
     {
         currState = BENDING_IDLE;
         currBend = BENDER_DAC_ZERO;
-        this->updateDAC(currBend);
         
-        // these callbacks should be moved outside, so that you can "handle" a bend event without triggering any callbacks
-        if (idleCallback && triggerCallbacks)
+        if (idleCallback)
             idleCallback();
     }
     else
     {
-        currBend = calculateOutput(value);
-        this->updateDAC(currBend);
-        if (activeCallback && triggerCallbacks)
-            activeCallback(value);
+        currBend = calculateOutput(this->read());
+        if (activeCallback)
+            activeCallback(currBend); // should this be passing the currBend value or the raw ADC value?
     }
 
     // handle tri-state
@@ -101,9 +93,9 @@ void Bender::updateDAC(uint16_t value)
     dac->write(dacChan, currOutput);
 }
 
-bool Bender::isIdle(uint16_t value)
+bool Bender::isIdle()
 {
-    if (value > this->getIdleValue() + BENDER_NOISE_THRESHOLD || value < this->getIdleValue() - BENDER_NOISE_THRESHOLD)
+    if (this->read() > this->getIdleValue() + BENDER_NOISE_THRESHOLD || this->read() < this->getIdleValue() - BENDER_NOISE_THRESHOLD)
     {
         return false;
     }
@@ -151,7 +143,7 @@ void Bender::setRatchetThresholds()
  * @return uint16_t
  */
 uint16_t Bender::getIdleValue() {
-    return adc.avgValueWhenIdle;
+    return adc.avgValueWhenIdle; // NOTE: careful with this value - you may prefer to use BENDER_DAC_ZERO instead
 }
 
 /**

@@ -116,7 +116,7 @@ void SuperSeq::clearAllBendEvents() {
  */
 void SuperSeq::clearBendAtPosition(int position)
 {
-    events[position].bend = bender->getIdleValue();
+    events[position].bend = BENDER_DAC_ZERO;
 };
 
 /**
