@@ -59,19 +59,19 @@ uint16_t Bender::calculateOutput(uint16_t value)
     uint16_t output;
     
     // BEND UP
-    if (value > this->getIdleValue() && value < this->getMaxBend())
+    if (value > adc.avgValueWhenIdle && value < adc.inputMax)
     {
         currState = BENDING_UP;
 
-        output = (((float)dacOutputRange / (this->getMaxBend() - this->getIdleValue())) * (value - this->getIdleValue()));
+        output = (((float)dacOutputRange / (adc.inputMax - adc.avgValueWhenIdle)) * (value - adc.avgValueWhenIdle));
         return (BENDER_DAC_ZERO - output); // inverted
     }
 
     // BEND DOWN
-    else if (value < this->getIdleValue() && value > this->getMinBend())
+    else if (value < adc.avgValueWhenIdle && value > adc.inputMin)
     {
         currState = BENDING_DOWN;
-        output = (((float)dacOutputRange / (this->getMinBend() - this->getIdleValue())) * (value - this->getIdleValue()));
+        output = (((float)dacOutputRange / (adc.inputMin - adc.avgValueWhenIdle)) * (value - adc.avgValueWhenIdle));
         return (BENDER_DAC_ZERO + output); // non-inverted
     }
     // ELSE executes when a bender is poorly calibrated, and exceeds its max or min bend
@@ -95,7 +95,7 @@ void Bender::updateDAC(uint16_t value)
 
 bool Bender::isIdle()
 {
-    if (this->read() > this->getIdleValue() + BENDER_NOISE_THRESHOLD || this->read() < this->getIdleValue() - BENDER_NOISE_THRESHOLD)
+    if (this->read() > adc.avgValueWhenIdle + BENDER_NOISE_THRESHOLD || this->read() < adc.avgValueWhenIdle - BENDER_NOISE_THRESHOLD)
     {
         return false;
     }
@@ -143,7 +143,7 @@ void Bender::setRatchetThresholds()
  * @return uint16_t
  */
 uint16_t Bender::getIdleValue() {
-    return adc.avgValueWhenIdle; // NOTE: careful with this value - you may prefer to use BENDER_DAC_ZERO instead
+    return BENDER_DAC_ZERO; // NOTE: careful with this value - you may prefer to use BENDER_DAC_ZERO instead
 }
 
 /**
@@ -153,7 +153,7 @@ uint16_t Bender::getIdleValue() {
  */
 uint16_t Bender::getMaxBend()
 {
-    return adc.inputMax;
+    return BIT_MAX_16;
 }
 
 /**
@@ -163,5 +163,5 @@ uint16_t Bender::getMaxBend()
  */
 uint16_t Bender::getMinBend()
 {
-    return adc.inputMin;
+    return 0;
 }
