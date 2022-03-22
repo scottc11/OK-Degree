@@ -23,9 +23,36 @@ void Bender::init()
 // polling should no longer check if the bender is idle. It should just update the DAC and call the activeCallback
 // there are no cycles being saved either way.
 void Bender::poll() {
+    
+    // handle hysterisis 
+    switch (currState)
+    {
+    case BENDING_IDLE:
+        if (adc.read_u16() > adc.avgValueWhenIdle + BENDER_NOISE_THRESHOLD)
+        {
+            currState = BENDING_UP;
+        }
+        else if (this->read() < adc.avgValueWhenIdle - BENDER_NOISE_THRESHOLD)
+        {
+            currState = BENDING_DOWN;
+        }
+        break; 
+    case BENDING_UP:
+        if (adc.read_u16() < adc.avgValueWhenIdle + BENDER_NOISE_THRESHOLD - BENDER_HYSTERESIS)
+        {
+            currState = BENDING_IDLE;
+        }
+        break;
+    case BENDING_DOWN:
+        if (adc.read_u16() > adc.avgValueWhenIdle - BENDER_NOISE_THRESHOLD + BENDER_HYSTERESIS)
+        {
+            currState = BENDING_IDLE;
+        }
+        break;
+    }
+
     if (this->isIdle())
     {
-        currState = BENDING_IDLE;
         currBend = BENDER_DAC_ZERO;
         
         if (idleCallback)
@@ -61,8 +88,6 @@ uint16_t Bender::calculateOutput(uint16_t value)
     // BEND UP
     if (value > adc.avgValueWhenIdle && value < adc.inputMax)
     {
-        currState = BENDING_UP;
-
         output = (((float)dacOutputRange / (adc.inputMax - adc.avgValueWhenIdle)) * (value - adc.avgValueWhenIdle));
         return (BENDER_DAC_ZERO - output); // inverted
     }
@@ -70,7 +95,6 @@ uint16_t Bender::calculateOutput(uint16_t value)
     // BEND DOWN
     else if (value < adc.avgValueWhenIdle && value > adc.inputMin)
     {
-        currState = BENDING_DOWN;
         output = (((float)dacOutputRange / (adc.inputMin - adc.avgValueWhenIdle)) * (value - adc.avgValueWhenIdle));
         return (BENDER_DAC_ZERO + output); // non-inverted
     }
@@ -95,12 +119,10 @@ void Bender::updateDAC(uint16_t value)
 
 bool Bender::isIdle()
 {
-    if (this->read() > adc.avgValueWhenIdle + BENDER_NOISE_THRESHOLD || this->read() < adc.avgValueWhenIdle - BENDER_NOISE_THRESHOLD)
+    if (currState != BENDING_IDLE)
     {
         return false;
-    }
-    else
-    {
+    } else {
         return true;
     }
 }
