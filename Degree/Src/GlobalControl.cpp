@@ -348,7 +348,7 @@ void GlobalControl::handleButtonRelease(int pad)
             channels[getTouchedChannel()]->disableSequenceRecording();
         }
         break;
-    case SEQ_LENGTH:
+    case SEQ_LENGTH: // exit sequence length UI
         this->display->clear();
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
@@ -356,7 +356,7 @@ void GlobalControl::handleButtonRelease(int pad)
             {
                 display->setSequenceLEDs(chan, channels[chan]->sequence.length, 2, true);
             }
-            channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_OFF);
+            channels[chan]->setBenderMode((TouchChannel::BenderMode)channels[chan]->prevBenderMode);
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_DEFAULT);
         }
         break;

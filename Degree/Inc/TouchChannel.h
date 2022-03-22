@@ -106,7 +106,6 @@ namespace DEGREE {
             globalGateOut = global_gate_ptr;
             uiMode = UIMode::UI_DEFAULT;
             playbackMode = PlaybackMode::MONO;
-            benderMode = PITCH_BEND;
             currDegree = 0;
             currOctave = 0;
             
@@ -135,7 +134,8 @@ namespace DEGREE {
         UIMode uiMode;
         PlaybackMode playbackMode;
 
-        int benderMode;
+        int currBenderMode;
+        int prevBenderMode;
 
         uint8_t currDegree;
         uint8_t currOctave;

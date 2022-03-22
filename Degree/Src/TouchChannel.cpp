@@ -546,7 +546,7 @@ void TouchChannel::handleRatchet(int position, uint16_t value)
 */
 
 void TouchChannel::handleBend(uint16_t value) {
-    switch (this->benderMode)
+    switch (this->currBenderMode)
     {
     case BEND_OFF:
         // do nothing, bender instance will update its DAC on its own
@@ -574,13 +574,13 @@ void TouchChannel::handlePitchBend(uint16_t value) {
         if (bender->currState == Bender::BENDING_UP)
         {
             pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
-            output.setPitchBend(pitchbend); // non-inverted
+            output.setPitchBend(pitchbend * -1); // NOTE: inverted mapping
         }
         // Pitch Bend DOWN
         else if (bender->currState == Bender::BENDING_DOWN)
         {
-            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend()); // NOTE: inverted mapping
-            output.setPitchBend(pitchbend * -1);                                                        // inverted
+            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend());
+            output.setPitchBend(pitchbend);
         }
     }
     
@@ -592,19 +592,23 @@ void TouchChannel::handlePitchBend(uint16_t value) {
 */
 int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
 {
+    if (targetMode != INCREMENT_BENDER_MODE || targetMode != BEND_MENU) {
+        prevBenderMode = currBenderMode;
+    }
+
     if (targetMode != INCREMENT_BENDER_MODE)
     {
-        benderMode = targetMode;
+        currBenderMode = targetMode;
     }
-    else if (benderMode < 3)
+    else if (currBenderMode < 3)
     {
-        benderMode += 1;
+        currBenderMode += 1;
     }
     else
     {
-        benderMode = 0;
+        currBenderMode = 0;
     }
-    switch (benderMode)
+    switch (currBenderMode)
     {
     case BEND_OFF:
         setLED(CHANNEL_RATCHET_LED, OFF);
@@ -628,7 +632,7 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
         display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
         break;
     }
-    return benderMode;
+    return currBenderMode;
 }
 
 /**
@@ -638,8 +642,7 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
  */
 void TouchChannel::benderActiveCallback(uint16_t value)
 {
-    // you need to disable the sequencer bend handler inside this callback, because this callback
-    // will trigger independant what the sequencer is doing, yet if record enabled, you want to
+    bender->updateDAC(value);
 
     // overdub existing bend events when record enabled
     // override existng bend events when record disabled (but sequencer still ON)
@@ -647,15 +650,23 @@ void TouchChannel::benderActiveCallback(uint16_t value)
     {
         sequence.createBendEvent(sequence.currPosition, value);
     }
-    sequence.bendEnabled = false;
     this->handleBend(value);
 }
 
 void TouchChannel::benderIdleCallback()
 {
-    sequence.bendEnabled = true;
+    if (sequence.playbackEnabled)
+    {
+        if (!sequence.containsBendEvents)
+        {
+            bender->updateDAC(bender->currBend); // currBend gets set to ist idle value in the underlying handler
+        }
+    } else {
+        bender->updateDAC(bender->currBend);
+    }
     
-    switch (this->benderMode)
+
+    switch (this->currBenderMode) // do you need this? Or can you call handleBend()?
     {
     case BEND_OFF:
         break;
@@ -675,7 +686,7 @@ void TouchChannel::benderIdleCallback()
 
 void TouchChannel::benderTriStateCallback(Bender::BendState state)
 {
-    switch (this->benderMode)
+    switch (this->currBenderMode)
     {
     case BEND_OFF:
         break;
@@ -688,13 +699,13 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
     case BEND_MENU:
         if (state == Bender::BendState::BENDING_UP)
         {
-            sequence.setLength(sequence.length + 1);
+            sequence.setLength(sequence.length + 2);
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
         }
         else if (state == Bender::BendState::BENDING_DOWN)
         {
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, false);
-            sequence.setLength(sequence.length - 1);
+            sequence.setLength(sequence.length - 2);
             display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
         }
         break;
@@ -948,10 +959,10 @@ void TouchChannel::handleSequence(int position)
     // Handle Bend Events
     if (sequence.containsBendEvents)
     {
-        if (sequence.bendEnabled)
+        if (bender->isIdle())
         {
             this->handleBend(sequence.getBend(position));
-            this->bender->handleBend(sequence.getBend(position), false);
+            this->bender->updateDAC(sequence.getBend(position));
         }
     }
 }
