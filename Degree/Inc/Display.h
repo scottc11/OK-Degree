@@ -21,11 +21,9 @@
 #pragma once
 
 #include "main.h"
+#include <array>
 #include "IS31FL3739.h"
 
-#define OK_PWM_HIGH 255
-#define OK_PWM_MID 80
-#define OK_PWM_LOW 20
 #define DISPLAY_LED_COUNT         64
 #define DISPLAY_CHANNEL_LED_COUNT 16
 
@@ -41,11 +39,20 @@ static const int DISPLAY_SQUARE_LED_MAP[DISPLAY_SQUARE_LENGTH] = {0, 1, 2, 3, 7,
 #define DISPLAY_SPIRAL_LENGTH 16
 static const int DISPLAY_SPIRAL_LED_MAP[DISPLAY_SPIRAL_LENGTH] = {0, 1, 2, 3, 7, 11, 15, 14, 13, 12, 8, 4, 5, 6, 10, 9};
 
+enum PWM : uint8_t
+{
+    PWM_OFF = 0,
+    PWM_LOW = 20,
+    PWM_LOW_MID = 80,
+    PWM_MID = 127,
+    PWM_MID_HIGH = 180,
+    PWM_HIGH = 255,
+};
+
 class Display
 {
 public:
     
-    uint8_t state[4][16];
     IS31FL3739 ledMatrix;
 
     Display(I2C *i2c_ptr) : ledMatrix(i2c_ptr) {}
@@ -55,10 +62,14 @@ public:
     void clear(int chan);
     void fill();
     void fill(int chan);
+
+    void saveScene(int scene);
+    void restoreScene(int scene);
+
     void setGlobalCurrent(uint8_t value);
-    void setLED(int index, bool state, uint8_t pwm=OK_PWM_HIGH);
-    void setColumn(int column, bool state, uint8_t pwm=OK_PWM_HIGH);
-    void setChannelLED(int chan, int index, bool on);
+    void setLED(int index, uint8_t pwm);
+    void setColumn(int column, uint8_t pwm);
+    void setChannelLED(int chan, int index, uint8_t pwm);
     void setSequenceLEDs(int chan, int length, int diviser, bool on);
     void stepSequenceLED(int chan, int currStep, int prevStep, int length);
     void benderCalibration();
@@ -66,4 +77,8 @@ public:
     void drawSquare(int chan, TickType_t speed);
     void drawSpiral(int chan, bool direction, TickType_t speed);
     void flash(int flashes, TickType_t ticks);
+
+private:
+    std::array<uint8_t, 64> _state;
+    std::array< std::array<uint8_t, 2>, 64> _scene_storage; // array to store the PWM value of each LED
 };

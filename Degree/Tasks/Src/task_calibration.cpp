@@ -108,7 +108,7 @@ void taskCalibrate(void *params)
     float targetFreq;           // where we want the frequency to get to
     int targetFreqIndex;        // current voltage map iteration + initial pitch index
     int iteration = 0;          // the current interation in the voltage map array
-    int initialPitchIndex;      // the index of the initial target frequency in PITCH_FREQ_ARR
+    int initialPitchIndex = 0;  // the index of the initial target frequency in PITCH_FREQ_ARR
     bool initialized = false;   //
     
     while (1)
@@ -163,7 +163,7 @@ void taskCalibrate(void *params)
             logger_log(calibrationAttemps);
 
             int ledIndex = map_num_in_range<int>(iteration, 0, DAC_1VO_ARR_SIZE, 0, 63);
-            channel->display->setLED(ledIndex, true);
+            channel->display->setLED(ledIndex, PWM::PWM_HIGH);
 
             // if we are on the final iteration, then some how breakout of all this crap.
             if (iteration == DAC_1VO_ARR_SIZE - 1) {
@@ -215,35 +215,5 @@ void taskCalibrate(void *params)
     }
     
 }
-
-static const float TARGET_FREQUENCY_C1 = PITCH_FREQ_ARR[0];
-static const float TARGET_FREQUENCY_C2 = PITCH_FREQ_ARR[12];
-static const float TARGET_FREQUENCY_C3 = PITCH_FREQ_ARR[24];
-
-void taskTuner(void *params) {
-    TouchChannel *channel = (TouchChannel *)params;
-    float sampledFrequency = 0;
-    while (1)
-    {
-        // listen for a notification for a freq sample being ready
-        
-        // once sample obtained, compare that value to a target value
-        // target values should be all C notes under a certain range
-
-        if (sampledFrequency > TARGET_FREQUENCY_C1 + TUNING_TOLERANCE)
-        {
-            // top half leds light up relative to how far away from the target frequency you are
-        }
-        else if (sampledFrequency < TARGET_FREQUENCY_C1 - TUNING_TOLERANCE)
-        {
-            // bottom half leds light up relative to how far away from the target frequency you are
-        }
-        else {
-            // light up middle two rows of display
-        }
-    }
-    
-}
-
 // during calibration, you should light the whole display very dim, and then blink all the LEDs which have
 // not yet been reached and turn all LEDs which have been reach solid and bright

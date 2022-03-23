@@ -28,8 +28,8 @@ void task_tuner(void *params)
         // listen for items on queue
         xQueueReceive(tuner_queue, &sampledFrequency, portMAX_DELAY);
         channel->display->clear();
-        channel->display->setColumn(7, true);
-        channel->display->setColumn(8, true);
+        channel->display->setColumn(7, PWM::PWM_HIGH);
+        channel->display->setColumn(8, PWM::PWM_HIGH);
 
         // find the closest target frequence relative to incoming frequency
         int index = arr_find_closest_float(const_cast<float *>(TUNER_TARGET_FREQUENCIES), 3, sampledFrequency);
@@ -43,11 +43,11 @@ void task_tuner(void *params)
         {
             if (sampledFrequency > nextFrequency) // indicate
             {
-                channel->display->setColumn(15, true, OK_PWM_MID);
-                channel->display->setColumn(14, true, OK_PWM_LOW);
+                channel->display->setColumn(15, PWM::PWM_LOW_MID);
+                channel->display->setColumn(14, PWM::PWM_LOW);
             } else {
                 sampledColumn = map_num_in_range<float>(sampledFrequency, targetFrequency, nextFrequency, 9, 15);
-                channel->display->setColumn(sampledColumn, true, OK_PWM_MID);
+                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID);
             }
             timer.reset();
         }
@@ -56,12 +56,12 @@ void task_tuner(void *params)
             if (sampledFrequency < prevFrequency)
             {
                 // definetely blink the LEDs when it reaches this point.
-                channel->display->setColumn(0, true, OK_PWM_MID);
-                channel->display->setColumn(1, true, OK_PWM_LOW);
+                channel->display->setColumn(0, PWM::PWM_LOW_MID);
+                channel->display->setColumn(1, PWM::PWM_LOW);
             } else {
                 // maybe increase the blink frequency the closer you get to target?
                 sampledColumn = map_num_in_range<float>(sampledFrequency, prevFrequency, targetFrequency, 0, 7);
-                channel->display->setColumn(sampledColumn, true, OK_PWM_MID);
+                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID);
             }
             timer.reset();
         }
@@ -70,16 +70,5 @@ void task_tuner(void *params)
             // flash the columns
             timer.start();
         }
-    }
-}
-
-// you need a task that can hold the current state of the display so that it can blink/flash certain LEDs without having to 
-// re-render the entire matrix.
-void TASK_Display(void *params)
-{
-    uint8_t display_state_pwm[64];
-    while (1)
-    {
-        /* code */
     }
 }

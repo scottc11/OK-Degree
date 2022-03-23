@@ -1075,5 +1075,5 @@ void TouchChannel::displayProgressCallback(uint16_t progress)
 {
     // map the incoming progress to a value between 0..16
     progress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, 15);
-    this->display->setChannelLED(this->channelIndex, progress, true);
+    this->display->setChannelLED(this->channelIndex, progress, PWM::PWM_MID_HIGH);
 }

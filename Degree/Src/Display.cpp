@@ -41,6 +41,15 @@ void Display::fill(int chan)
     }
 }
 
+void Display::saveScene(int scene)
+{
+    
+}
+
+void Display::restoreScene(int scene) {
+
+}
+
 /**
  * @brief set the current for ALL LEDs in the display. Ideal for blinking everything at once
  * 
@@ -54,8 +63,10 @@ void Display::setGlobalCurrent(uint8_t value) {
     }
 }
 
-void Display::setLED(int index, bool state, uint8_t pwm /*=OK_PWM_HIGH*/) {
-    ledMatrix.setPWM(index, state ? pwm : 0);
+void Display::setLED(int index, uint8_t pwm)
+{
+    _state[index] = pwm;
+    ledMatrix.setPWM(index, pwm);
 }
 
 /**
@@ -64,12 +75,12 @@ void Display::setLED(int index, bool state, uint8_t pwm /*=OK_PWM_HIGH*/) {
  * @param state on or off
  * @param pwm brightness
  */
-void Display::setColumn(int column, bool state, uint8_t pwm/*=OK_PWM_HIGH*/)
+void Display::setColumn(int column, uint8_t pwm)
 {
-    this->setLED(column, state, pwm);
-    this->setLED(column + 16, state, pwm);
-    this->setLED(column + 32, state, pwm);
-    this->setLED(column + 48, state, pwm);
+    this->setLED(column, pwm);
+    this->setLED(column + 16, pwm);
+    this->setLED(column + 32, pwm);
+    this->setLED(column + 48, pwm);
 }
 
 /**
@@ -79,9 +90,9 @@ void Display::setColumn(int column, bool state, uint8_t pwm/*=OK_PWM_HIGH*/)
  * @param index value between 0..15. 0 is top left of the grid, 15 is bottom right of the grid
  * @param on on or off
  */
-void Display::setChannelLED(int chan, int index, bool on)
+void Display::setChannelLED(int chan, int index, uint8_t pwm)
 {
-    ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][index], on ? OK_PWM_HIGH : 0);
+    this->setLED(CHAN_DISPLAY_LED_MAP[chan][index], pwm);
 }
 
 /**
@@ -92,13 +103,13 @@ void Display::setSequenceLEDs(int chan, int length, int diviser, bool on)
     // illuminate each channels sequence length
     for (int i = 0; i < length / diviser; i++)
     {
-        ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][i], on ? OK_PWM_MID : 0);
+        this->setChannelLED(chan, i, on ? PWM::PWM_LOW_MID : 0);
     }
 
     if (length % 2 == 1)
     {
         int oddLedIndex = (length / diviser);
-        ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][oddLedIndex], on ? OK_PWM_LOW : 0);
+        this->setChannelLED(chan, oddLedIndex, on ? PWM::PWM_LOW : 0);
     }
 }
 
@@ -107,19 +118,19 @@ void Display::stepSequenceLED(int chan, int currStep, int prevStep, int length)
     if (currStep % 2 == 0)
     {
         // set currStep PWM High
-        ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][currStep / 2], OK_PWM_HIGH);
+        this->setChannelLED(chan, currStep / 2, PWM::PWM_HIGH);
 
         // handle odd sequence lengths.
         //  The last LED in sequence gets set to a different PWM
         if (prevStep == length - 1 && length % 2 == 1)
         {
-            ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][prevStep / 2], OK_PWM_LOW);
+            this->setChannelLED(chan, prevStep / 2, PWM::PWM_LOW);
         }
         // regular sequence lengths
         else
         {
             // set prevStep PWM back to Mid
-            ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][prevStep / 2], OK_PWM_MID);
+            this->setChannelLED(chan, prevStep / 2, PWM::PWM_LOW_MID);
         }
     }
 }
@@ -138,11 +149,11 @@ void Display::benderCalibration()
         {
             if (i >= 0 && i < 4)
             {
-                ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][i], OK_PWM_MID);
+                this->setChannelLED(chan, i, PWM::PWM_LOW_MID);
             }
             else if (i > 11)
             {
-                ledMatrix.setPWM(CHAN_DISPLAY_LED_MAP[chan][i], OK_PWM_MID);
+                this->setChannelLED(chan, i, PWM::PWM_LOW_MID);
             }
         }
     }
@@ -158,7 +169,7 @@ void Display::drawSquare(int chan, TickType_t speed)
 {
     for (int i = 0; i < DISPLAY_SQUARE_LENGTH; i++)
     {
-        this->setChannelLED(chan, DISPLAY_SQUARE_LED_MAP[i], true);
+        this->setChannelLED(chan, DISPLAY_SQUARE_LED_MAP[i], PWM::PWM_HIGH);
         vTaskDelay(speed);
     }
 }
@@ -176,7 +187,7 @@ void Display::drawSpiral(int chan, bool direction, TickType_t speed)
     for (int i = 0; i < DISPLAY_SPIRAL_LENGTH; i++)
     {
         index = direction ? i : (DISPLAY_SPIRAL_LENGTH - 1) - i;
-        this->setChannelLED(chan, DISPLAY_SPIRAL_LED_MAP[index], true);
+        this->setChannelLED(chan, DISPLAY_SPIRAL_LED_MAP[index], PWM::PWM_HIGH);
         vTaskDelay(speed);
     }
 }
