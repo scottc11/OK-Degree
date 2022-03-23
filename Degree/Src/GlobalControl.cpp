@@ -321,21 +321,25 @@ void GlobalControl::handleButtonRelease(int pad)
             channels[i]->setUIMode(TouchChannel::UIMode::UI_DEFAULT);
         }
         break;
+        
     case CLEAR_SEQ_TOUCH:
         if (!gestureFlag)
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < CHANNEL_COUNT; i++)
             {
                 channels[i]->sequence.clearAllTouchEvents();
-                channels[i]->disableSequenceRecording();
+                if (!recordEnabled)
+                    channels[i]->disableSequenceRecording();
             }
         }
         else // clear only curr touched channels sequences
         {
             channels[getTouchedChannel()]->sequence.clearAllTouchEvents();
-            channels[getTouchedChannel()]->disableSequenceRecording();
+            if (!recordEnabled)
+                channels[getTouchedChannel()]->disableSequenceRecording();
         }
         break;
+
     case CLEAR_SEQ_BEND:
         if (!gestureFlag) {
             for (int i = 0; i < CHANNEL_COUNT; i++)

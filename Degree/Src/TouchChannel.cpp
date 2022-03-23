@@ -997,10 +997,6 @@ void TouchChannel::enableSequenceRecording()
 }
 
 /**
- * NOTE: A nice feature here would be to only have the LEDs be red when REC is held down, and flash the green LEDs
- * when a channel contains loop events, but REC is NOT held down. You would only be able to add new events to
- * the loop when REC is held down (ie. when channel leds are RED)
- * 
  * NOTE: ADDITIONALLY, this would be a good place to count the amount of steps which have passed while the REC button has
  * been held down, and if this value is greater than the current loop length, update the loop length to accomodate.
  * the new loop length would just increase the multiplier by one
