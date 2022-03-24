@@ -3,6 +3,7 @@
 #include "main.h"
 #include "okSemaphore.h"
 #include "task_calibration.h"
+#include "task_display.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
