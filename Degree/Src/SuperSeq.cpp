@@ -319,20 +319,20 @@ uint8_t SuperSeq::readDegreeBits(uint8_t byte)
 
 uint8_t SuperSeq::setGateBits(bool state, uint8_t byte)
 {
-    return state ? bitSet(byte, SEQ_EVENT_GATE_BIT) : bitClear(byte, SEQ_EVENT_GATE_BIT);
+    return state ? bitwise_set_bit(byte, SEQ_EVENT_GATE_BIT) : bitwise_clear_bit(byte, SEQ_EVENT_GATE_BIT);
 }
 
 uint8_t SuperSeq::readGateBits(uint8_t byte)
 {
-    return bitRead(byte, SEQ_EVENT_GATE_BIT);
+    return bitwise_read_bit(byte, SEQ_EVENT_GATE_BIT);
 }
 
 uint8_t SuperSeq::setStatusBits(bool status, uint8_t byte)
 {
-    return status ? bitSet(byte, SEQ_EVENT_STATUS_BIT) : bitClear(byte, SEQ_EVENT_STATUS_BIT);
+    return status ? bitwise_set_bit(byte, SEQ_EVENT_STATUS_BIT) : bitwise_clear_bit(byte, SEQ_EVENT_STATUS_BIT);
 }
 
 uint8_t SuperSeq::readStatusBits(uint8_t byte)
 {
-    return bitRead(byte, SEQ_EVENT_STATUS_BIT);
+    return bitwise_read_bit(byte, SEQ_EVENT_STATUS_BIT);
 }

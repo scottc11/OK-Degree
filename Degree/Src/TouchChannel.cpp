@@ -229,11 +229,11 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
                 triggerNote(pad, currOctave, NOTE_ON);
                 break;
             case QUANTIZER:
-                setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
+                setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
                 break;
             case QUANTIZER_LOOP:
                 // every touch detected, take a snapshot of all active degree values and apply them to the sequence
-                setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
+                setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
                 sequence.createChordEvent(sequence.currPosition, activeDegrees);
                 break;
             default:
@@ -777,7 +777,7 @@ void TouchChannel::handleCVInput()
                     triggerNote(currDegree, prevOctave, NOTE_OFF);  // set previous triggered degree 
 
                     // re-DIM previously degree LED
-                    if (bitRead(activeDegrees, prevDegree))
+                    if (bitwise_read_bit(activeDegrees, prevDegree))
                     {
                         setDegreeLed(currDegree, BLINK_OFF);
                         setDegreeLed(currDegree, DIM_LOW);
@@ -788,7 +788,7 @@ void TouchChannel::handleCVInput()
                     setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK_ON);
 
                     // re-DIM previous Octave LED
-                    if (bitRead(currActiveOctaves, prevOctave))
+                    if (bitwise_read_bit(currActiveOctaves, prevOctave))
                     {
                         setOctaveLed(prevOctave, LedState::BLINK_OFF);
                         setOctaveLed(prevOctave, LedState::DIM_LOW);
@@ -819,7 +819,7 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
     numActiveDegrees = 0;
     for (int i = 0; i < DEGREE_COUNT; i++)
     {
-        if (bitRead(activeDegrees, i))
+        if (bitwise_read_bit(activeDegrees, i))
         {
             activeDegreeValues[numActiveDegrees].noteIndex = i;
             numActiveDegrees += 1;
@@ -836,7 +836,7 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
     numActiveOctaves = 0;
     for (int i = 0; i < OCTAVE_COUNT; i++)
     {
-        if (bitRead(currActiveOctaves, i))
+        if (bitwise_read_bit(currActiveOctaves, i))
         {
             activeOctaveValues[numActiveOctaves].octave = i;
             numActiveOctaves += 1;
@@ -871,9 +871,9 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
 */
 void TouchChannel::setActiveOctaves(int octave)
 {
-    if (bitFlip(currActiveOctaves, octave) != 0) // one octave must always remain active.
+    if (bitwise_flip_bit(currActiveOctaves, octave) != 0) // one octave must always remain active.
     {
-        currActiveOctaves = bitFlip(currActiveOctaves, octave);
+        currActiveOctaves = bitwise_flip_bit(currActiveOctaves, octave);
     }
 }
 
