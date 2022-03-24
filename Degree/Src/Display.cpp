@@ -29,7 +29,7 @@ void Display::fill(uint8_t pwm)
 {
     for (int i = 0; i < DISPLAY_LED_COUNT; i++)
     {
-        this->setLED(i, PWM::PWM_HIGH);
+        this->setLED(i, pwm);
     }
 }
 
@@ -37,7 +37,7 @@ void Display::fill(int chan, uint8_t pwm)
 {
     for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
     {
-        this->setChannelLED(chan, i, PWM::PWM_HIGH);
+        this->setChannelLED(chan, i, pwm);
     }
 }
 
