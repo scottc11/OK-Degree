@@ -13,7 +13,7 @@ void Display::clear()
 {
     for (int i = 0; i < DISPLAY_LED_COUNT; i++)
     {
-        this->setLED(i, false);
+        this->setLED(i, PWM::PWM_OFF);
     }
 }
 
@@ -21,7 +21,7 @@ void Display::clear(int chan)
 {
     for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
     {
-        this->setChannelLED(chan, i, false);
+        this->setChannelLED(chan, i, PWM::PWM_OFF);
     }
 }
 
@@ -29,7 +29,7 @@ void Display::fill()
 {
     for (int i = 0; i < DISPLAY_LED_COUNT; i++)
     {
-        this->setLED(i, true);
+        this->setLED(i, PWM::PWM_HIGH);
     }
 }
 
@@ -37,7 +37,7 @@ void Display::fill(int chan)
 {
     for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
     {
-        this->setChannelLED(chan, i, true);
+        this->setChannelLED(chan, i, PWM::PWM_HIGH);
     }
 }
 
