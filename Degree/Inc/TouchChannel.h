@@ -127,6 +127,7 @@ namespace DEGREE {
         VoltPerOctave output;        
         
         TaskHandle_t handleTouchTaskHandle;
+        QueueHandle_t touchEventQueue;
 
         uint8_t currRatchetRate;      //
         bool gateState;               // state of the gate output
