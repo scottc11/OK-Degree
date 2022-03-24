@@ -25,7 +25,7 @@ void Display::clear(int chan)
     }
 }
 
-void Display::fill()
+void Display::fill(uint8_t pwm)
 {
     for (int i = 0; i < DISPLAY_LED_COUNT; i++)
     {
@@ -33,7 +33,7 @@ void Display::fill()
     }
 }
 
-void Display::fill(int chan)
+void Display::fill(int chan, uint8_t pwm)
 {
     for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
     {

@@ -60,8 +60,8 @@ public:
     void init();
     void clear();
     void clear(int chan);
-    void fill();
-    void fill(int chan);
+    void fill(uint8_t pwm);
+    void fill(int chan, uint8_t pwm);
 
     void saveScene(int scene);
     void restoreScene(int scene);
