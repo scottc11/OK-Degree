@@ -73,7 +73,6 @@ namespace DEGREE {
         bool recordEnabled;      // global recording flag
         bool sampleVCO;          // global flag for calibration routine
 
-        bool buttonInterupt;        // flag for handling buttons interupt
         uint16_t currButtonsState;
         uint16_t prevButtonsState;
 

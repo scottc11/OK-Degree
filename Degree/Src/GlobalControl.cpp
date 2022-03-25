@@ -57,7 +57,6 @@ void GlobalControl::poll()
     {
     case DEFAULT:
         pollTempoPot();
-        pollButtons();
         pollTouchPads();
         channels[0]->poll();
         channels[1]->poll();
@@ -90,7 +89,10 @@ void GlobalControl::handleSwitchChange()
 
 void GlobalControl::handleButtonInterupt()
 {
-    buttonInterupt = true;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    uint8_t isr_id = ISR_ID_TACTILE_BUTTONS;
+    xQueueSendFromISR(qhInterruptQueue, &isr_id, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void GlobalControl::handleTouchInterupt() {
@@ -154,31 +156,26 @@ void GlobalControl::pollTouchPads() {
 */
 void GlobalControl::pollButtons()
 {
-    if (ioInterrupt.read() == 0)
+    currButtonsState = buttons->digitalReadAB();
+    if (currButtonsState != prevButtonsState)
     {
-        currButtonsState = buttons->digitalReadAB();
-        if (currButtonsState != prevButtonsState)
+        for (int i = 0; i < 16; i++)
         {
-            for (int i = 0; i < 16; i++)
+            // if state went HIGH and was LOW before
+            if (bitwise_read_bit(currButtonsState, i) && !bitwise_read_bit(prevButtonsState, i))
             {
-                // if state went HIGH and was LOW before
-                if (bitwise_read_bit(currButtonsState, i) && !bitwise_read_bit(prevButtonsState, i))
-                {
-                    this->handleButtonPress(currButtonsState);
-                }
-                // if state went LOW and was HIGH before
-                if (!bitwise_read_bit(currButtonsState, i) && bitwise_read_bit(prevButtonsState, i))
-                {
-                    this->handleButtonRelease(prevButtonsState);
-                }
+                this->handleButtonPress(currButtonsState);
+            }
+            // if state went LOW and was HIGH before
+            if (!bitwise_read_bit(currButtonsState, i) && bitwise_read_bit(prevButtonsState, i))
+            {
+                this->handleButtonRelease(prevButtonsState);
             }
         }
-
-        // reset polling
-        prevButtonsState = currButtonsState;
-        buttonInterupt = false;
     }
-    buttonInterupt = false;
+
+    // reset polling
+    prevButtonsState = currButtonsState;
 }
 
 /**
