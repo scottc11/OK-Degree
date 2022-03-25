@@ -132,19 +132,19 @@ void GlobalControl::pollTouchPads() {
     prevTouched = currTouched;
     currTouched = touchPads->touched() >> 4;
 
-    for (int i = 0; i < CHANNEL_COUNT; i++)
-    {
-        if (touchPads->padIsTouched(i, currTouched))
-        {
-            display->fill(i, 127);
-            // display->setBlinkStatus(i, true);
-        }
-        else
-        {
-            display->clear(i);
-            // display->setBlinkStatus(i, false);
-        }
-    }
+    // for (int i = 0; i < CHANNEL_COUNT; i++)
+    // {
+    //     if (touchPads->padIsTouched(i, currTouched))
+    //     {
+    //         display->fill(i, 127);
+    //         // display->setBlinkStatus(i, true);
+    //     }
+    //     else
+    //     {
+    //         display->clear(i);
+    //         // display->setBlinkStatus(i, false);
+    //     }
+    // }
 
     if (currTouched == 0x00)
     {
@@ -493,10 +493,10 @@ int GlobalControl::getCalibrationDataPosition(int data_index, int channel_index)
 */
 void GlobalControl::advanceSequencer(uint8_t pulse)
 {
-    if (pulse % 16 == 0)
-    {
-        display_dispatch_isr(DISPLAY_ACTION::PULSE_DISPLAY, CHAN::ALL, 0);
-    }
+    // if (pulse % 16 == 0)
+    // {
+    //     display_dispatch_isr(DISPLAY_ACTION::PULSE_DISPLAY, CHAN::ALL, 0);
+    // }
     
 
     if (pulse == 0) {
