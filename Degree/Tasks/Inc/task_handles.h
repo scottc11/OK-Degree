@@ -11,7 +11,9 @@ extern TaskHandle_t thExitCalibration;
 extern TaskHandle_t thCalibrate;
 extern TaskHandle_t thController;
 extern TaskHandle_t tuner_task_handle;
+extern TaskHandle_t thInterruptHandler;
 
+extern QueueHandle_t qhInterruptQueue;
 extern QueueHandle_t tuner_queue;
 
 enum CTRL_ACTION

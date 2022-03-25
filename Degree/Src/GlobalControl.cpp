@@ -57,7 +57,6 @@ void GlobalControl::poll()
     {
     case DEFAULT:
         pollTempoPot();
-        switches->poll();
         pollButtons();
         pollTouchPads();
         channels[0]->poll();
