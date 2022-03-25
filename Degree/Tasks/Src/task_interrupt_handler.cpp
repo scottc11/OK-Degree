@@ -27,7 +27,7 @@ void task_interrupt_handler(void *params)
             global_control->pollButtons();
             break;
         case ISR_ID_TOUCH_PADS:
-            // global_control->switches->updateDegreeStates();
+            global_control->pollTouchPads();
             break;
         default:
             break;

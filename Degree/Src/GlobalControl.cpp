@@ -87,7 +87,7 @@ void GlobalControl::handleSwitchChange()
     channels[3]->updateDegrees();
 }
 
-void GlobalControl::handleButtonInterupt()
+void GlobalControl::handleButtonInterrupt()
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     uint8_t isr_id = ISR_ID_TACTILE_BUTTONS;
@@ -95,8 +95,11 @@ void GlobalControl::handleButtonInterupt()
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void GlobalControl::handleTouchInterupt() {
-    touchDetected = true;
+void GlobalControl::handleTouchInterrupt() {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    uint8_t isr_id = ISR_ID_TOUCH_PADS;
+    xQueueSendFromISR(qhInterruptQueue, &isr_id, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void GlobalControl::pollTempoPot()
@@ -126,28 +129,30 @@ void GlobalControl::handleTempoAdjustment(uint16_t value)
 }
 
 void GlobalControl::pollTouchPads() {
-    if (touchDetected)
+    prevTouched = currTouched;
+    currTouched = touchPads->touched() >> 4;
+
+    for (int i = 0; i < CHANNEL_COUNT; i++)
     {
-        prevTouched = currTouched;
-        currTouched = touchPads->touched() >> 4;
-
-        for (int i = 0; i < CHANNEL_COUNT; i++)
+        if (touchPads->padIsTouched(i, currTouched))
         {
-            if (touchPads->padIsTouched(i, currTouched))
-            {
-                display->setBlinkStatus(i, true);
-            } else {
-                display->setBlinkStatus(i, false);
-            }
+            display->fill(i, 127);
+            // display->setBlinkStatus(i, true);
         }
+        else
+        {
+            display->clear(i);
+            // display->setBlinkStatus(i, false);
+        }
+    }
 
-        if (currTouched == 0x00) {
-            gestureFlag = false;
-        } else {
-            gestureFlag = true;
-        }
-        
-        touchDetected = false;
+    if (currTouched == 0x00)
+    {
+        gestureFlag = false;
+    }
+    else
+    {
+        gestureFlag = true;
     }
 }
 

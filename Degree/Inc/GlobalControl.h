@@ -49,8 +49,8 @@ namespace DEGREE {
             switches = degrees_ptr;
             buttons = buttons_ptr;
             display = display_ptr;
-            ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterupt));
-            touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
+            ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
+            touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
         };
 
         Mode mode;
@@ -79,8 +79,7 @@ namespace DEGREE {
         uint16_t currTempoPotValue;
         uint16_t prevTempoPotValue;
 
-        bool touchDetected;
-        volatile bool gestureFlag;
+        bool gestureFlag;
         uint8_t currTouched;
         uint8_t prevTouched;
 
@@ -102,8 +101,8 @@ namespace DEGREE {
         int getTouchedChannel();
 
         void handleSwitchChange();
-        void handleButtonInterupt();
-        void handleTouchInterupt();
+        void handleButtonInterrupt();
+        void handleTouchInterrupt();
 
         void enableVCOCalibration(TouchChannel *channel);
         void disableVCOCalibration();
