@@ -55,7 +55,6 @@ void TouchChannel::poll()
         {
             if (tickerFlag)
             {
-
                 bender->poll();
 
                 if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
@@ -191,7 +190,7 @@ void TouchChannel::onTouch(uint8_t pad)
 }
 
 void TouchChannel::onRelease(uint8_t pad)
-{   
+{
     switch (uiMode)
     {
     case UIMode::UI_DEFAULT:
@@ -229,11 +228,11 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
                 triggerNote(pad, currOctave, NOTE_ON);
                 break;
             case QUANTIZER:
-                setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
+                setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
                 break;
             case QUANTIZER_LOOP:
                 // every touch detected, take a snapshot of all active degree values and apply them to the sequence
-                setActiveDegrees(bitWrite(activeDegrees, pad, !bitRead(activeDegrees, pad)));
+                setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
                 sequence.createChordEvent(sequence.currPosition, activeDegrees);
                 break;
             default:
@@ -777,7 +776,7 @@ void TouchChannel::handleCVInput()
                     triggerNote(currDegree, prevOctave, NOTE_OFF);  // set previous triggered degree 
 
                     // re-DIM previously degree LED
-                    if (bitRead(activeDegrees, prevDegree))
+                    if (bitwise_read_bit(activeDegrees, prevDegree))
                     {
                         setDegreeLed(currDegree, BLINK_OFF);
                         setDegreeLed(currDegree, DIM_LOW);
@@ -788,7 +787,7 @@ void TouchChannel::handleCVInput()
                     setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK_ON);
 
                     // re-DIM previous Octave LED
-                    if (bitRead(currActiveOctaves, prevOctave))
+                    if (bitwise_read_bit(currActiveOctaves, prevOctave))
                     {
                         setOctaveLed(prevOctave, LedState::BLINK_OFF);
                         setOctaveLed(prevOctave, LedState::DIM_LOW);
@@ -819,7 +818,7 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
     numActiveDegrees = 0;
     for (int i = 0; i < DEGREE_COUNT; i++)
     {
-        if (bitRead(activeDegrees, i))
+        if (bitwise_read_bit(activeDegrees, i))
         {
             activeDegreeValues[numActiveDegrees].noteIndex = i;
             numActiveDegrees += 1;
@@ -836,7 +835,7 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
     numActiveOctaves = 0;
     for (int i = 0; i < OCTAVE_COUNT; i++)
     {
-        if (bitRead(currActiveOctaves, i))
+        if (bitwise_read_bit(currActiveOctaves, i))
         {
             activeOctaveValues[numActiveOctaves].octave = i;
             numActiveOctaves += 1;
@@ -871,9 +870,9 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
 */
 void TouchChannel::setActiveOctaves(int octave)
 {
-    if (bitFlip(currActiveOctaves, octave) != 0) // one octave must always remain active.
+    if (bitwise_flip_bit(currActiveOctaves, octave) != 0) // one octave must always remain active.
     {
-        currActiveOctaves = bitFlip(currActiveOctaves, octave);
+        currActiveOctaves = bitwise_flip_bit(currActiveOctaves, octave);
     }
 }
 
@@ -997,10 +996,6 @@ void TouchChannel::enableSequenceRecording()
 }
 
 /**
- * NOTE: A nice feature here would be to only have the LEDs be red when REC is held down, and flash the green LEDs
- * when a channel contains loop events, but REC is NOT held down. You would only be able to add new events to
- * the loop when REC is held down (ie. when channel leds are RED)
- * 
  * NOTE: ADDITIONALLY, this would be a good place to count the amount of steps which have passed while the REC button has
  * been held down, and if this value is greater than the current loop length, update the loop length to accomodate.
  * the new loop length would just increase the multiplier by one
@@ -1038,31 +1033,29 @@ void TouchChannel::initializeCalibration() {
 }
 
 /**
- * @brief dedicated high priority task for each touch channel which listens for a notification sent by the touch interrupt
+ * @brief dedicated high priority task for each touch channel which listens for touch events getting added to a queue by
+ * each channels touch interrupt pins
  *
- *
- * @todo Set the MPR121 callback to send a notification
- * @todo setup task to listen for a notification
- * @todo when notification recieive, call handleTouch(), which will read the pads via I2C and then trigger
- * the onTouch and onRelease callbacks, respectively
- * @todo add task to scheduler
  * @param touch_chan_ptr TouchChannel pointer
  */
 void TouchChannel::taskHandleTouch(void *touch_chan_ptr) {
     TouchChannel *_this = (TouchChannel*)touch_chan_ptr;
+    _this->touchEventQueue = xQueueCreate(12, sizeof(uint8_t));
+    uint8_t eventData;
     while (1)
     {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        xQueueReceive(_this->touchEventQueue, &eventData, portMAX_DELAY);
         _this->touchPads->handleTouch(); // this will trigger either onTouch() or onRelease()
     }
 }
 
 /**
- * @brief send a notification to the handle touch task
+ * @brief send a notification to the handle touch task queue
  */
 void TouchChannel::handleTouchInterrupt() {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xTaskNotifyFromISR(this->handleTouchTaskHandle, 0, eNoAction, &xHigherPriorityTaskWoken);
+    uint8_t nil = 88; // this does not matter but it doesn't work otherwise
+    xQueueSendFromISR(this->touchEventQueue, &nil, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
@@ -1079,5 +1072,5 @@ void TouchChannel::displayProgressCallback(uint16_t progress)
 {
     // map the incoming progress to a value between 0..16
     progress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, 15);
-    this->display->setChannelLED(this->channelIndex, progress, true);
+    this->display->setChannelLED(this->channelIndex, progress, PWM::PWM_MID_HIGH);
 }

@@ -49,6 +49,14 @@ public:
         return xQueueSend(this->handle, (void *) item, delay);
     }
 
+    BaseType_t sendISR(T item)
+    {
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        status = xQueueSendFromISR(this->handle, &item, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        return status;
+    }
+
     /**
      * @brief Get an item from the Queue.
      * Gets the first item from the Queue

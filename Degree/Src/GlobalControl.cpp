@@ -57,8 +57,6 @@ void GlobalControl::poll()
     {
     case DEFAULT:
         pollTempoPot();
-        switches->poll();
-        pollButtons();
         pollTouchPads();
         channels[0]->poll();
         channels[1]->poll();
@@ -89,13 +87,19 @@ void GlobalControl::handleSwitchChange()
     channels[3]->updateDegrees();
 }
 
-void GlobalControl::handleButtonInterupt()
+void GlobalControl::handleButtonInterrupt()
 {
-    buttonInterupt = true;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    uint8_t isr_id = ISR_ID_TACTILE_BUTTONS;
+    xQueueSendFromISR(qhInterruptQueue, &isr_id, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void GlobalControl::handleTouchInterupt() {
-    touchDetected = true;
+void GlobalControl::handleTouchInterrupt() {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    uint8_t isr_id = ISR_ID_TOUCH_PADS;
+    xQueueSendFromISR(qhInterruptQueue, &isr_id, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void GlobalControl::pollTempoPot()
@@ -125,17 +129,30 @@ void GlobalControl::handleTempoAdjustment(uint16_t value)
 }
 
 void GlobalControl::pollTouchPads() {
-    if (touchDetected)
+    prevTouched = currTouched;
+    currTouched = touchPads->touched() >> 4;
+
+    // for (int i = 0; i < CHANNEL_COUNT; i++)
+    // {
+    //     if (touchPads->padIsTouched(i, currTouched))
+    //     {
+    //         display->fill(i, 127);
+    //         // display->setBlinkStatus(i, true);
+    //     }
+    //     else
+    //     {
+    //         display->clear(i);
+    //         // display->setBlinkStatus(i, false);
+    //     }
+    // }
+
+    if (currTouched == 0x00)
     {
-        prevTouched = currTouched;
-        currTouched = touchPads->touched() >> 4;
-        if (currTouched == 0x00) {
-            gestureFlag = false;
-        } else {
-            gestureFlag = true;
-        }
-        
-        touchDetected = false;
+        gestureFlag = false;
+    }
+    else
+    {
+        gestureFlag = true;
     }
 }
 
@@ -144,31 +161,26 @@ void GlobalControl::pollTouchPads() {
 */
 void GlobalControl::pollButtons()
 {
-    if (ioInterrupt.read() == 0)
+    currButtonsState = buttons->digitalReadAB();
+    if (currButtonsState != prevButtonsState)
     {
-        currButtonsState = buttons->digitalReadAB();
-        if (currButtonsState != prevButtonsState)
+        for (int i = 0; i < 16; i++)
         {
-            for (int i = 0; i < 16; i++)
+            // if state went HIGH and was LOW before
+            if (bitwise_read_bit(currButtonsState, i) && !bitwise_read_bit(prevButtonsState, i))
             {
-                // if state went HIGH and was LOW before
-                if (bitRead(currButtonsState, i) && !bitRead(prevButtonsState, i))
-                {
-                    this->handleButtonPress(currButtonsState);
-                }
-                // if state went LOW and was HIGH before
-                if (!bitRead(currButtonsState, i) && bitRead(prevButtonsState, i))
-                {
-                    this->handleButtonRelease(prevButtonsState);
-                }
+                this->handleButtonPress(currButtonsState);
+            }
+            // if state went LOW and was HIGH before
+            if (!bitwise_read_bit(currButtonsState, i) && bitwise_read_bit(prevButtonsState, i))
+            {
+                this->handleButtonRelease(prevButtonsState);
             }
         }
-
-        // reset polling
-        prevButtonsState = currButtonsState;
-        buttonInterupt = false;
     }
-    buttonInterupt = false;
+
+    // reset polling
+    prevButtonsState = currButtonsState;
 }
 
 /**
@@ -181,7 +193,7 @@ void GlobalControl::handleButtonPress(int pad)
     case CMODE:
         for (int i = 0; i < 4; i++)
         {
-            if (touchPads->padIsTouched(i, currTouched, prevTouched))
+            if (touchPads->padIsTouched(i, currTouched))
             {
                 channels[i]->toggleMode();
             }
@@ -237,7 +249,7 @@ void GlobalControl::handleButtonPress(int pad)
         if (gestureFlag) {
             for (int i = 0; i < 4; i++)
             {
-                if (touchPads->padIsTouched(i, currTouched, prevTouched))
+                if (touchPads->padIsTouched(i, currTouched))
                 {
                     selectedChannel = i;
                     break;
@@ -256,7 +268,7 @@ void GlobalControl::handleButtonPress(int pad)
         // iterate over currTouched and setChannelBenderMode if touched
         for (int i = 0; i < CHANNEL_COUNT; i++)
         {
-            if (touchPads->padIsTouched(i, currTouched, prevTouched))
+            if (touchPads->padIsTouched(i, currTouched))
             {
                 channels[i]->setBenderMode();
             }
@@ -321,21 +333,25 @@ void GlobalControl::handleButtonRelease(int pad)
             channels[i]->setUIMode(TouchChannel::UIMode::UI_DEFAULT);
         }
         break;
+        
     case CLEAR_SEQ_TOUCH:
         if (!gestureFlag)
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < CHANNEL_COUNT; i++)
             {
                 channels[i]->sequence.clearAllTouchEvents();
-                channels[i]->disableSequenceRecording();
+                if (!recordEnabled)
+                    channels[i]->disableSequenceRecording();
             }
         }
         else // clear only curr touched channels sequences
         {
             channels[getTouchedChannel()]->sequence.clearAllTouchEvents();
-            channels[getTouchedChannel()]->disableSequenceRecording();
+            if (!recordEnabled)
+                channels[getTouchedChannel()]->disableSequenceRecording();
         }
         break;
+
     case CLEAR_SEQ_BEND:
         if (!gestureFlag) {
             for (int i = 0; i < CHANNEL_COUNT; i++)
@@ -411,7 +427,7 @@ void GlobalControl::loadCalibrationDataFromFlash()
 void GlobalControl::saveCalibrationDataToFlash()
 {
     // disable interupts?
-    this->display->fill();
+    this->display->fill(PWM::PWM_MID);
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
     {
@@ -477,6 +493,12 @@ int GlobalControl::getCalibrationDataPosition(int data_index, int channel_index)
 */
 void GlobalControl::advanceSequencer(uint8_t pulse)
 {
+    // if (pulse % 16 == 0)
+    // {
+    //     display_dispatch_isr(DISPLAY_ACTION::PULSE_DISPLAY, CHAN::ALL, 0);
+    // }
+    
+
     if (pulse == 0) {
         tempoLED.write(HIGH);
         tempoGate.write(HIGH);
@@ -490,17 +512,6 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         channels[i]->sequence.advance();
         channels[i]->setTickerFlag();
     }
-
-#ifdef CLOCK_DEBUG
-    if (pulse == PPQN - 2) {
-        tempoGate.write(HIGH);
-    }
-
-    if (pulse == PPQN - 1)
-    {
-        tempoGate.write(LOW);
-    }
-#endif
 }
 
 /**
@@ -550,7 +561,7 @@ void GlobalControl::handleChannelGesture(Callback<void(int chan)> callback)
 {
     for (int i = 0; i < CHANNEL_COUNT; i++)
     {
-        if (touchPads->padIsTouched(i, currTouched, prevTouched))
+        if (touchPads->padIsTouched(i, currTouched))
         {
             callback(i);
             break;
@@ -567,7 +578,7 @@ int GlobalControl::getTouchedChannel() {
     int channel = 0;
     for (int i = 0; i < CHANNEL_COUNT; i++)
     {
-        if (touchPads->padIsTouched(i, currTouched, prevTouched))
+        if (touchPads->padIsTouched(i, currTouched))
         {
             channel = i;
             break;

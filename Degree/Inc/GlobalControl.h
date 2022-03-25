@@ -3,6 +3,7 @@
 #include "main.h"
 #include "okSemaphore.h"
 #include "task_calibration.h"
+#include "task_display.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
@@ -48,8 +49,8 @@ namespace DEGREE {
             switches = degrees_ptr;
             buttons = buttons_ptr;
             display = display_ptr;
-            ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterupt));
-            touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterupt));
+            ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
+            touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
         };
 
         Mode mode;
@@ -72,15 +73,13 @@ namespace DEGREE {
         bool recordEnabled;      // global recording flag
         bool sampleVCO;          // global flag for calibration routine
 
-        bool buttonInterupt;        // flag for handling buttons interupt
         uint16_t currButtonsState;
         uint16_t prevButtonsState;
 
         uint16_t currTempoPotValue;
         uint16_t prevTempoPotValue;
 
-        bool touchDetected;
-        volatile bool gestureFlag;
+        bool gestureFlag;
         uint8_t currTouched;
         uint8_t prevTouched;
 
@@ -102,8 +101,8 @@ namespace DEGREE {
         int getTouchedChannel();
 
         void handleSwitchChange();
-        void handleButtonInterupt();
-        void handleTouchInterupt();
+        void handleButtonInterrupt();
+        void handleTouchInterrupt();
 
         void enableVCOCalibration(TouchChannel *channel);
         void disableVCOCalibration();

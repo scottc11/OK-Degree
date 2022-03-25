@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "logger.h"
 #include "Mutex.h"
 #include "gpio_api.h"
 

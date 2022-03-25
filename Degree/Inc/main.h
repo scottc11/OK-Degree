@@ -101,3 +101,17 @@
 #define MCP23017_CTRL_ADDR    0x24    // 0100100
 
 #define FLASH_CONFIG_ADDR ADDR_FLASH_SECTOR_7 // sector 7
+
+enum CHAN
+{
+    A,
+    B,
+    C,
+    D,
+    ALL
+};
+typedef enum CHAN CHAN;
+
+#define ISR_ID_TOGGLE_SWITCHES 0
+#define ISR_ID_TACTILE_BUTTONS 1
+#define ISR_ID_TOUCH_PADS 2

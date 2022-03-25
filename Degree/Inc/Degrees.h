@@ -13,8 +13,6 @@ namespace DEGREE {
         MCP23017 *io;
         InterruptIn ioInterupt;
         Callback<void()> onChangeCallback;
-        bool interuptDetected;
-        bool hasChanged;
         uint16_t currState;
         uint16_t prevState;
 
@@ -23,8 +21,7 @@ namespace DEGREE {
         Degrees(PinName ioIntPin, MCP23017 *io_ptr) : ioInterupt(ioIntPin, PullUp)
         {
             io = io_ptr;
-            interuptDetected = false;
-            ioInterupt.fall(callback(this, &Degrees::handleInterupt));
+            ioInterupt.fall(callback(this, &Degrees::handleInterrupt));
         };
 
         void init()
@@ -42,25 +39,18 @@ namespace DEGREE {
             updateDegreeStates(); // get current state of toggle switches
         };
 
-        void handleInterupt()
+        void handleInterrupt()
         {
-            interuptDetected = true;
+            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+            uint8_t isr_id = ISR_ID_TOGGLE_SWITCHES;
+            xQueueSendFromISR(qhInterruptQueue, &isr_id, &xHigherPriorityTaskWoken);
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
         };
 
         void attachCallback(Callback<void()> func)
         {
             onChangeCallback = func;
         }
-
-        void poll()
-        {
-            if (interuptDetected) // update switch states
-            {
-                // wait_us(5);
-                updateDegreeStates();
-                interuptDetected = false;
-            }
-        };
 
         void updateDegreeStates()
         {
