@@ -397,18 +397,18 @@ void SuperSeq::logSequenceToConsole() {
     logger_log(lengthPPQN);
     logger_log(", Quant: ");
     logger_log((int)quantizeAmount);
-    logger_log("\n||  pos  |  degree  |  gate  ||");
+    logger_log("\n||  POS  |  DEG  |  GATE  ||");
     for (int pos = 0; pos < lengthPPQN; pos++)
     {
         if (events[pos].getStatus())
         {
-            logger_log("\n||  ");
+            logger_log("\n*|  ");
             logger_log(pos);
-            logger_log("  |    ");
+            logger_log("  |   ");
             logger_log(events[pos].getDegree());
-            logger_log("    |  ");
+            logger_log("   |  ");
             logger_log(events[pos].getGate());
-            logger_log("  ||");
+            logger_log("  |*");
         }
     }
 }
