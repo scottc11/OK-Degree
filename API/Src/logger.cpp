@@ -65,7 +65,7 @@ void logger_log(float const f) {
 void logger_log(bool const boolean) {
     if (boolean)
     {
-        logger_log("TRUE");
+        logger_log("TRUE ");
     } else {
         logger_log("FALSE");
     }
