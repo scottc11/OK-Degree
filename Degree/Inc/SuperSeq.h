@@ -70,7 +70,7 @@ public:
     void copyPaste(int prevPosition, int newPosition);
     void cutPaste(int prevPosition, int newPosition);
 
-    void createTouchEvent(int position, int noteIndex, bool gate);
+    void createTouchEvent(int position, int degree, bool gate);
     void createBendEvent(int position, uint16_t bend);
     void createChordEvent(int position, uint8_t notes);
     
@@ -96,6 +96,7 @@ public:
     uint8_t getActiveDegrees(int position);
     bool getEventGate(int position);
     bool getEventStatus(int position);
+    bool eventsAreAssociated(int pos1, int pos2);
     uint16_t getBend(int position);
     
     void setEventStatus(int position, bool status);
@@ -109,7 +110,6 @@ public:
 
     void quantizationTest();
     void logSequenceToConsole();
-    void logTestResults();
 
 private:
     SequenceNode events[MAX_SEQ_LENGTH_PPQN];
