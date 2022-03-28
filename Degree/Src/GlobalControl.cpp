@@ -274,6 +274,10 @@ void GlobalControl::handleButtonPress(int pad)
         HAL_NVIC_SystemReset();
         break;
 
+    case Gestures::LOG_SYSTEM_STATUS:
+        channels[3]->sequence.logSequenceToConsole();
+        break;
+
     case BEND_MODE:
         // iterate over currTouched and setChannelBenderMode if touched
         for (int i = 0; i < CHANNEL_COUNT; i++)
