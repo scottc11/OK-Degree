@@ -126,7 +126,7 @@ namespace DEGREE {
             CLEAR_BEND = 0x0400,
             CLEAR_SEQ = 0x0200,
             BEND_MODE = 0x0100,
-            QUANTIZE_AMOUNT = 0x0080,
+            QUANTIZE_SEQ = 0x0080,
             SEQ_LENGTH = 0x0020,
             PB_RANGE = 0x0040,
             SHIFT = 0x0010,
@@ -142,7 +142,7 @@ namespace DEGREE {
             CLEAR_SEQ_BEND = 0x0400,
             CLEAR_SEQ_TOUCH = 0x0200,
             BEND_MODE = 0x0040,
-            QUANTIZE_AMOUNT = 0x0800,
+            QUANTIZE_SEQ = 0x0800,
             SEQ_LENGTH = 0x0100,
             PB_RANGE = 0x0020,
             SHIFT = 0x0010,
@@ -159,7 +159,7 @@ namespace DEGREE {
             RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
             CALIBRATE_1VO = SHIFT | CMODE,
             CLEAR_SEQ_ALL = CLEAR_SEQ_BEND | CLEAR_SEQ_TOUCH,
-            FULL_SYSTEM_RESET = SHIFT | SEQ_LENGTH | QUANTIZE_AMOUNT | CMODE
+            FULL_SYSTEM_RESET = SHIFT | SEQ_LENGTH | QUANTIZE_SEQ | CMODE
         };
     };
 }

@@ -113,9 +113,12 @@ int main(void)
 
   vTaskStartScheduler();
 
+  // code below this comment will not execute. For testing.
+  chanA.sequence.quantizationTest();
+
   while (1)
   {  
-    // glblCtrl.poll();
+    
   }
 }
 // ----------------------------------------

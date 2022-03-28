@@ -14,6 +14,9 @@ typedef struct SequenceNode
     uint8_t activeDegrees; // byte for holding active/inactive notes for a chord
     uint8_t data;          // bits 0..3: Degree Index || bit 4: Gate || bit 5: status
     uint16_t bend;         // raw ADC value from pitch bend
+    bool getStatus() { return bitwise_read_bit(data, SEQ_EVENT_STATUS_BIT); }
+    uint8_t getDegree() { return data & SEQ_EVENT_INDEX_BIT_MASK; }
+    bool getGate() { return bitwise_read_bit(data, SEQ_EVENT_GATE_BIT); }
 } SequenceNode;
 
 class SuperSeq {
@@ -63,16 +66,28 @@ public:
     void clearAllBendEvents();
     void clearBendAtPosition(int position);
     void clearTouchAtPosition(int position);
+
+    void copyPaste(int prevPosition, int newPosition);
+    void cutPaste(int prevPosition, int newPosition);
+
     void createTouchEvent(int position, int noteIndex, bool gate);
     void createBendEvent(int position, uint16_t bend);
     void createChordEvent(int position, uint8_t notes);
+    
     void setLength(int steps);
     int getLength();
-    void setQuantizeAmount(QuantizeAmount value);
-    int quantizePosition(int pos, QuantizeAmount target);
+    int getLengthPPQN();
+
     int getNextPosition(int position);
+    int getPrevPosition(int position);
+    int getLastPosition();
+
     void advance();
     void advanceStep();
+
+    void quantize();
+    void setQuantizeAmount(QuantizeAmount value);
+    int getQuantizedPosition(int pos, QuantizeAmount target);
 
     uint8_t constructEventData(uint8_t degree, bool gate, bool status);
     void setEventData(int position, uint8_t degree, bool gate, bool status);
@@ -92,6 +107,10 @@ public:
     uint8_t setStatusBits(bool status, uint8_t byte);
     uint8_t readStatusBits(uint8_t byte);
 
+    void quantizationTest();
+    void logSequenceToConsole();
+    void logTestResults();
+
 private:
-    SequenceNode events[PPQN * MAX_SEQ_LENGTH];
+    SequenceNode events[MAX_SEQ_LENGTH_PPQN];
 };

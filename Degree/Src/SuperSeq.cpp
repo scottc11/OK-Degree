@@ -3,7 +3,7 @@
 void SuperSeq::init()
 {
     this->setLength(DEFAULT_SEQ_LENGTH);
-    this->setQuantizeAmount(QUANT_NONE);
+    this->setQuantizeAmount(QUANT_8th);
     this->clearAllEvents();
 };
 
@@ -20,6 +20,25 @@ int SuperSeq::getNextPosition(int position)
     {
         return 0;
     }
+}
+
+/**
+ * @brief get the position of the given position - 1
+ * 
+ * @param position 
+ * @return int 
+ */
+int SuperSeq::getPrevPosition(int position)
+{
+    if (position == 0) {
+        return lengthPPQN - 1;
+    } else {
+        return position - 1;
+    }
+}
+
+int SuperSeq::getLastPosition() {
+    return lengthPPQN - 1;
 }
 
 /**
@@ -129,6 +148,29 @@ void SuperSeq::clearTouchAtPosition(int position)
 }
 
 /**
+ * @brief copy the contents of an event from one position to a new position
+ * 
+ * @param prevPosition 
+ * @param newPosition 
+ */
+void SuperSeq::copyPaste(int prevPosition, int newPosition)
+{
+    events[newPosition].data = events[prevPosition].data;
+}
+
+/**
+ * @brief copy the contents of an event from one position to a new position
+ *
+ * @param prevPosition
+ * @param newPosition
+ */
+void SuperSeq::cutPaste(int prevPosition, int newPosition)
+{
+    this->copyPaste(prevPosition, newPosition);
+    clearTouchAtPosition(prevPosition);
+}
+
+/**
  * @brief Create new event at position
 */
 void SuperSeq::createTouchEvent(int position, int noteIndex, bool gate)
@@ -136,37 +178,7 @@ void SuperSeq::createTouchEvent(int position, int noteIndex, bool gate)
     if (!containsTouchEvents)
         containsTouchEvents = true;
 
-    // handle quantization first, for overdubbing purposes
-    // int quantizedPosition = (currStep * PPQN) + quantizePosition(position, quantizeAmount);
-    int quantizedPosition = position;
-
-    if (quantizedPosition > position) {
-        // flag the sequence handler to not trigger this event, as it has already been triggered manually
-        // one way to do this: disable ALL new events until the sequence has come back around.
-        // or... just don't quantize on the fly
-    }
-    
-
-    // if the previous event was a GATE HIGH event, re-position its succeeding GATE LOW event to the new events position - 1
-    // NOTE: you will also have to trigger the GATE LOW, so that the new event will generate a trigger event
-    // TODO: intsead of "position - 1", do "position - (quantizeAmount / 2)"
-    if (getEventGate(prevEventPos) == HIGH)
-    {
-        int newPosition = quantizedPosition == 0 ? lengthPPQN - 1 : quantizedPosition - 1;
-        setEventData(newPosition, getEventDegree(prevEventPos), LOW, true);
-        prevEventPos = newPosition; // pretend like this event got executed
-    }
-
-    // if this new event is a GATE LOW event, and after quantization there exists an event at the same position in the sequence,
-    // move this new event to the next available position @ the curr quantize level divided by 2 (to not interfere with next event), which will also have to be checked for any existing events.
-    // If there is an existing GATE HIGH event at the next position, this new event will have to be placed right before it executes, regardless of quantization
-    if (gate == LOW && getEventStatus(quantizedPosition) && getEventGate(quantizedPosition) == HIGH)
-    {
-        int move = quantizeAmount == 0 ? PPQN / 2 : quantizeAmount / 2;
-        quantizedPosition = quantizedPosition + (move);
-    }
-
-    newEventPos = quantizedPosition; // store new events position
+    newEventPos = position;
     setEventData(newEventPos, noteIndex, gate, true);
 };
 
@@ -223,38 +235,162 @@ const int Q_ONE_28TH_NOTE[33] = {0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36,
 /**
  * @brief snap input position to a quantized grid
 */
-int SuperSeq::quantizePosition(int pos, QuantizeAmount target)
+int SuperSeq::getQuantizedPosition(int pos, QuantizeAmount target)
 {
+    int ppqnPos = pos % PPQN;
+    int stepPosition = pos - ppqnPos;
     int newPosition;
     switch (target)
     {
     case QUANT_NONE:
-        newPosition = pos;
+        newPosition = ppqnPos;
         break;
     case QUANT_Quarter:
-        newPosition = arr_find_closest_int((int *)Q_QUARTER_NOTE, 2, pos);
+        newPosition = arr_find_closest_int((int *)Q_QUARTER_NOTE, 2, ppqnPos);
         break;
     case QUANT_8th:
-        newPosition = arr_find_closest_int((int *)Q_EIGTH_NOTE, 3, pos);
+        newPosition = arr_find_closest_int((int *)Q_EIGTH_NOTE, 3, ppqnPos);
         break;
     case QUANT_16th:
-        newPosition = arr_find_closest_int((int *)Q_SIXTEENTH_NOTE, 4, pos);
+        newPosition = arr_find_closest_int((int *)Q_SIXTEENTH_NOTE, 4, ppqnPos);
         break;
     case QUANT_32nd:
-        newPosition = arr_find_closest_int((int *)Q_THIRTY_SECOND_NOTE, 9, pos);
+        newPosition = arr_find_closest_int((int *)Q_THIRTY_SECOND_NOTE, 9, ppqnPos);
         break;
     case QUANT_64th:
-        newPosition = arr_find_closest_int((int *)Q_SIXTY_FOURTH_NOTE, 12, pos);
+        newPosition = arr_find_closest_int((int *)Q_SIXTY_FOURTH_NOTE, 12, ppqnPos);
         break;
     case QUANT_128th:
-        newPosition = arr_find_closest_int((int *)Q_ONE_28TH_NOTE, 33, pos);
+        newPosition = arr_find_closest_int((int *)Q_ONE_28TH_NOTE, 33, ppqnPos);
         break;
     default:
-        newPosition = pos;
+        newPosition = ppqnPos;
         break;
     }
-    return newPosition;
+    // check if stepPosition + newPosition does not exceed lengthPPQN
+    if (stepPosition + newPosition >= lengthPPQN)
+    {
+        return 0; // start of seq
+    } else {
+        return stepPosition + newPosition;
+    }
 };
+
+/**
+ * @brief Quantize the current sequence
+ */
+void SuperSeq::quantize()
+{
+    int pos = 0;
+    int lastGateHighPos = 0;
+    int lastGateLowPos = 0;
+    
+    while (pos < this->lengthPPQN)
+    {
+        // should you keep track of gate HIGH and gate LOW events?
+        // If you hold the degree index between iterations than you can delete stray gate low events 
+        // as you iterate over the sequence events
+        
+        // If there is touch event data at this position (bit 5)
+        if (events[pos].getStatus())
+        {
+            // if event is a gate HIGH event
+            if (events[pos].getGate())
+            {
+                int newPos = getQuantizedPosition(pos, quantizeAmount);
+
+                if (newPos == pos) // alread perfect, move on.
+                {
+                    lastGateHighPos = newPos;
+                    pos++;
+                    continue;
+                }
+
+                if (events[newPos].getStatus()) // is there an active event at the new position?
+                {
+                    if (events[newPos].getGate()) // is it a gate HIGH event?
+                    {
+
+                        this->cutPaste(pos, newPos); // overwrite that event
+                    }
+                    else // if the event is a gate low event
+                    {
+                        // copy that gate low event to newPos - 1
+                        int reposition = getPrevPosition(newPos);
+                        this->copyPaste(newPos, reposition);
+                        
+                        // copy only the touch event data to the new position, and delete it from its original position
+                        this->cutPaste(pos, newPos);
+                    }
+                } else { // cut this event to its new position
+                    cutPaste(pos, newPos);
+                }
+                lastGateHighPos = newPos;
+            }
+            else // if event is a gate LOW event
+            {
+                // check to see if its associated gate HIGH event has overlapped
+                if (events[pos].getDegree() == events[lastGateHighPos].getDegree() && events[lastGateHighPos].getGate() == HIGH)
+                {
+                    if (lastGateHighPos >= pos) // if greater or equal
+                    {
+                        int nextPos = getNextPosition(lastGateHighPos);
+                        if (events[nextPos].getStatus() == false) // if there already is an ective HIGH event, then what?
+                        {
+                            // move this gate low event to lastGateHighPos + 1
+                            cutPaste(pos, nextPos);
+                        } else {
+                            clearTouchAtPosition(pos);
+                        }
+                    }
+                }
+                lastGateLowPos = pos;
+            }
+        }
+        pos++;
+    }
+    // if you store the active gate high event, and continue iterating through the sequence, you could wait and see if the new position
+    // of that event will overlap the associated gate LOW event. In which case, you will want to move that gate LOW event to the new gate 
+    // HIGH event position + 1.
+    // basically you need to like, "scoop" up all events 
+}
+
+void SuperSeq::quantizationTest()
+{
+    setLength(2); // set sequence length to two steps, ie. 96 * 2 PPQN
+    setQuantizeAmount(QuantizeAmount::QUANT_Quarter);
+    logger_log(lengthPPQN);
+
+    createTouchEvent(191, 2, true);
+    createTouchEvent(89, 2, false);
+    logTestResults();
+}
+
+void SuperSeq::logSequenceToConsole() {
+    logger_log("\n pos  |  degree  |  gate  |  ");
+    for (int pos = 0; pos < lengthPPQN; pos++)
+    {
+        if (events[pos].getStatus())
+        {
+            logger_log("\n  ");
+            logger_log(pos);
+            logger_log("  |    ");
+            logger_log(events[pos].getDegree());
+            logger_log("    |  ");
+            logger_log(events[pos].getGate());
+            logger_log("  |  ");
+        }
+    }
+}
+
+void SuperSeq::logTestResults() {
+    logger_log("\nPRE-QUANTIZATION");
+    logSequenceToConsole();
+    quantize();
+    logger_log("\n\nPOST-QUANTIZATION");
+    logSequenceToConsole();
+    logger_log("\n");
+}
 
 /**
  * @brief contruct an 8-bit value which holds the degree index, gate state, and status of a sequence event.
