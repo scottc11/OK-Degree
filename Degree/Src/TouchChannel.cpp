@@ -915,8 +915,7 @@ void TouchChannel::handleSequence(int position)
                     // if new event overlaps succeeding events, clear those events
                     sequence.clearTouchAtPosition(position);
                 }
-                // Handle Sequence Events
-                else
+                else // Handle Sequence Events
                 {
                     if (sequence.getEventGate(position) == HIGH)
                     {
