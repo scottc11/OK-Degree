@@ -62,6 +62,15 @@ void logger_log(float const f) {
     uart_transmit((uint8_t *)str);
 }
 
+void logger_log(bool const boolean) {
+    if (boolean)
+    {
+        logger_log("TRUE");
+    } else {
+        logger_log("FALSE");
+    }
+}
+
 void logger_log_err(char const *func_name, HAL_StatusTypeDef error)
 {
     logger_log("\n** ERROR ** Function -> ");

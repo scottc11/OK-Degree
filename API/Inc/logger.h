@@ -21,6 +21,8 @@ void logger_log(uint32_t const num);
 
 void logger_log(float const f);
 
+void logger_log(bool const boolean);
+
 void logger_log_arr(int arr[]);
 
 void logger_log_err(char const *func_name, HAL_StatusTypeDef error);
