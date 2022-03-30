@@ -155,6 +155,7 @@ namespace DEGREE {
 
         enum Gestures : uint16_t
         {
+            QUANTIZE_AMOUNT = SHIFT | PB_RANGE,
             CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
             RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
             CALIBRATE_1VO = SHIFT | CMODE,

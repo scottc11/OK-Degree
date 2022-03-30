@@ -298,6 +298,14 @@ void GlobalControl::handleButtonPress(int pad)
             channels[i]->setUIMode(TouchChannel::UIMode::UI_PITCH_BEND_RANGE);
         }
         break;
+
+    case QUANTIZE_AMOUNT:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+        {
+            channels[i]->setUIMode(TouchChannel::UIMode::UI_QUANTIZE_AMOUNT);
+        }
+        break;
+
     case SEQ_LENGTH:
         this->display->clear();
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)

@@ -62,7 +62,8 @@ namespace DEGREE {
         enum UIMode {
             UI_DEFAULT,
             UI_PITCH_BEND_RANGE,
-            UI_SEQUENCE_LENGTH
+            UI_SEQUENCE_LENGTH,
+            UI_QUANTIZE_AMOUNT
         };
 
         enum PlaybackMode
@@ -175,7 +176,9 @@ namespace DEGREE {
         void freeze(bool state);
         void updateDegrees();
 
+        // Alt UI Handlers
         void handlePitchBendRangeUI();
+        void handleQuantizeAmountUI();
 
         void setOctave(int octave);
         void updateOctaveLeds(int octave);

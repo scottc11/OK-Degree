@@ -96,6 +96,9 @@ void TouchChannel::setUIMode(UIMode targetMode) {
         break;
     case UI_SEQUENCE_LENGTH:
         break;
+    case UI_QUANTIZE_AMOUNT:
+        handleQuantizeAmountUI();
+        break;
     }
 }
 
@@ -109,6 +112,17 @@ void TouchChannel::handlePitchBendRangeUI()
     {
         setDegreeLed(i, LedState::ON);
     }
+}
+
+/**
+ * @brief what if you flashed the degree leds at a rate relative to their corrosponding value
+ * ie. if you want to quantize to an 8th note grid, then you would touch the degree LED that is flashing
+ * at a rate of 8th notes (relative to clock)
+ */
+void TouchChannel::handleQuantizeAmountUI()
+{
+    setAllOctaveLeds(LedState::OFF);
+    setAllDegreeLeds(LedState::OFF);
 }
 
 /**
