@@ -112,6 +112,8 @@ namespace DEGREE {
         void resetCalibration1VO(int chan);
         int getCalibrationDataPosition(int data_index, int channel_index);
 
+        void log_system_status();
+
     private:
     private:
         enum PadNames : uint16_t

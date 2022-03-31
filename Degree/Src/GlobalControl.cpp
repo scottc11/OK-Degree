@@ -32,9 +32,7 @@ void GlobalControl::init() {
     buttons->setPullUp(MCP23017_PORTA, 0xff);
     buttons->setPullUp(MCP23017_PORTB, 0xff);
     buttons->setInputPolarity(MCP23017_PORTA, 0xff);
-    buttons->setInputPolarity(MCP23017_PORTB, 0b01111111);
-    buttons->digitalReadAB();
-
+    buttons->setInputPolarity(MCP23017_PORTB, 0b11111111);
     logger_log(", ISR pin (after) = ");
     logger_log(ioInterrupt.read());
 
@@ -76,7 +74,9 @@ void GlobalControl::init() {
 
     switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
     switches->enableInterrupt();
+    switches->io->digitalReadAB(); // not ideal, but you have to clear the interrupt after initialization
     ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
+    buttons->digitalReadAB();
     touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
 }
 
@@ -86,6 +86,7 @@ void GlobalControl::poll()
     {
     case DEFAULT:
         pollTempoPot();
+        // logger_log(switches->ioInterupt.read());
         pollTouchPads();
         channels[0]->poll();
         channels[1]->poll();
@@ -304,7 +305,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case Gestures::LOG_SYSTEM_STATUS:
-        channels[3]->sequence.logSequenceToConsole();
+        log_system_status();
         break;
 
     case BEND_MODE:
@@ -637,4 +638,16 @@ int GlobalControl::getTouchedChannel() {
     }
     gestureFlag = false;
     return channel;
+}
+
+void GlobalControl::log_system_status()
+{
+    logger_log("\nToggle Switches ISR = ");
+    logger_log(switches->ioInterupt.read());
+
+    logger_log("\nTactile Buttons ISR pin = ");
+    logger_log(ioInterrupt.read());
+
+    logger_log("\nTouch ISR pin = ");
+    logger_log(touchInterrupt.read());
 }
