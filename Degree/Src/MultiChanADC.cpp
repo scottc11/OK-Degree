@@ -17,7 +17,7 @@ void multi_chan_adc_init()
     logger_log("\n");
 
     AnalogHandle::semaphore = xSemaphoreCreateBinary();
-    xTaskCreate(AnalogHandle::sampleReadyTask, "ADC Sample Ready Task", 1024, NULL, RTOS_PRIORITY_MED, NULL);
+    xTaskCreate(AnalogHandle::sampleReadyTask, "ADC Task", RTOS_STACK_SIZE_MIN, NULL, RTOS_PRIORITY_MED, NULL);
 }
 
 void multi_chan_adc_start()
