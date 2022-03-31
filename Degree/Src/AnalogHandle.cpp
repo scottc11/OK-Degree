@@ -151,6 +151,7 @@ void AnalogHandle::RouteConversionCompleteCallback() // static
  * @param params
  */
 void AnalogHandle::sampleReadyTask(void *params) {
+    logger_log_task_watermark();
     while (1)
     {
         xSemaphoreTake(AnalogHandle::semaphore, portMAX_DELAY);
