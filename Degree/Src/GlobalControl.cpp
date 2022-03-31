@@ -47,16 +47,6 @@ void GlobalControl::init() {
     touchPads->init();
     logger_log(", ISR pin (after) = ");
     logger_log(touchInterrupt.read());
-    logger_log("\n");
-    
-    // initializing channels here might be initializing the SPI while an interrupt is getting fired by
-    // the tactile buttons / switches, which may be interrupting this task and using the SPI periph before
-    // it is initialized
-    channels[0]->init();
-    channels[1]->init();
-    channels[2]->init();
-    channels[3]->init();
-    display->clear();
 
     // Tempo Pot ADC Noise: 1300ish w/ 100nF
     tempoPot.setFilter(0.01);
@@ -65,6 +55,16 @@ void GlobalControl::init() {
     sem_ptr->give();
     tempoPot.log_noise_threshold_to_console("Tempo Pot");
     tempoPot.invertReadings();
+    logger_log("\n");
+
+    // initializing channels here might be initializing the SPI while an interrupt is getting fired by
+    // the tactile buttons / switches, which may be interrupting this task and using the SPI periph before
+    // it is initialized
+    channels[0]->init();
+    channels[1]->init();
+    channels[2]->init();
+    channels[3]->init();
+    display->clear();
 
     // initialize tempo
     clock->init();

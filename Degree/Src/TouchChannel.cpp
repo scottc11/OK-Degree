@@ -10,6 +10,16 @@ void TouchChannel::init()
     
     adc.setFilter(0.1);
 
+    // initialize LED Driver
+    _leds->init();
+    _leds->setBlinkFrequency(SX1509::ClockSpeed::FAST);
+
+    for (int i = 0; i < 16; i++)
+    {
+        _leds->ledConfig(i);
+        setLED(i, OFF);
+    }
+
     bender->adc.attachSamplingProgressCallback(callback(this, &TouchChannel::displayProgressCallback));
     bender->init();
     bender->adc.detachSamplingProgressCallback();
@@ -21,22 +31,11 @@ void TouchChannel::init()
     sequence.init(); // really important sequencer initializes after the bender gets initialized
 
     // initialize channel touch pads
-    logger_log("\nMPR121 Connected: ");
-    logger_log(touchPads->connected());
     touchPads->init();
     touchPads->attachInterruptCallback(callback(this, &TouchChannel::handleTouchInterrupt));
     touchPads->attachCallbackTouched(callback(this, &TouchChannel::onTouch));
     touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
     touchPads->enable();
-
-    // initialize LED Driver
-    _leds->init();
-    _leds->setBlinkFrequency(SX1509::ClockSpeed::FAST);
-
-    for (int i = 0; i < 16; i++) {
-        _leds->ledConfig(i);
-        setLED(i, OFF);
-    }
 
     display->drawSpiral(channelIndex, true, 25);
 
@@ -1087,18 +1086,31 @@ void taskHandleLEDs(void *params) {
 void TouchChannel::displayProgressCallback(uint16_t progress)
 {
     // map the incoming progress to a value between 0..16
-    progress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, 15);
-    this->display->setChannelLED(this->channelIndex, progress, PWM::PWM_MID_HIGH);
+    uint8_t displayProgress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, 15);
+    this->display->setChannelLED(this->channelIndex, displayProgress, PWM::PWM_MID_HIGH);
+    this->setLED(DEGREE_LED_RAINBOW[displayProgress], LedState::ON);
+    uint16_t dacProgress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, BIT_MAX_16);
+    bender->dac->write(bender->dacChan, dacProgress);
+    if (displayProgress == 15)
+    {
+        bender->dac->write(bender->dacChan, BENDER_DAC_ZERO);
+    }
+    
 }
 
 void TouchChannel::logPeripherals() {
-    logger_log("\n** IC Connections **");
-    logger_log("\nSX1509: ");
+    logger_log("\n** Channel ");
+    logger_log(this->channelIndex);
+    logger_log(" **");
+    logger_log("\nSX1509 connected: ");
     logger_log(_leds->isConnected());
-
-    logger_log("\n\n** IO STATES **");
-    logger_log("\nGate Out: ");
+    logger_log("\nGate Out state: ");
     logger_log(gateOut.read());
     logger_log("\nMPR121 Int Pin: ");
     logger_log(touchPads->readInterruptPin());
+
+    logger_log("\nBender ADC Value: ");
+    logger_log(bender->adc.read_u16());
+    bender->adc.log_noise_threshold_to_console("Bender");
+    logger_log("\n");
 }

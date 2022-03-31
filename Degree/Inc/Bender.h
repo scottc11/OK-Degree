@@ -10,6 +10,7 @@
 #pragma once
 
 #include "main.h"
+#include "logger.h"
 #include "okSemaphore.h"
 #include "Callback.h"
 #include "DAC8554.h"
