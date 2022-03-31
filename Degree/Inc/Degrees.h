@@ -21,7 +21,6 @@ namespace DEGREE {
         Degrees(PinName ioIntPin, MCP23017 *io_ptr) : ioInterupt(ioIntPin, PullUp)
         {
             io = io_ptr;
-            ioInterupt.fall(callback(this, &Degrees::handleInterrupt));
         };
 
         void init()
@@ -38,6 +37,10 @@ namespace DEGREE {
 
             updateDegreeStates(); // get current state of toggle switches
         };
+
+        void enableInterrupt() {
+            ioInterupt.fall(callback(this, &Degrees::handleInterrupt));
+        }
 
         void handleInterrupt()
         {

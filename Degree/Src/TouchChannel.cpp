@@ -21,6 +21,8 @@ void TouchChannel::init()
     sequence.init(); // really important sequencer initializes after the bender gets initialized
 
     // initialize channel touch pads
+    logger_log("\nMPR121 Connected: ");
+    logger_log(touchPads->connected());
     touchPads->init();
     touchPads->attachInterruptCallback(callback(this, &TouchChannel::handleTouchInterrupt));
     touchPads->attachCallbackTouched(callback(this, &TouchChannel::onTouch));
@@ -29,7 +31,7 @@ void TouchChannel::init()
 
     // initialize LED Driver
     _leds->init();
-    _leds->setBlinkFrequency(SX1509::FAST);
+    _leds->setBlinkFrequency(SX1509::ClockSpeed::FAST);
 
     for (int i = 0; i < 16; i++) {
         _leds->ledConfig(i);
@@ -40,6 +42,7 @@ void TouchChannel::init()
 
     setPlaybackMode(MONO);
     setBenderMode(PITCH_BEND);
+    logPeripherals();
 }
 
 /** ------------------------------------------------------------------------
@@ -1086,4 +1089,16 @@ void TouchChannel::displayProgressCallback(uint16_t progress)
     // map the incoming progress to a value between 0..16
     progress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, 15);
     this->display->setChannelLED(this->channelIndex, progress, PWM::PWM_MID_HIGH);
+}
+
+void TouchChannel::logPeripherals() {
+    logger_log("\n** IC Connections **");
+    logger_log("\nSX1509: ");
+    logger_log(_leds->isConnected());
+
+    logger_log("\n\n** IO STATES **");
+    logger_log("\nGate Out: ");
+    logger_log(gateOut.read());
+    logger_log("\nMPR121 Int Pin: ");
+    logger_log(touchPads->readInterruptPin());
 }

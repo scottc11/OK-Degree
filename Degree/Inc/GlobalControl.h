@@ -49,8 +49,6 @@ namespace DEGREE {
             switches = degrees_ptr;
             buttons = buttons_ptr;
             display = display_ptr;
-            ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
-            touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
         };
 
         Mode mode;

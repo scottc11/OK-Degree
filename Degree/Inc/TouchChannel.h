@@ -221,6 +221,8 @@ namespace DEGREE {
         void handleRatchet(int position, uint16_t value);
 
         void initializeCalibration();
+        
+        void logPeripherals();
 
         static void taskHandleTouch(void *_this);
     };

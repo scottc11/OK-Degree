@@ -10,9 +10,20 @@ void GlobalControl::init() {
     display->init();
     display->clear();
 
+    logger_log("\n");
+    logger_log("\n** Global Control **");
+    logger_log("\nToggle Switches: connected = ");
+    logger_log(switches->io->isConnected());
+    logger_log(", ISR pin (before) = ");
+    logger_log(switches->ioInterupt.read());
     switches->init();
-    switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
+    logger_log(", ISR pin (after) = ");
+    logger_log(switches->ioInterupt.read());
 
+    logger_log("\nTactile Buttons: connected = ");
+    logger_log(buttons->isConnected());
+    logger_log(", ISR pin (before) = ");
+    logger_log(ioInterrupt.read());
     buttons->init();
     buttons->setDirection(MCP23017_PORTA, 0xff);
     buttons->setDirection(MCP23017_PORTB, 0xff);
@@ -23,9 +34,22 @@ void GlobalControl::init() {
     buttons->setInputPolarity(MCP23017_PORTA, 0xff);
     buttons->setInputPolarity(MCP23017_PORTB, 0b01111111);
     buttons->digitalReadAB();
-    
-    touchPads->init();
 
+    logger_log(", ISR pin (after) = ");
+    logger_log(ioInterrupt.read());
+
+    logger_log("\nTouch Pads:      connected = ");
+    logger_log(touchPads->isConnected());
+    logger_log(", ISR pin (before) = ");
+    logger_log(touchInterrupt.read());
+    touchPads->init();
+    logger_log(", ISR pin (after) = ");
+    logger_log(touchInterrupt.read());
+    logger_log("\n");
+    
+    // initializing channels here might be initializing the SPI while an interrupt is getting fired by
+    // the tactile buttons / switches, which may be interrupting this task and using the SPI periph before
+    // it is initialized
     channels[0]->init();
     channels[1]->init();
     channels[2]->init();
@@ -49,6 +73,11 @@ void GlobalControl::init() {
     handleTempoAdjustment(currTempoPotValue);
     prevTempoPotValue = currTempoPotValue;
     clock->start();
+
+    switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
+    switches->enableInterrupt();
+    ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
+    touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
 }
 
 void GlobalControl::poll()
