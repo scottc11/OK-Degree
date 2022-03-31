@@ -32,7 +32,11 @@ void GlobalControl::init() {
     buttons->setPullUp(MCP23017_PORTA, 0xff);
     buttons->setPullUp(MCP23017_PORTB, 0xff);
     buttons->setInputPolarity(MCP23017_PORTA, 0xff);
+#ifdef BOARD_REV_v41
+    buttons->setInputPolarity(MCP23017_PORTB, 0b01111111);
+#else
     buttons->setInputPolarity(MCP23017_PORTB, 0b11111111);
+#endif
     logger_log(", ISR pin (after) = ");
     logger_log(ioInterrupt.read());
 
