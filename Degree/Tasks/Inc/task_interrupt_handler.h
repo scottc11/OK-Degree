@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main.h"
+#include "logger.h"
 #include "GlobalControl.h"
 
 using namespace DEGREE;
