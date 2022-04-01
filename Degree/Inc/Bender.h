@@ -67,7 +67,7 @@ public:
     void setMinBend(uint16_t value) { adc.setInputMin(value); }
 
     void setRatchetThresholds();
-    void updateDAC(uint16_t value);
+    void updateDAC(uint16_t value, bool bypassFilter = false);
     bool isIdle();
     int setMode(int targetMode = 0);
     uint16_t calculateOutput(uint16_t value);

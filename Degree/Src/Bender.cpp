@@ -111,10 +111,10 @@ uint16_t Bender::calculateOutput(uint16_t value)
  * 
  * Output will be between 0V and 2.5V, centered at 2.5V/2
 */
-void Bender::updateDAC(uint16_t value)
+void Bender::updateDAC(uint16_t value, bool bypassFilter /*=false*/)
 {
     prevOutput = currOutput;
-    currOutput = filter_one_pole<uint16_t>(value, prevOutput, 0.065);
+    currOutput = bypassFilter ? value : filter_one_pole<uint16_t>(value, prevOutput, 0.065);
     dac->write(dacChan, currOutput);
 }
 

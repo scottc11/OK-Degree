@@ -106,6 +106,8 @@ void GlobalControl::poll()
         }
         pollButtons();
         break;
+    case HARDWARE_TESTING:
+        break;
     default:
         break;
     }
@@ -210,12 +212,22 @@ void GlobalControl::pollButtons()
             // if state went HIGH and was LOW before
             if (bitwise_read_bit(currButtonsState, i) && !bitwise_read_bit(prevButtonsState, i))
             {
-                this->handleButtonPress(currButtonsState);
+                if (mode == Mode::HARDWARE_TESTING)
+                {
+                    this->handleHardwareTest(currButtonsState);
+                }
+                else
+                {
+                    this->handleButtonPress(currButtonsState);
+                }
             }
             // if state went LOW and was HIGH before
             if (!bitwise_read_bit(currButtonsState, i) && bitwise_read_bit(prevButtonsState, i))
             {
-                this->handleButtonRelease(prevButtonsState);
+                if (mode != Mode::HARDWARE_TESTING)
+                {
+                    this->handleButtonRelease(prevButtonsState);
+                }
             }
         }
     }
@@ -228,7 +240,7 @@ void GlobalControl::pollButtons()
  * Handle Button Press
 */
 void GlobalControl::handleButtonPress(int pad)
-{
+{    
     switch (pad)
     {
     case CMODE:
@@ -311,8 +323,8 @@ void GlobalControl::handleButtonPress(int pad)
         }
         break;
     
-    case Gestures::FULL_SYSTEM_RESET:
-        HAL_NVIC_SystemReset();
+    case Gestures::ENTER_HARDWARE_TEST:
+        mode = Mode::HARDWARE_TESTING;
         break;
 
     case Gestures::LOG_SYSTEM_STATUS:
@@ -661,4 +673,28 @@ void GlobalControl::log_system_status()
 
     logger_log("\nTouch ISR pin = ");
     logger_log(touchInterrupt.read());
+}
+
+void GlobalControl::handleHardwareTest(uint16_t pressedButtons)
+{
+    switch (pressedButtons)
+    {
+    case HardwareTest::TEST_BEND_OUT_HIGH:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+            channels[i]->bender->updateDAC(BIT_MAX_16, true);
+        break;
+    case HardwareTest::TEST_BEND_OUT_LOW:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+            channels[i]->bender->updateDAC(0, true);
+        break;
+    case HardwareTest::TEST_BEND_OUT_MID:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+            channels[i]->bender->updateDAC(BENDER_DAC_ZERO, true);
+        break;
+    case HardwareTest::EXIT_HARDWARE_TEST:
+        mode = Mode::DEFAULT;
+        break;
+    default:
+        break;
+    }
 }

@@ -25,7 +25,7 @@ namespace DEGREE {
             DEFAULT,
             CALIBRATING_1VO,
             CALIBRATING_BENDER,
-            SET_SEQUENCE_LENGTH
+            HARDWARE_TESTING
         };
 
         GlobalControl(
@@ -70,6 +70,7 @@ namespace DEGREE {
 
         bool recordEnabled;      // global recording flag
         bool sampleVCO;          // global flag for calibration routine
+        bool hardwareTesting;    // hardware testing mode
 
         uint16_t currButtonsState;
         uint16_t prevButtonsState;
@@ -113,6 +114,8 @@ namespace DEGREE {
         int getCalibrationDataPosition(int data_index, int channel_index);
 
         void log_system_status();
+
+        void handleHardwareTest(uint16_t pressedButtons);
 
     private:
     private:
@@ -160,8 +163,16 @@ namespace DEGREE {
             RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
             CALIBRATE_1VO = SHIFT | CMODE,
             CLEAR_SEQ_ALL = CLEAR_SEQ_BEND | CLEAR_SEQ_TOUCH,
-            FULL_SYSTEM_RESET = SHIFT | SEQ_LENGTH | QUANTIZE_SEQ | CMODE,
+            ENTER_HARDWARE_TEST = SHIFT | SEQ_LENGTH | QUANTIZE_SEQ | CMODE,
             LOG_SYSTEM_STATUS = SHIFT | QUANTIZE_SEQ | SEQ_LENGTH
+        };
+
+        enum HardwareTest : uint16_t
+        {
+            TEST_BEND_OUT_HIGH = SHIFT,
+            TEST_BEND_OUT_LOW = PB_RANGE,
+            TEST_BEND_OUT_MID = BEND_MODE,
+            EXIT_HARDWARE_TEST = ENTER_HARDWARE_TEST
         };
     };
 }
