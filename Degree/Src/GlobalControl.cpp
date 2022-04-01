@@ -32,7 +32,7 @@ void GlobalControl::init() {
     buttons->setPullUp(MCP23017_PORTA, 0xff);
     buttons->setPullUp(MCP23017_PORTB, 0xff);
     buttons->setInputPolarity(MCP23017_PORTA, 0xff);
-#ifdef BOARD_REV_v41
+#if BOARD_VERSION == 41
     buttons->setInputPolarity(MCP23017_PORTB, 0b01111111);
 #else
     buttons->setInputPolarity(MCP23017_PORTB, 0b11111111);
@@ -90,8 +90,6 @@ void GlobalControl::poll()
     {
     case DEFAULT:
         pollTempoPot();
-        // logger_log(switches->ioInterupt.read());
-        pollTouchPads();
         channels[0]->poll();
         channels[1]->poll();
         channels[2]->poll();
@@ -162,9 +160,18 @@ void GlobalControl::handleTempoAdjustment(uint16_t value)
     }
 }
 
+/**
+ * @brief
+ * | x | x | + | - | D | C | B | A |
+ */
 void GlobalControl::pollTouchPads() {
     prevTouched = currTouched;
+
+#if BOARD_VERSION == 41 // touch pads do not have + - connected, and are wired differently
     currTouched = touchPads->touched() >> 4;
+#else
+    currTouched = touchPads->touched();
+#endif
 
     // for (int i = 0; i < CHANNEL_COUNT; i++)
     // {

@@ -118,7 +118,7 @@ namespace DEGREE {
     private:
         enum PadNames : uint16_t
         { // integers correlate to 8-bit index position
-#ifdef BOARD_REV_V38
+#if BOARD_VERSION == 38
             FREEZE = 0x4000,
             RECORD = 0x2000,
             RESET = 0x1000,

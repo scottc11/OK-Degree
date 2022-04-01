@@ -6,9 +6,7 @@
 
 #include "common.h"
 
-// #define BOARD_REV_V38
-// #define BOARD_REV_v41
-#define BOARD_REV_v42
+#define BOARD_VERSION 42
 
 #define PPQN 96
 
@@ -43,7 +41,7 @@
 
 #define EXT_CLOCK_INPUT PA_3
 
-#ifdef BOARD_REV_V38
+#if BOARD_VERSION == 38
 #define INT_CLOCK_OUTPUT PB_2
 #else
 #define INT_CLOCK_OUTPUT PA_0
