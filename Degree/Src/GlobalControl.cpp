@@ -691,6 +691,22 @@ void GlobalControl::handleHardwareTest(uint16_t pressedButtons)
         for (int i = 0; i < CHANNEL_COUNT; i++)
             channels[i]->bender->updateDAC(BENDER_DAC_ZERO, true);
         break;
+    case HardwareTest::TEST_1VO_HIGH:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+            channels[i]->output.dac->write(channels[i]->output.dacChannel, BIT_MAX_16);
+        break;
+    case HardwareTest::TEST_1VO_LOW:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+            channels[i]->output.dac->write(channels[i]->output.dacChannel, 0);
+        break;
+    case HardwareTest::TEST_GATE_HIGH:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+            channels[i]->setGate(true);
+        break;
+    case HardwareTest::TEST_GATE_LOW:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+            channels[i]->setGate(false);
+        break;
     case HardwareTest::EXIT_HARDWARE_TEST:
         mode = Mode::DEFAULT;
         break;

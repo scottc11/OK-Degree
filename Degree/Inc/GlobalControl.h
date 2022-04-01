@@ -172,6 +172,10 @@ namespace DEGREE {
             TEST_BEND_OUT_HIGH = SHIFT,
             TEST_BEND_OUT_LOW = PB_RANGE,
             TEST_BEND_OUT_MID = BEND_MODE,
+            TEST_1VO_HIGH = QUANTIZE_SEQ,
+            TEST_1VO_LOW = CLEAR_SEQ_BEND,
+            TEST_GATE_HIGH = CLEAR_SEQ_TOUCH,
+            TEST_GATE_LOW = SEQ_LENGTH,
             EXIT_HARDWARE_TEST = ENTER_HARDWARE_TEST
         };
     };
