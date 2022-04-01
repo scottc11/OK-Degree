@@ -9,15 +9,13 @@ Bender D ADC Noise: 760, Idle: 32271
 
 void Bender::init()
 {
+    dac->init();
     adc.setFilter(0.1);
     okSemaphore *sem = adc.initDenoising();
     sem->wait();
-    adc.log_noise_threshold_to_console("Bender");
-
-    dac->init();
-    
     setRatchetThresholds();
-    updateDAC(BENDER_DAC_ZERO);
+    currOutput = BENDER_DAC_ZERO; // initialize at idle position for filtering
+    updateDAC(currOutput);
 }
 
 // polling should no longer check if the bender is idle. It should just update the DAC and call the activeCallback
@@ -61,6 +59,9 @@ void Bender::poll() {
     else
     {
         currBend = calculateOutput(this->read());
+#ifdef TESTING
+        logger_log(currBend);
+#endif        
         if (activeCallback)
             activeCallback(currBend); // should this be passing the currBend value or the raw ADC value?
     }

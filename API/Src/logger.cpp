@@ -65,7 +65,7 @@ void logger_log(float const f) {
 void logger_log(bool const boolean) {
     if (boolean)
     {
-        logger_log("TRUE");
+        logger_log("TRUE ");
     } else {
         logger_log("FALSE");
     }
@@ -136,7 +136,6 @@ void logger_log_task_watermark(TaskHandle_t task_handle) {
     logger_log(task_name);
     logger_log(" stack remaining: ");
     logger_log((uint32_t)stackSpace);
-    logger_log("\n");
 }
 
 static QueueHandle_t logger_queue = NULL;

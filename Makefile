@@ -95,6 +95,7 @@ API/rtos/Src/Mutex.cpp \
 Degree/Src/AnalogHandle.cpp \
 Degree/Src/main.cpp \
 Degree/Src/Bender.cpp \
+Degree/Src/Degrees.cpp \
 Degree/Src/Display.cpp \
 Degree/Src/MultiChanADC.cpp \
 Degree/Src/SuperSeq.cpp \

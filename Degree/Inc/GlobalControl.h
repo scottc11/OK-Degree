@@ -49,8 +49,6 @@ namespace DEGREE {
             switches = degrees_ptr;
             buttons = buttons_ptr;
             display = display_ptr;
-            ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
-            touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
         };
 
         Mode mode;
@@ -114,11 +112,13 @@ namespace DEGREE {
         void resetCalibration1VO(int chan);
         int getCalibrationDataPosition(int data_index, int channel_index);
 
+        void log_system_status();
+
     private:
     private:
         enum PadNames : uint16_t
         { // integers correlate to 8-bit index position
-#ifdef BOARD_REV_V38
+#if BOARD_VERSION == 38
             FREEZE = 0x4000,
             RECORD = 0x2000,
             RESET = 0x1000,
@@ -155,11 +155,13 @@ namespace DEGREE {
 
         enum Gestures : uint16_t
         {
+            QUANTIZE_AMOUNT = SHIFT | PB_RANGE,
             CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
             RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
             CALIBRATE_1VO = SHIFT | CMODE,
             CLEAR_SEQ_ALL = CLEAR_SEQ_BEND | CLEAR_SEQ_TOUCH,
-            FULL_SYSTEM_RESET = SHIFT | SEQ_LENGTH | QUANTIZE_SEQ | CMODE
+            FULL_SYSTEM_RESET = SHIFT | SEQ_LENGTH | QUANTIZE_SEQ | CMODE,
+            LOG_SYSTEM_STATUS = SHIFT | QUANTIZE_SEQ | SEQ_LENGTH
         };
     };
 }

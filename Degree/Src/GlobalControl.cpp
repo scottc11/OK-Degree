@@ -10,9 +10,20 @@ void GlobalControl::init() {
     display->init();
     display->clear();
 
+    logger_log("\n");
+    logger_log("\n** Global Control **");
+    logger_log("\nToggle Switches: connected = ");
+    logger_log(switches->io->isConnected());
+    logger_log(", ISR pin (before) = ");
+    logger_log(switches->ioInterupt.read());
     switches->init();
-    switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
+    logger_log(", ISR pin (after) = ");
+    logger_log(switches->ioInterupt.read());
 
+    logger_log("\nTactile Buttons: connected = ");
+    logger_log(buttons->isConnected());
+    logger_log(", ISR pin (before) = ");
+    logger_log(ioInterrupt.read());
     buttons->init();
     buttons->setDirection(MCP23017_PORTA, 0xff);
     buttons->setDirection(MCP23017_PORTB, 0xff);
@@ -21,16 +32,21 @@ void GlobalControl::init() {
     buttons->setPullUp(MCP23017_PORTA, 0xff);
     buttons->setPullUp(MCP23017_PORTB, 0xff);
     buttons->setInputPolarity(MCP23017_PORTA, 0xff);
+#if BOARD_VERSION == 41
     buttons->setInputPolarity(MCP23017_PORTB, 0b01111111);
-    buttons->digitalReadAB();
-    
-    touchPads->init();
+#else
+    buttons->setInputPolarity(MCP23017_PORTB, 0b11111111);
+#endif
+    logger_log(", ISR pin (after) = ");
+    logger_log(ioInterrupt.read());
 
-    channels[0]->init();
-    channels[1]->init();
-    channels[2]->init();
-    channels[3]->init();
-    display->clear();
+    logger_log("\nTouch Pads:      connected = ");
+    logger_log(touchPads->isConnected());
+    logger_log(", ISR pin (before) = ");
+    logger_log(touchInterrupt.read());
+    touchPads->init();
+    logger_log(", ISR pin (after) = ");
+    logger_log(touchInterrupt.read());
 
     // Tempo Pot ADC Noise: 1300ish w/ 100nF
     tempoPot.setFilter(0.01);
@@ -39,6 +55,16 @@ void GlobalControl::init() {
     sem_ptr->give();
     tempoPot.log_noise_threshold_to_console("Tempo Pot");
     tempoPot.invertReadings();
+    logger_log("\n");
+
+    // initializing channels here might be initializing the SPI while an interrupt is getting fired by
+    // the tactile buttons / switches, which may be interrupting this task and using the SPI periph before
+    // it is initialized
+    channels[0]->init();
+    channels[1]->init();
+    channels[2]->init();
+    channels[3]->init();
+    display->clear();
 
     // initialize tempo
     clock->init();
@@ -49,6 +75,13 @@ void GlobalControl::init() {
     handleTempoAdjustment(currTempoPotValue);
     prevTempoPotValue = currTempoPotValue;
     clock->start();
+
+    switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
+    switches->enableInterrupt();
+    switches->io->digitalReadAB(); // not ideal, but you have to clear the interrupt after initialization
+    ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
+    buttons->digitalReadAB();
+    touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
 }
 
 void GlobalControl::poll()
@@ -57,7 +90,6 @@ void GlobalControl::poll()
     {
     case DEFAULT:
         pollTempoPot();
-        pollTouchPads();
         channels[0]->poll();
         channels[1]->poll();
         channels[2]->poll();
@@ -128,9 +160,18 @@ void GlobalControl::handleTempoAdjustment(uint16_t value)
     }
 }
 
+/**
+ * @brief
+ * | x | x | + | - | D | C | B | A |
+ */
 void GlobalControl::pollTouchPads() {
     prevTouched = currTouched;
+
+#if BOARD_VERSION == 41 // touch pads do not have + - connected, and are wired differently
     currTouched = touchPads->touched() >> 4;
+#else
+    currTouched = touchPads->touched();
+#endif
 
     // for (int i = 0; i < CHANNEL_COUNT; i++)
     // {
@@ -274,6 +315,10 @@ void GlobalControl::handleButtonPress(int pad)
         HAL_NVIC_SystemReset();
         break;
 
+    case Gestures::LOG_SYSTEM_STATUS:
+        log_system_status();
+        break;
+
     case BEND_MODE:
         // iterate over currTouched and setChannelBenderMode if touched
         for (int i = 0; i < CHANNEL_COUNT; i++)
@@ -294,6 +339,14 @@ void GlobalControl::handleButtonPress(int pad)
             channels[i]->setUIMode(TouchChannel::UIMode::UI_PITCH_BEND_RANGE);
         }
         break;
+
+    case QUANTIZE_AMOUNT:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+        {
+            channels[i]->setUIMode(TouchChannel::UIMode::UI_QUANTIZE_AMOUNT);
+        }
+        break;
+
     case SEQ_LENGTH:
         this->display->clear();
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
@@ -596,4 +649,16 @@ int GlobalControl::getTouchedChannel() {
     }
     gestureFlag = false;
     return channel;
+}
+
+void GlobalControl::log_system_status()
+{
+    logger_log("\nToggle Switches ISR = ");
+    logger_log(switches->ioInterupt.read());
+
+    logger_log("\nTactile Buttons ISR pin = ");
+    logger_log(ioInterrupt.read());
+
+    logger_log("\nTouch ISR pin = ");
+    logger_log(touchInterrupt.read());
 }
