@@ -171,6 +171,7 @@ void SuperClock::disableInputCaptureISR()
 {
     externalInputMode = false;
     // HAL_TIM_IC_Stop(&htim2, TIM_CHANNEL_4);
+    __HAL_TIM_ENABLE(&htim4); // re-enable TIM4 (it gets disabled should the pulse count overtake PPQN before a new input capture event occurs)
     HAL_NVIC_DisableIRQ(TIM2_IRQn);
 }
 
