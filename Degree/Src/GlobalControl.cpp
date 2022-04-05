@@ -371,15 +371,13 @@ void GlobalControl::handleButtonPress(int pad)
         if (!recordEnabled)
         {
             recLED.write(1);
-            for (int i = 0; i < CHANNEL_COUNT; i++)
-                channels[i]->enableSequenceRecording();
+            sequencer_add_to_queue_ISR(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
             recordEnabled = true;
         }
         else
         {
             recLED.write(0);
-            for (int i = 0; i < CHANNEL_COUNT; i++)
-                channels[i]->disableSequenceRecording();
+            sequencer_add_to_queue_ISR(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
             recordEnabled = false;
         }
         break;
@@ -573,7 +571,6 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
     // {
     //     display_dispatch_isr(DISPLAY_ACTION::PULSE_DISPLAY, CHAN::ALL, 0);
     // }
-    
 
     if (pulse == 0) {
         tempoLED.write(HIGH);
@@ -583,7 +580,10 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         tempoGate.write(LOW);
     }
 
-    dispatch_sequence_notification_ISR();
+    sequencer_add_to_queue_ISR(CHAN::A, SEQ::ADVANCE, pulse);
+    sequencer_add_to_queue_ISR(CHAN::B, SEQ::ADVANCE, pulse);
+    sequencer_add_to_queue_ISR(CHAN::C, SEQ::ADVANCE, pulse);
+    sequencer_add_to_queue_ISR(CHAN::D, SEQ::ADVANCE, pulse);
 }
 
 /**

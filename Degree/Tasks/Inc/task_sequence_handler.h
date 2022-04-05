@@ -6,15 +6,16 @@
 
 using namespace DEGREE;
 
-extern TaskHandle_t sequencer_task_handle;
-
 enum class SEQ
 {
     ADVANCE,
     FREEZE,
-    RESET
+    RESET,
+    CLEAR,
+    RECORD_ENABLE,
+    RECORD_DISABLE
 };
 typedef enum SEQ SEQ;
 
 void task_sequence_handler(void *params);
-void dispatch_sequence_notification_ISR();
+void sequencer_add_to_queue_ISR(CHAN channel, SEQ event, uint16_t position);
