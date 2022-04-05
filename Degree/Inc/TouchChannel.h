@@ -61,7 +61,7 @@ namespace DEGREE {
         };
 
         enum UIMode {
-            UI_DEFAULT,
+            UI_PLAYBACK,
             UI_PITCH_BEND_RANGE,
             UI_SEQUENCE_LENGTH,
             UI_QUANTIZE_AMOUNT
@@ -106,7 +106,7 @@ namespace DEGREE {
             degreeSwitches = degrees;
             bender = _bender;
             globalGateOut = global_gate_ptr;
-            uiMode = UIMode::UI_DEFAULT;
+            uiMode = UIMode::UI_PLAYBACK;
             playbackMode = PlaybackMode::MONO;
             currDegree = 0;
             currOctave = 0;
@@ -183,13 +183,13 @@ namespace DEGREE {
         void handleQuantizeAmountUI();
 
         void setOctave(int octave);
-        void updateOctaveLeds(int octave);
+        void updateOctaveLeds(int octave, bool isPlaybackEvent);
 
-        void setLED(int io_pin, LedState state);
-        void setDegreeLed(int degree, LedState state);
-        void setAllDegreeLeds(LedState state);
-        void setOctaveLed(int octave, LedState state);
-        void setAllOctaveLeds(LedState state);
+        void setLED(int io_pin, LedState state, bool isPlaybackEvent);
+        void setDegreeLed(int degree, LedState state, bool isPlaybackEvent);
+        void setAllDegreeLeds(LedState state, bool isPlaybackEvent);
+        void setOctaveLed(int octave, LedState state, bool isPlaybackEvent);
+        void setAllOctaveLeds(LedState state, bool isPlaybackEvent);
 
         // Display Methods
         void displayProgressCallback(uint16_t progress);

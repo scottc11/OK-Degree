@@ -405,7 +405,7 @@ void GlobalControl::handleButtonRelease(int pad)
     case PB_RANGE:
         for (int i = 0; i < CHANNEL_COUNT; i++)
         {
-            channels[i]->setUIMode(TouchChannel::UIMode::UI_DEFAULT);
+            channels[i]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
         }
         break;
         
@@ -448,7 +448,7 @@ void GlobalControl::handleButtonRelease(int pad)
                 display->setSequenceLEDs(chan, channels[chan]->sequence.length, 2, true);
             }
             channels[chan]->setBenderMode((TouchChannel::BenderMode)channels[chan]->prevBenderMode);
-            channels[chan]->setUIMode(TouchChannel::UIMode::UI_DEFAULT);
+            channels[chan]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
         }
         break;
     case RECORD:
