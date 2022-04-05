@@ -21,6 +21,7 @@
 #pragma once
 
 #include "main.h"
+#include "Mutex.h"
 #include <array>
 #include "IS31FL3739.h"
 
@@ -86,4 +87,6 @@ private:
     bool _blinkState;
     std::array<uint8_t, 64> _state;
     std::array< std::array<uint8_t, 2>, 64> _scene_storage; // array to store the PWM value of each LED
+
+    static Mutex _mutex;
 };

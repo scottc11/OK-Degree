@@ -1,5 +1,7 @@
 #include "Display.h"
 
+Mutex Display::_mutex;
+
 void Display::init()
 {
     ledMatrix.init();
@@ -122,6 +124,7 @@ void Display::setChannelLED(int chan, int index, uint8_t pwm)
 */
 void Display::setSequenceLEDs(int chan, int length, int diviser, bool on)
 {
+    _mutex.lock();
     // illuminate each channels sequence length
     for (int i = 0; i < length / diviser; i++)
     {
@@ -133,10 +136,12 @@ void Display::setSequenceLEDs(int chan, int length, int diviser, bool on)
         int oddLedIndex = (length / diviser);
         this->setChannelLED(chan, oddLedIndex, on ? PWM::PWM_LOW : 0);
     }
+    _mutex.unlock();
 }
 
 void Display::stepSequenceLED(int chan, int currStep, int prevStep, int length)
 {
+    _mutex.lock();
     if (currStep % 2 == 0)
     {
         // set currStep PWM High
@@ -155,6 +160,7 @@ void Display::stepSequenceLED(int chan, int currStep, int prevStep, int length)
             this->setChannelLED(chan, prevStep / 2, PWM::PWM_LOW_MID);
         }
     }
+    _mutex.unlock();
 }
 
 /**
