@@ -38,6 +38,8 @@
 #define FREEZE_LED PB_7
 #define TEMPO_LED PA_1
 #define TEMPO_POT PA_2
+#define TEMPO_POT_MIN_ADC 1000
+#define TEMPO_POT_MAX_ADC 60000
 
 #define EXT_CLOCK_INPUT PA_3
 

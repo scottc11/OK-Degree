@@ -107,7 +107,8 @@ void SuperClock::initTIM4(uint16_t prescaler, uint16_t period)
 uint16_t SuperClock::convertADCReadToTicks(uint16_t min, uint16_t max, uint16_t value)
 {
     value = (max - value) + min; // invert
-    return map_num_in_range<uint16_t>(value, min, max, MIN_TICKS_PER_PULSE, MAX_TICKS_PER_PULSE);
+    uint16_t ticks = map_num_in_range<uint16_t>(value, min, max, MIN_TICKS_PER_PULSE, MAX_TICKS_PER_PULSE);
+    return ticks;
 }
 
 /**
@@ -117,6 +118,7 @@ uint16_t SuperClock::convertADCReadToTicks(uint16_t min, uint16_t max, uint16_t 
  */
 void SuperClock::setPulseFrequency(uint32_t ticks)
 {
+    ticksPerPulse = ticks; // store for debugging reference
     __HAL_TIM_SetAutoreload(&htim4, ticks);
 }
 
