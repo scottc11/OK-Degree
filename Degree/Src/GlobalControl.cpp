@@ -563,9 +563,10 @@ int GlobalControl::getCalibrationDataPosition(int data_index, int channel_index)
 }
 
 /**
- * Method gets called once every PPQN
+ * @brief Called within ISR, advances all channels sequence by 1, and handles global clock output
  * 
-*/
+ * @param pulse 
+ */
 void GlobalControl::advanceSequencer(uint8_t pulse)
 {
     // if (pulse % 16 == 0)
@@ -582,11 +583,7 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         tempoGate.write(LOW);
     }
 
-    for (int i = 0; i < CHANNEL_COUNT; i++)
-    {
-        channels[i]->sequence.advance();
-        channels[i]->setTickerFlag();
-    }
+    dispatch_sequence_notification_ISR();
 }
 
 /**

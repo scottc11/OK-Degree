@@ -4,6 +4,7 @@
 #include "okSemaphore.h"
 #include "task_calibration.h"
 #include "task_display.h"
+#include "task_sequence_handler.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"

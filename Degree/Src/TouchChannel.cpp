@@ -53,25 +53,6 @@ void TouchChannel::poll()
     switch (uiMode)
     {
     case UI_DEFAULT:
-        if (!freezeChannel)
-        {
-            if (tickerFlag)
-            {
-                bender->poll();
-
-                if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
-                {
-                    handleCVInput();
-                }
-
-                if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP)
-                {
-                    handleSequence(sequence.currPosition);
-                }
-
-                clearTickerFlag();
-            }
-        }
         break;
     case UI_PITCH_BEND_RANGE:
         break;
@@ -82,7 +63,24 @@ void TouchChannel::poll()
             clearTickerFlag();
         }
     }
-    
+}
+
+/**
+ * @brief gets called once every PPQN automatically by a task
+ *
+ */
+void TouchChannel::handleClock() {
+    bender->poll();
+
+    if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
+    {
+        handleCVInput();
+    }
+
+    if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP)
+    {
+        handleSequence(sequence.currPosition);
+    }
 }
 
 void TouchChannel::setUIMode(UIMode targetMode) {

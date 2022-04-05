@@ -163,6 +163,7 @@ namespace DEGREE {
 
         void init();
         void poll();
+        void handleClock();
         void setUIMode(UIMode targetMode);
         void setPlaybackMode(PlaybackMode targetMode);
         void toggleMode();
