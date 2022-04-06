@@ -570,10 +570,7 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         tempoGate.write(LOW);
     }
 
-    dispatch_sequencer_event_ISR(CHAN::A, SEQ::ADVANCE, pulse);
-    dispatch_sequencer_event_ISR(CHAN::B, SEQ::ADVANCE, pulse);
-    dispatch_sequencer_event_ISR(CHAN::C, SEQ::ADVANCE, pulse);
-    dispatch_sequencer_event_ISR(CHAN::D, SEQ::ADVANCE, pulse);
+    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::ADVANCE, pulse);
 }
 
 /**

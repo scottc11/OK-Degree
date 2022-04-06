@@ -25,9 +25,19 @@ void task_sequence_handler(void *params)
         switch (action)
         {
         case SEQ::ADVANCE:
-            ctrl->channels[channel]->sequence.advance();
-            ctrl->channels[channel]->handleClock();
+            if (channel == CHAN::ALL)
+            {
+                for (int i = 0; i < CHANNEL_COUNT; i++)
+                {
+                    ctrl->channels[i]->sequence.advance();
+                    ctrl->channels[i]->handleClock();
+                }
+            } else {
+                ctrl->channels[channel]->sequence.advance();
+                ctrl->channels[channel]->handleClock();
+            }
             break;
+
         case SEQ::FREEZE:
             if (channel == CHAN::ALL) {
                 for (int i = 0; i < CHANNEL_COUNT; i++)
@@ -36,6 +46,7 @@ void task_sequence_handler(void *params)
                 ctrl->channels[channel]->freeze((bool)data);
             }
             break;
+
         case SEQ::RESET:
             if (channel == CHAN::ALL)
             {
@@ -45,6 +56,7 @@ void task_sequence_handler(void *params)
                 ctrl->channels[channel]->resetSequence();
             }
             break;
+
         case SEQ::CLEAR_TOUCH:
             if (channel == CHAN::ALL)
             {
@@ -56,6 +68,7 @@ void task_sequence_handler(void *params)
                 ctrl->channels[channel]->sequence.clearAllTouchEvents();
             }
             break;
+
         case SEQ::CLEAR_BEND:
             if (channel == CHAN::ALL)
             {
@@ -69,14 +82,17 @@ void task_sequence_handler(void *params)
                 ctrl->channels[channel]->sequence.clearAllBendEvents();
             }
             break;
+
         case SEQ::RECORD_ENABLE:
             for (int i = 0; i < CHANNEL_COUNT; i++)
                 ctrl->channels[i]->enableSequenceRecording();
             break;
+
         case SEQ::RECORD_DISABLE:
             for (int i = 0; i < CHANNEL_COUNT; i++)
                 ctrl->channels[i]->disableSequenceRecording();
             break;
+            
         case SEQ::SET_LENGTH:
             ctrl->channels[channel]->updateSequenceLength(data);
             break;
