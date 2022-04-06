@@ -16,7 +16,8 @@
 #include "AnalogHandle.h"
 
 namespace DEGREE {
-
+    class TouchChannel; // forward declaration
+    
     class GlobalControl
     {
     public:

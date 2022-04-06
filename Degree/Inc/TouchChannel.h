@@ -10,6 +10,7 @@
 #include "SuperSeq.h"
 #include "Display.h"
 #include "okSemaphore.h"
+#include "task_sequence_handler.h"
 
 typedef struct QuantOctave
 {
@@ -205,10 +206,15 @@ namespace DEGREE {
         // Sequencer methods
         void handleSequence(int position);
         void resetSequence();
+        void updateSequenceLength(uint8_t steps);
+        void setSequenceLED(uint8_t step, uint8_t pwm);
+        void setAllSequenceLEDs();
+        void stepSequenceLED(int currStep, int prevStep, int length);
         void enableSequenceRecording();
         void disableSequenceRecording();
-        void setTickerFlag()   { tickerFlag = true; };
-        void clearTickerFlag() { tickerFlag = false; };
+
+        void setTickerFlag()   { tickerFlag = true; };  // obsolete
+        void clearTickerFlag() { tickerFlag = false; }; // obsolete
 
         // Bender methods
         void handleBend(uint16_t value);

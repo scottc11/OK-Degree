@@ -364,7 +364,7 @@ void TouchChannel::freeze(bool state)
         // reset last led in sequence before freeze
         if (sequence.playbackEnabled && sequence.currStep != freezeStep)
         {
-            display->setSequenceLED(channelIndex, freezeStep, PWM::PWM_LOW_MID);
+            setSequenceLED(freezeStep, PWM::PWM_LOW_MID);
         }
     }
 }
@@ -673,7 +673,7 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
     case INCREMENT_BENDER_MODE:
         break;
     case BEND_MENU:
-        display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
+        setAllSequenceLEDs();
         break;
     }
     return currBenderMode;
@@ -743,14 +743,11 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
     case BEND_MENU:
         if (state == Bender::BendState::BENDING_UP)
         {
-            sequence.setLength(sequence.length + 2);
-            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
+            sequencer_add_to_queue((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length + 2);
         }
         else if (state == Bender::BendState::BENDING_DOWN)
         {
-            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, false);
-            sequence.setLength(sequence.length - 2);
-            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
+            sequencer_add_to_queue((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length - 2);
         }
         break;
     }
@@ -934,7 +931,7 @@ void TouchChannel::handleSequence(int position)
     // always disp;ay sequence progresion regardless if there are events or not
     if (sequence.currStep != sequence.prevStep) // why?
     {
-        display->stepSequenceLED(this->channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
+        stepSequenceLED(sequence.currStep, sequence.prevStep, sequence.length);
     }
 
     // break out if there are no sequence events
@@ -1024,15 +1021,85 @@ void TouchChannel::resetSequence()
     sequence.reset();
     if (sequence.containsEvents())
     {
-        display->stepSequenceLED(channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
+        stepSequenceLED(sequence.currStep, sequence.prevStep, sequence.length);
         handleSequence(sequence.currPosition);
+    }
+}
+
+/**
+ * @brief set the sequence length and update UI
+ *
+ * @param length
+ */
+void TouchChannel::updateSequenceLength(uint8_t steps)
+{
+    sequence.setLength(steps);
+    display->clear(channelIndex);
+    setAllSequenceLEDs();
+    if (sequence.playbackEnabled)
+    {
+        if (sequence.currStep <= steps)
+        {
+            setSequenceLED(sequence.currStep, PWM::PWM_HIGH);
+        }
+    }
+}
+
+/**
+ * @brief given a sequence step, 
+ * 
+ * @param step 
+ */
+void TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm)
+{
+    uint8_t ledIndex = step / 2; // 32 step seq displayed with 16 LEDs
+    display->setChannelLED(channelIndex, ledIndex, pwm);
+}
+
+/**
+ * @brief illuminates the number of LEDs equal to sequence length divided by 2
+ */
+void TouchChannel::setAllSequenceLEDs()
+{
+    // illuminate each channels sequence length
+    for (int i = 0; i < sequence.length / 2; i++)
+    {
+        display->setChannelLED(channelIndex, i, PWM::PWM_LOW_MID);
+    }
+
+    if (sequence.length % 2 == 1)
+    {
+        int oddLedIndex = (sequence.length / 2);
+        display->setChannelLED(channelIndex, oddLedIndex, PWM::PWM_LOW);
+    }
+}
+
+void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
+{
+    if (currStep % 2 == 0)
+    {
+        // set currStep PWM High
+        setSequenceLED(currStep, PWM::PWM_HIGH);
+
+        // handle odd sequence lengths.
+        //  The last LED in sequence gets set to a different PWM
+        if (prevStep == length - 1 && length % 2 == 1)
+        {
+            setSequenceLED(prevStep, PWM::PWM_LOW);
+        }
+        // regular sequence lengths
+        else
+        {
+            // set prevStep PWM back to Mid
+            setSequenceLED(prevStep, PWM::PWM_LOW_MID);
+        }
     }
 }
 
 void TouchChannel::enableSequenceRecording()
 {
     sequence.recordEnabled = true;
-    display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
+    setAllSequenceLEDs();
     if (playbackMode == MONO)
     {
         setPlaybackMode(MONO_LOOP);

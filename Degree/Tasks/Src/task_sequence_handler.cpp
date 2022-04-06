@@ -70,6 +70,9 @@ void task_sequence_handler(void *params)
             for (int i = 0; i < CHANNEL_COUNT; i++)
                 ctrl->channels[i]->disableSequenceRecording();
             break;
+        case SEQ::SET_LENGTH:
+            ctrl->channels[channel]->updateSequenceLength(data);
+            break;
         }
     }
 }

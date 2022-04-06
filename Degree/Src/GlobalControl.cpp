@@ -428,12 +428,12 @@ void GlobalControl::handleButtonRelease(int pad)
         }
         break;
     case SEQ_LENGTH: // exit sequence length UI
-        this->display->clear();
+        this->display->clear(); // Why clear? Can't you instead iterate over each channel and then keep the display LEDs on or off based check on sequence containing events?
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             if (channels[chan]->sequence.containsEvents())
             {
-                display->setSequenceLEDs(chan, channels[chan]->sequence.length, 2, true);
+                channels[chan]->setAllSequenceLEDs();
             }
             channels[chan]->setBenderMode((TouchChannel::BenderMode)channels[chan]->prevBenderMode);
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);

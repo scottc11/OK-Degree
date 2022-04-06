@@ -120,56 +120,6 @@ void Display::setChannelLED(int chan, int index, uint8_t pwm)
 }
 
 /**
- * @brief illuminates the number of LEDs equal to sequence length divided by 2
-*/
-void Display::setSequenceLEDs(int chan, int length, int diviser, bool on)
-{
-    _mutex.lock();
-    // illuminate each channels sequence length
-    for (int i = 0; i < length / diviser; i++)
-    {
-        this->setChannelLED(chan, i, on ? PWM::PWM_LOW_MID : 0);
-    }
-
-    if (length % 2 == 1)
-    {
-        int oddLedIndex = (length / diviser);
-        this->setChannelLED(chan, oddLedIndex, on ? PWM::PWM_LOW : 0);
-    }
-    _mutex.unlock();
-}
-
-void Display::stepSequenceLED(int chan, int currStep, int prevStep, int length)
-{
-    _mutex.lock();
-    if (currStep % 2 == 0)
-    {
-        // set currStep PWM High
-        this->setSequenceLED(chan, currStep, PWM::PWM_HIGH);
-
-        // handle odd sequence lengths.
-        //  The last LED in sequence gets set to a different PWM
-        if (prevStep == length - 1 && length % 2 == 1)
-        {
-            this->setSequenceLED(chan, prevStep, PWM::PWM_LOW);
-        }
-        // regular sequence lengths
-        else
-        {
-            // set prevStep PWM back to Mid
-            this->setSequenceLED(chan, prevStep, PWM::PWM_LOW_MID);
-        }
-    }
-    _mutex.unlock();
-}
-
-void Display::setSequenceLED(int chan, int step, uint8_t pwm)
-{
-    uint8_t led = step / 2; // 32 step seq displayed with 16 LEDs
-    this->setChannelLED(chan, led, pwm);
-}
-
-/**
  * The Bender Calibration LED displau should start with the middle two rows barely illuminated, and then increase the brightness of
  * the middle row + top / bottom rows as the Bender gets more and more calibrated.
  * 

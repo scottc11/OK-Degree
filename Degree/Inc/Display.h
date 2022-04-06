@@ -74,9 +74,6 @@ public:
     void setLED(int index, uint8_t pwm);
     void setColumn(int column, uint8_t pwm);
     void setChannelLED(int chan, int index, uint8_t pwm);
-    void setSequenceLEDs(int chan, int length, int diviser, bool on);
-    void setSequenceLED(int chan, int step, uint8_t pwm);
-    void stepSequenceLED(int chan, int currStep, int prevStep, int length);
     void benderCalibration();
 
     void drawSquare(int chan, TickType_t speed);
