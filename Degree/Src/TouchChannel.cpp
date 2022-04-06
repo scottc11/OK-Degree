@@ -742,11 +742,11 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
     case BEND_MENU:
         if (state == Bender::BendState::BENDING_UP)
         {
-            sequencer_add_to_queue((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length + 2);
+            dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length + 2);
         }
         else if (state == Bender::BendState::BENDING_DOWN)
         {
-            sequencer_add_to_queue((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length - 2);
+            dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length - 2);
         }
         break;
     }

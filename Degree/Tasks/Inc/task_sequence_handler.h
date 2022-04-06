@@ -20,5 +20,5 @@ enum class SEQ
 typedef enum SEQ SEQ;
 
 void task_sequence_handler(void *params);
-void sequencer_add_to_queue(CHAN channel, SEQ event, uint16_t position);
-void sequencer_add_to_queue_ISR(CHAN channel, SEQ event, uint16_t position);
+void dispatch_sequencer_event(CHAN channel, SEQ event, uint16_t position);
+void dispatch_sequencer_event_ISR(CHAN channel, SEQ event, uint16_t position);

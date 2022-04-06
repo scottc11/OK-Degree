@@ -84,14 +84,14 @@ void task_sequence_handler(void *params)
     }
 }
 
-void sequencer_add_to_queue(CHAN channel, SEQ action, uint16_t position)
+void dispatch_sequencer_event(CHAN channel, SEQ action, uint16_t position)
 {
     // | chan | event | position |
     uint32_t event = ((uint8_t)channel << 24) | ((uint8_t)action << 16) | position;
     xQueueSend(sequencer_queue, &event, portMAX_DELAY);
 }
 
-void sequencer_add_to_queue_ISR(CHAN channel, SEQ action, uint16_t position)
+void dispatch_sequencer_event_ISR(CHAN channel, SEQ action, uint16_t position)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     // | chan | event | position |

@@ -256,11 +256,11 @@ void GlobalControl::handleButtonPress(int pad)
         break;
     case FREEZE:
         freezeLED.write(HIGH);
-        sequencer_add_to_queue(CHAN::ALL, SEQ::FREEZE, 1);
+        dispatch_sequencer_event(CHAN::ALL, SEQ::FREEZE, 1);
         break;
 
     case RESET:
-        sequencer_add_to_queue(CHAN::ALL, SEQ::RESET, 0);
+        dispatch_sequencer_event(CHAN::ALL, SEQ::RESET, 0);
         break;
 
     case QUANTIZE_SEQ:
@@ -367,13 +367,13 @@ void GlobalControl::handleButtonPress(int pad)
         if (!recordEnabled)
         {
             recLED.write(1);
-            sequencer_add_to_queue(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
             recordEnabled = true;
         }
         else
         {
             recLED.write(0);
-            sequencer_add_to_queue(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
             recordEnabled = false;
         }
         break;
@@ -389,7 +389,7 @@ void GlobalControl::handleButtonRelease(int pad)
     {
     case FREEZE:
         freezeLED.write(LOW);
-        sequencer_add_to_queue(CHAN::ALL, SEQ::FREEZE, 0); // 0 means false
+        dispatch_sequencer_event(CHAN::ALL, SEQ::FREEZE, 0); // 0 means false
         break;
     case RESET:
         break;
@@ -403,15 +403,15 @@ void GlobalControl::handleButtonRelease(int pad)
     case CLEAR_SEQ_TOUCH:
         if (!gestureFlag)
         {
-            sequencer_add_to_queue(CHAN::ALL, SEQ::CLEAR_TOUCH, 0);
+            dispatch_sequencer_event(CHAN::ALL, SEQ::CLEAR_TOUCH, 0);
             if (!recordEnabled)
-                sequencer_add_to_queue(CHAN::ALL, SEQ::RECORD_DISABLE, 0); // why do you even have to do this?
+                dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0); // why do you even have to do this?
         }
         else // clear only curr touched channels sequences
         {
-            sequencer_add_to_queue((CHAN)getTouchedChannel(), SEQ::CLEAR_TOUCH, 0);
+            dispatch_sequencer_event((CHAN)getTouchedChannel(), SEQ::CLEAR_TOUCH, 0);
             if (!recordEnabled)
-                sequencer_add_to_queue((CHAN)getTouchedChannel(), SEQ::RECORD_DISABLE, 0);
+                dispatch_sequencer_event((CHAN)getTouchedChannel(), SEQ::RECORD_DISABLE, 0);
         }
         break;
 
@@ -570,10 +570,10 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         tempoGate.write(LOW);
     }
 
-    sequencer_add_to_queue_ISR(CHAN::A, SEQ::ADVANCE, pulse);
-    sequencer_add_to_queue_ISR(CHAN::B, SEQ::ADVANCE, pulse);
-    sequencer_add_to_queue_ISR(CHAN::C, SEQ::ADVANCE, pulse);
-    sequencer_add_to_queue_ISR(CHAN::D, SEQ::ADVANCE, pulse);
+    dispatch_sequencer_event_ISR(CHAN::A, SEQ::ADVANCE, pulse);
+    dispatch_sequencer_event_ISR(CHAN::B, SEQ::ADVANCE, pulse);
+    dispatch_sequencer_event_ISR(CHAN::C, SEQ::ADVANCE, pulse);
+    dispatch_sequencer_event_ISR(CHAN::D, SEQ::ADVANCE, pulse);
 }
 
 /**
