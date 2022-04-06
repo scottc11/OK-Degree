@@ -20,7 +20,7 @@ void task_sequence_handler(void *params)
         xQueueReceive(sequencer_queue, &event, portMAX_DELAY);
         CHAN channel = (CHAN)bitwise_slice(event, 24, 8);
         SEQ action = (SEQ)bitwise_slice(event, 16, 8);
-        uint16_t position = bitwise_slice(event, 0, 16);
+        uint16_t data = bitwise_slice(event, 0, 16);
 
         switch (action)
         {
@@ -29,6 +29,12 @@ void task_sequence_handler(void *params)
             ctrl->channels[channel]->handleClock();
             break;
         case SEQ::FREEZE:
+            if (channel == CHAN::ALL) {
+                for (int i = 0; i < CHANNEL_COUNT; i++)
+                    ctrl->channels[i]->freeze((bool)data);
+            } else {
+                ctrl->channels[channel]->freeze((bool)data);
+            }
             break;
         case SEQ::RESET:
             break;

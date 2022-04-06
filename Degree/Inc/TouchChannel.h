@@ -146,6 +146,7 @@ namespace DEGREE {
         uint8_t prevOctave;
 
         bool freezeChannel;
+        int freezeStep;    // the position of sequence when freeze was enabled
 
         // Quantiser members
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)

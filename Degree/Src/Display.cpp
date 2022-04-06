@@ -145,22 +145,28 @@ void Display::stepSequenceLED(int chan, int currStep, int prevStep, int length)
     if (currStep % 2 == 0)
     {
         // set currStep PWM High
-        this->setChannelLED(chan, currStep / 2, PWM::PWM_HIGH);
+        this->setSequenceLED(chan, currStep, PWM::PWM_HIGH);
 
         // handle odd sequence lengths.
         //  The last LED in sequence gets set to a different PWM
         if (prevStep == length - 1 && length % 2 == 1)
         {
-            this->setChannelLED(chan, prevStep / 2, PWM::PWM_LOW);
+            this->setSequenceLED(chan, prevStep, PWM::PWM_LOW);
         }
         // regular sequence lengths
         else
         {
             // set prevStep PWM back to Mid
-            this->setChannelLED(chan, prevStep / 2, PWM::PWM_LOW_MID);
+            this->setSequenceLED(chan, prevStep, PWM::PWM_LOW_MID);
         }
     }
     _mutex.unlock();
+}
+
+void Display::setSequenceLED(int chan, int step, uint8_t pwm)
+{
+    uint8_t led = step / 2; // 32 step seq displayed with 16 LEDs
+    this->setChannelLED(chan, led, pwm);
 }
 
 /**

@@ -256,11 +256,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
     case FREEZE:
         freezeLED.write(HIGH);
-        for (int i = 0; i < CHANNEL_COUNT; i++)
-        {
-            channels[i]->freeze(true);
-        }
-        
+        sequencer_add_to_queue(CHAN::ALL, SEQ::FREEZE, 1);
         break;
 
     case RESET:
@@ -393,10 +389,7 @@ void GlobalControl::handleButtonRelease(int pad)
     {
     case FREEZE:
         freezeLED.write(LOW);
-        for (int i = 0; i < CHANNEL_COUNT; i++)
-        {
-            channels[i]->freeze(false);
-        }
+        sequencer_add_to_queue(CHAN::ALL, SEQ::FREEZE, 0); // 0 means false
         break;
     case RESET:
         break;

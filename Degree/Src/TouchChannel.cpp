@@ -73,16 +73,19 @@ void TouchChannel::poll()
  *
  */
 void TouchChannel::handleClock() {
-    bender->poll();
-
-    if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
+    if (!freezeChannel)
     {
-        handleCVInput();
-    }
+        bender->poll();
 
-    if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP)
-    {
-        handleSequence(sequence.currPosition);
+        if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
+        {
+            handleCVInput();
+        }
+
+        if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP)
+        {
+            handleSequence(sequence.currPosition);
+        }
     }
 }
 
@@ -354,9 +357,15 @@ void TouchChannel::freeze(bool state)
 {
     freezeChannel = state;
     if (freezeChannel == true) {
-        // log the last sequence led to be illuminated
+        freezeStep = sequence.currStep; // log the last sequence led to be illuminated
+        // maybe blink the degree LEDs?
+        // maybe blink the display LED sequence was frozen at?
     } else {
-        // turn off the last led in sequence before freeze
+        // reset last led in sequence before freeze
+        if (sequence.playbackEnabled && sequence.currStep != freezeStep)
+        {
+            display->setSequenceLED(channelIndex, freezeStep, PWM::PWM_LOW_MID);
+        }
     }
 }
 
