@@ -37,6 +37,13 @@ void task_sequence_handler(void *params)
             }
             break;
         case SEQ::RESET:
+            if (channel == CHAN::ALL)
+            {
+                for (int i = 0; i < CHANNEL_COUNT; i++)
+                    ctrl->channels[i]->resetSequence();
+            } else {
+                ctrl->channels[channel]->resetSequence();
+            }
             break;
         case SEQ::CLEAR_TOUCH:
             if (channel == CHAN::ALL)

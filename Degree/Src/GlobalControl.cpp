@@ -260,10 +260,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case RESET:
-        for (int i = 0; i < CHANNEL_COUNT; i++)
-        {
-            channels[i]->resetSequence();
-        }
+        sequencer_add_to_queue(CHAN::ALL, SEQ::RESET, 0);
         break;
 
     case QUANTIZE_SEQ:
