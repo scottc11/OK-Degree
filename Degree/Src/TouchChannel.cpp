@@ -673,7 +673,6 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
     case INCREMENT_BENDER_MODE:
         break;
     case BEND_MENU:
-        setAllSequenceLEDs();
         break;
     }
     return currBenderMode;
@@ -1034,15 +1033,7 @@ void TouchChannel::resetSequence()
 void TouchChannel::updateSequenceLength(uint8_t steps)
 {
     sequence.setLength(steps);
-    display->clear(channelIndex);
-    setAllSequenceLEDs();
-    if (sequence.playbackEnabled)
-    {
-        if (sequence.currStep <= steps)
-        {
-            setSequenceLED(sequence.currStep, PWM::PWM_HIGH);
-        }
-    }
+    drawSequenceToDisplay();
 }
 
 /**
@@ -1053,24 +1044,31 @@ void TouchChannel::updateSequenceLength(uint8_t steps)
 void TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm)
 {
     uint8_t ledIndex = step / 2; // 32 step seq displayed with 16 LEDs
-    display->setChannelLED(channelIndex, ledIndex, pwm);
+    display->setChannelLED(channelIndex, ledIndex, pwm); // it is possible ledIndex needs to be subracted by 1 🤔
 }
 
 /**
  * @brief illuminates the number of LEDs equal to sequence length divided by 2
  */
-void TouchChannel::setAllSequenceLEDs()
+void TouchChannel::drawSequenceToDisplay()
 {
-    // illuminate each channels sequence length
-    for (int i = 0; i < sequence.length / 2; i++)
+    for (int i = 0; i < MAX_SEQ_LENGTH; i += 2)
     {
-        display->setChannelLED(channelIndex, i, PWM::PWM_LOW_MID);
-    }
-
-    if (sequence.length % 2 == 1)
-    {
-        int oddLedIndex = (sequence.length / 2);
-        display->setChannelLED(channelIndex, oddLedIndex, PWM::PWM_LOW);
+        if (i < sequence.length)
+        {
+            if (i == sequence.currStep && sequence.playbackEnabled)
+            {
+                setSequenceLED(i, PWM::PWM_HIGH);
+            }
+            else
+            {
+                setSequenceLED(i, PWM::PWM_LOW_MID);
+            }
+        }
+        else
+        {
+            setSequenceLED(i, PWM::PWM_OFF);
+        }
     }
 }
 
@@ -1099,7 +1097,7 @@ void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
 void TouchChannel::enableSequenceRecording()
 {
     sequence.recordEnabled = true;
-    setAllSequenceLEDs();
+    drawSequenceToDisplay();
     if (playbackMode == MONO)
     {
         setPlaybackMode(MONO_LOOP);
