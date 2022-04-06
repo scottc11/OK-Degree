@@ -32,7 +32,29 @@ void task_sequence_handler(void *params)
             break;
         case SEQ::RESET:
             break;
-        case SEQ::CLEAR:
+        case SEQ::CLEAR_TOUCH:
+            if (channel == CHAN::ALL)
+            {
+                for (int i = 0; i < CHANNEL_COUNT; i++)
+                {
+                    ctrl->channels[i]->sequence.clearAllTouchEvents();
+                }
+            } else {
+                ctrl->channels[channel]->sequence.clearAllTouchEvents();
+            }
+            break;
+        case SEQ::CLEAR_BEND:
+            if (channel == CHAN::ALL)
+            {
+                for (int i = 0; i < CHANNEL_COUNT; i++)
+                {
+                    ctrl->channels[i]->sequence.clearAllBendEvents();
+                }
+            }
+            else
+            {
+                ctrl->channels[channel]->sequence.clearAllBendEvents();
+            }
             break;
         case SEQ::RECORD_ENABLE:
             for (int i = 0; i < CHANNEL_COUNT; i++)
@@ -44,6 +66,13 @@ void task_sequence_handler(void *params)
             break;
         }
     }
+}
+
+void sequencer_add_to_queue(CHAN channel, SEQ action, uint16_t position)
+{
+    // | chan | event | position |
+    uint32_t event = ((uint8_t)channel << 24) | ((uint8_t)action << 16) | position;
+    xQueueSend(sequencer_queue, &event, portMAX_DELAY);
 }
 
 void sequencer_add_to_queue_ISR(CHAN channel, SEQ action, uint16_t position)

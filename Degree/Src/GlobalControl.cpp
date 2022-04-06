@@ -371,13 +371,13 @@ void GlobalControl::handleButtonPress(int pad)
         if (!recordEnabled)
         {
             recLED.write(1);
-            sequencer_add_to_queue_ISR(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
+            sequencer_add_to_queue(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
             recordEnabled = true;
         }
         else
         {
             recLED.write(0);
-            sequencer_add_to_queue_ISR(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
+            sequencer_add_to_queue(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
             recordEnabled = false;
         }
         break;
@@ -410,18 +410,15 @@ void GlobalControl::handleButtonRelease(int pad)
     case CLEAR_SEQ_TOUCH:
         if (!gestureFlag)
         {
-            for (int i = 0; i < CHANNEL_COUNT; i++)
-            {
-                channels[i]->sequence.clearAllTouchEvents();
-                if (!recordEnabled)
-                    channels[i]->disableSequenceRecording();
-            }
+            sequencer_add_to_queue(CHAN::ALL, SEQ::CLEAR_TOUCH, 0);
+            if (!recordEnabled)
+                sequencer_add_to_queue(CHAN::ALL, SEQ::RECORD_DISABLE, 0); // why do you even have to do this?
         }
         else // clear only curr touched channels sequences
         {
-            channels[getTouchedChannel()]->sequence.clearAllTouchEvents();
+            sequencer_add_to_queue((CHAN)getTouchedChannel(), SEQ::CLEAR_TOUCH, 0);
             if (!recordEnabled)
-                channels[getTouchedChannel()]->disableSequenceRecording();
+                sequencer_add_to_queue((CHAN)getTouchedChannel(), SEQ::RECORD_DISABLE, 0);
         }
         break;
 
