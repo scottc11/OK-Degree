@@ -389,7 +389,10 @@ void TouchChannel::setLED(int io_pin, LedState state, bool isPlaybackEvent)
 {
     if (isPlaybackEvent && uiMode != UI_PLAYBACK)
     {
-        return;
+        if (uiMode == UI_PITCH_BEND_RANGE || uiMode == UI_QUANTIZE_AMOUNT)
+        {
+            return;
+        }
     }
     
     switch (state) {
