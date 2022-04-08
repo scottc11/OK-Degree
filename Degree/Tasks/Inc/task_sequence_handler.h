@@ -15,7 +15,8 @@ enum class SEQ
     CLEAR_BEND,
     RECORD_ENABLE,
     RECORD_DISABLE,
-    SET_LENGTH
+    SET_LENGTH,
+    QUANTIZE
 };
 typedef enum SEQ SEQ;
 

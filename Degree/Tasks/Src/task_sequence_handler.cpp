@@ -96,6 +96,22 @@ void task_sequence_handler(void *params)
         case SEQ::SET_LENGTH:
             ctrl->channels[channel]->updateSequenceLength(data);
             break;
+
+        case SEQ::QUANTIZE:
+            if (channel == CHAN::ALL)
+            {
+                for (int i = 0; i < CHANNEL_COUNT; i++)
+                {
+                    if (ctrl->channels[i]->sequence.containsTouchEvents)
+                    {
+                        ctrl->channels[i]->sequence.quantize();
+                    }
+                }
+            } else {
+                if (ctrl->channels[channel]->sequence.containsTouchEvents)
+                    ctrl->channels[channel]->sequence.quantize();
+            }
+            break;
         }
     }
 }

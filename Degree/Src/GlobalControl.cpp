@@ -264,13 +264,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case QUANTIZE_SEQ:
-        for (int i = 0; i < CHANNEL_COUNT; i++)
-        {
-            if (channels[i]->sequence.containsTouchEvents)
-            {
-                channels[i]->sequence.quantize();
-            }
-        }
+        dispatch_sequencer_event(CHAN::ALL, SEQ::QUANTIZE, 0);
         break;
 
     case Gestures::CALIBRATE_BENDER:
