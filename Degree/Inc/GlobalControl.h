@@ -91,7 +91,7 @@ namespace DEGREE {
         void pollTempoPot();
 
         void advanceSequencer(uint8_t pulse);
-        void resetSequencer();
+        void resetSequencer(uint8_t pulse);
 
         void handleTempoAdjustment(uint16_t value);
 

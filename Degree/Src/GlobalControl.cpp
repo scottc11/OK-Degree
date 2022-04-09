@@ -574,31 +574,13 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
  * pulse count overtakes the external clocks rising edge. To avoid this scenario, you need to halt further execution of the sequence should it reach PPQN - 1 
  * prior to the ext clock rising edge. Thing is, the sequence would first need to know that it is being externally clocked...
  * 
- * TODO: external clock is ignored unless the CLOCK knob is set to its minimum value and tap tempo is reset.
- * 
  * Currently, your clock division is very off. The higher the ext clock signal is, you lose an increasing amount of pulses.
  * Ex. @ 120bpm sequence will reset on pulse 84 (ie. missing 12 PPQNs)
  * Ex. @ 132bpm sequence missing 20 PPQNs
  */
-void GlobalControl::resetSequencer()
+void GlobalControl::resetSequencer(uint8_t pulse)
 {
-    for (int i = 0; i < CHANNEL_COUNT; i++)
-    {
-        // try just setting the sequence to 0, set any potential gates low. You may miss a note but 🤷‍♂️
-
-        // if sequence is not on its final PPQN of its step, then trigger all remaining PPQNs in current step until currPPQN == 0
-        if (channels[i]->sequence.currStepPosition != 0) {
-            while (channels[i]->sequence.currStepPosition != 0)
-            {
-                // you can't be calling i2c / spi functions here, meaning you can't execute unexecuted sequence events until you first abstract
-                // the DAC and LED components of an event out into a seperate thread.
-
-                // incrementing the clock will at least keep the sequence in sync with an external clock
-                channels[i]->sequence.advance();
-            }
-            channels[i]->setTickerFlag();
-        }
-    }
+    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::CORRECT, 0);
 }
 
 void GlobalControl::enableVCOCalibration(TouchChannel *channel)

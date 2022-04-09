@@ -143,13 +143,13 @@ void SuperClock::handleInputCaptureCallback()
 {
     // almost always, there will need to be at least 1 pulse not yet executed prior to an input capture, 
     // so you must execute all remaining until
-    // if (pulse > PPQN_ERROR)
-    // {
-    //     while (pulse < PPQN)
-    //     {
-    //         this->handleOverflowCallback();
-    //     }
-    // }
+    if (pulse < PPQN)
+    {
+        if (resetCallback)
+        {
+            resetCallback(pulse);
+        }
+    }
 
     __HAL_TIM_SetCounter(&htim2, 0); // reset after each input capture
     __HAL_TIM_SetCounter(&htim4, 0); // reset after each input capture
@@ -215,7 +215,7 @@ void SuperClock::attachPPQNCallback(Callback<void(uint8_t pulse)> func)
     ppqnCallback = func;
 }
 
-void SuperClock::attachResetCallback(Callback<void()> func)
+void SuperClock::attachResetCallback(Callback<void(uint8_t pulse)> func)
 {
     resetCallback = func;
 }

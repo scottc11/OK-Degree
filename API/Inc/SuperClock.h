@@ -36,7 +36,7 @@ public:
     Callback<void()> tickCallback;           // this callback gets executed at a frequency equal to tim1_freq
     Callback<void()> input_capture_callback; // this callback gets executed every on the rising edge of external input
     Callback<void(uint8_t pulse)> ppqnCallback; // this callback gets executed at a rate equal to input capture / PPQN. It passes the current tick values as arguments
-    Callback<void()> resetCallback;
+    Callback<void(uint8_t pulse)> resetCallback;
     Callback<void()> overflowCallback;       // callback executes when all when a full step completes
 
     /**
@@ -63,7 +63,7 @@ public:
     // Callback Setters
     void attachInputCaptureCallback(Callback<void()> func);
     void attachPPQNCallback(Callback<void(uint8_t pulse)> func);
-    void attachResetCallback(Callback<void()> func);
+    void attachResetCallback(Callback<void(uint8_t pulse)> func);
     
     // Low Level HAL interupt handlers
     void handleInputCaptureCallback();

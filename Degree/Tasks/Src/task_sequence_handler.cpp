@@ -112,6 +112,24 @@ void task_sequence_handler(void *params)
                     ctrl->channels[channel]->sequence.quantize();
             }
             break;
+
+        case SEQ::CORRECT:
+            for (int i = 0; i < CHANNEL_COUNT; i++)
+            {
+                // you could just setting the sequence to 0, set any potential gates low. You may miss a note but 🤷‍♂️
+
+                // if sequence is not on its final PPQN of its step, then trigger all remaining PPQNs in current step until currPPQN == 0
+                if (ctrl->channels[i]->sequence.currStepPosition != 0)
+                {
+                    while (ctrl->channels[i]->sequence.currStepPosition != 0)
+                    {
+                        // incrementing the clock will at least keep the sequence in sync with an external clock
+                        ctrl->channels[i]->sequence.advance();
+                        ctrl->channels[i]->handleClock();
+                    }
+                }
+            }
+            break;
         }
     }
 }
