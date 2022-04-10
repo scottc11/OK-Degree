@@ -5,6 +5,7 @@ using namespace DEGREE;
 uint32_t SETTINGS_BUFFER[SETTINGS_BUFFER_SIZE];
 
 void GlobalControl::init() {
+    suspend_sequencer_task();
     this->loadCalibrationDataFromFlash();
 
     display->init();
@@ -82,6 +83,7 @@ void GlobalControl::init() {
     ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
     buttons->digitalReadAB();
     touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
+    resume_sequencer_task();
 }
 
 void GlobalControl::poll()
