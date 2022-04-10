@@ -4,7 +4,6 @@ using namespace DEGREE;
 
 void TouchChannel::init()
 {
-    xTaskCreate(TouchChannel::taskHandleTouch, "handleTouch", RTOS_STACK_SIZE_MIN, this, RTOS_PRIORITY_HIGH, &this->handleTouchTaskHandle);
     uiMode = UI_PLAYBACK;
     
     output.init(); // must init this first (for the dac)
@@ -1146,39 +1145,10 @@ void TouchChannel::initializeCalibration() {
 }
 
 /**
- * @brief dedicated high priority task for each touch channel which listens for touch events getting added to a queue by
- * each channels touch interrupt pins
- *
- * @param touch_chan_ptr TouchChannel pointer
- */
-void TouchChannel::taskHandleTouch(void *touch_chan_ptr) {
-    TouchChannel *_this = (TouchChannel*)touch_chan_ptr;
-    _this->touchEventQueue = xQueueCreate(12, sizeof(uint8_t));
-    uint8_t eventData;
-    while (1)
-    {
-        xQueueReceive(_this->touchEventQueue, &eventData, portMAX_DELAY);
-        _this->touchPads->handleTouch(); // this will trigger either onTouch() or onRelease()
-    }
-}
-
-/**
- * @brief send a notification to the handle touch task queue
+ * @brief ISR from touch IC to send a notification sequencer queue
  */
 void TouchChannel::handleTouchInterrupt() {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    uint8_t nil = 88; // this does not matter but it doesn't work otherwise
-    xQueueSendFromISR(this->touchEventQueue, &nil, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-
-void taskHandleLEDs(void *params) {
-    while (1)
-    {
-        // handle incoming events from a queue
-        // update LEDs depending on the channels UI mode
-    }
+    dispatch_sequencer_event_ISR((CHAN)channelIndex, SEQ::HANDLE_TOUCH, 0);
 }
 
 void TouchChannel::displayProgressCallback(uint16_t progress)

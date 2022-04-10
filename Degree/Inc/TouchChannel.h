@@ -128,9 +128,6 @@ namespace DEGREE {
         DigitalOut gateOut; // gate output
         AnalogHandle adc;   // CV input ADC
         VoltPerOctave output;        
-        
-        TaskHandle_t handleTouchTaskHandle;
-        QueueHandle_t touchEventQueue;
 
         uint8_t currRatchetRate;      //
         bool gateState;               // state of the gate output
@@ -232,7 +229,5 @@ namespace DEGREE {
         void initializeCalibration();
         
         void logPeripherals();
-
-        static void taskHandleTouch(void *_this);
     };
 } // end namespace

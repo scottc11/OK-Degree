@@ -38,6 +38,10 @@ void task_sequence_handler(void *params)
             }
             break;
 
+        case SEQ::HANDLE_TOUCH:
+            ctrl->channels[channel]->touchPads->handleTouch(); // this will trigger either onTouch() or onRelease()
+            break;
+
         case SEQ::FREEZE:
             if (channel == CHAN::ALL) {
                 for (int i = 0; i < CHANNEL_COUNT; i++)

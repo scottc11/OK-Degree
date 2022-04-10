@@ -17,7 +17,8 @@ enum class SEQ
     RECORD_DISABLE,
     SET_LENGTH,
     QUANTIZE,
-    CORRECT
+    CORRECT,
+    HANDLE_TOUCH
 };
 typedef enum SEQ SEQ;
 
