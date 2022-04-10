@@ -292,8 +292,8 @@ int SuperSeq::getQuantizedPosition(int pos, QuantizeAmount target)
  */
 void SuperSeq::quantize()
 {
-    logger_log("\nPRE-QUANTIZATION");
-    logSequenceToConsole();
+    // logger_log("\nPRE-QUANTIZATION");
+    // logSequenceToConsole();
     
     int pos = 0;
     int lastGateHighPos = 0;
@@ -366,9 +366,9 @@ void SuperSeq::quantize()
         }
         pos++;
     }
-    logger_log("\n\nPOST-QUANTIZATION");
-    logSequenceToConsole();
-    logger_log("\n");
+    // logger_log("\n\nPOST-QUANTIZATION");
+    // logSequenceToConsole();
+    // logger_log("\n");
 }
 
 void SuperSeq::quantizationTest()
