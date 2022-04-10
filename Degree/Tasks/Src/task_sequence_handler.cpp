@@ -153,3 +153,13 @@ void dispatch_sequencer_event_ISR(CHAN channel, SEQ action, uint16_t position)
     xQueueSendFromISR(sequencer_queue, &event, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+
+void suspend_sequencer_task()
+{
+    vTaskSuspend(sequencer_task_handle);
+}
+
+void resume_sequencer_task()
+{
+    vTaskResume(sequencer_task_handle);
+}

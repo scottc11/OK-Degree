@@ -17,6 +17,7 @@ void task_controller(void *params)
         {
         case CTRL_ACTION::ENTER_1VO_CALIBRATION:
             vTaskSuspend(main_task_handle);
+            suspend_sequencer_task();
             controller->channels[channel]->initializeCalibration();
             ctrl_dispatch(CTRL_ACTION::ENTER_VCO_TUNING, channel, 0);
             break;
@@ -30,6 +31,7 @@ void task_controller(void *params)
 
             controller->disableVCOCalibration();
             vTaskResume(main_task_handle);
+            resume_sequencer_task();
             break;
         case CTRL_ACTION::EXIT_BENDER_CALIBRATION:
             // do something
