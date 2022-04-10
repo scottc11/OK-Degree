@@ -966,18 +966,10 @@ void TouchChannel::handleSequence(int position)
                         sequence.prevEventPos = position;                                    // store position into variable
                         triggerNote(sequence.getEventDegree(position), currOctave, NOTE_ON); // trigger note ON
                     }
-                    else
+                    else // set event.gate LOW
                     {
-                        // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
-                        if (sequence.getEventDegree(sequence.prevEventPos) != sequence.getEventDegree(position))
-                        {
-                            sequence.clearTouchAtPosition(position);
-                        }
-                        else // set event.gate LOW
-                        {
-                            sequence.prevEventPos = position;                                     // store position into variable
-                            triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
-                        }
+                        sequence.prevEventPos = position;                                     // store position into variable
+                        triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
                     }
                 }
             }
