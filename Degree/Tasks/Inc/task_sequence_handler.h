@@ -18,7 +18,8 @@ enum class SEQ
     SET_LENGTH,
     QUANTIZE,
     CORRECT,
-    HANDLE_TOUCH
+    HANDLE_TOUCH,
+    HANDLE_DEGREE
 };
 typedef enum SEQ SEQ;
 

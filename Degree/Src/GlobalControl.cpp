@@ -78,7 +78,7 @@ void GlobalControl::init() {
 
     switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
     switches->enableInterrupt();
-    switches->io->digitalReadAB(); // not ideal, but you have to clear the interrupt after initialization
+    switches->updateDegreeStates(); // not ideal, but you have to clear the interrupt after initialization
     ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
     buttons->digitalReadAB();
     touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
@@ -115,10 +115,7 @@ void GlobalControl::poll()
 
 void GlobalControl::handleSwitchChange()
 {
-    channels[0]->updateDegrees();
-    channels[1]->updateDegrees();
-    channels[2]->updateDegrees();
-    channels[3]->updateDegrees();
+    dispatch_sequencer_event(CHAN::ALL, SEQ::HANDLE_DEGREE, 0);
 }
 
 void GlobalControl::handleButtonInterrupt()
