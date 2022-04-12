@@ -38,7 +38,7 @@ void VoltPerOctave::setPitchBend(uint16_t value)
  * @param min range floor of input
  * @param max range ceiling of input
 */
-uint16_t VoltPerOctave::calculatePitchBend(int input, int min, int max)
+uint16_t VoltPerOctave::calculatePitchBend(uint16_t input, uint16_t min, uint16_t max)
 {
     return map_num_in_range<uint16_t>(input, min, max, minPitchBend, maxPitchBend);
 }
@@ -82,5 +82,15 @@ void VoltPerOctave::resetVoltageMap()
     for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
     {
         dacVoltageMap[i] = floor + (semitone * i);
+    }
+}
+
+void VoltPerOctave::logVoltageMap() {
+    logger_log("\nVoltage Map\n");
+    for (int i = 0; i < DAC_1VO_ARR_SIZE; i++) {
+        logger_log(dacVoltageMap[i]);
+        if (i != DAC_1VO_ARR_SIZE - 1) {
+            logger_log(", ");
+        }
     }
 }

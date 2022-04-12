@@ -663,8 +663,10 @@ void GlobalControl::log_system_status()
 
     logger_log("\nTouch ISR pin = ");
     logger_log(touchInterrupt.read());
-    for (int i = 0; i < CHANNEL_COUNT; i++)
+    for (int i = 0; i < CHANNEL_COUNT; i++) {
         channels[i]->logPeripherals();
+        channels[i]->output.logVoltageMap();
+    }
 }
 
 void GlobalControl::handleHardwareTest(uint16_t pressedButtons)

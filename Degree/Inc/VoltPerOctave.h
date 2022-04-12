@@ -56,7 +56,8 @@ namespace DEGREE {
         int getPitchBendRange();
         void setPitchBend(uint16_t value);
         void bend(uint16_t value);
-        uint16_t calculatePitchBend(int input, int min, int max);
+        uint16_t calculatePitchBend(uint16_t input, uint16_t min, uint16_t max);
         void resetVoltageMap();
+        void logVoltageMap();
     };
 }
