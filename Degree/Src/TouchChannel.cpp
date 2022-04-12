@@ -140,7 +140,6 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
 
     // start from a clean slate by setting all the LEDs LOW
     for (int i = 0; i < DEGREE_COUNT; i++) {
-        setDegreeLed(i, DIM_MED, false);
         setDegreeLed(i, OFF, false);
     }
     setLED(CHANNEL_REC_LED, OFF, false);
@@ -156,6 +155,7 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
     case MONO_LOOP:
         sequence.playbackEnabled = true;
         setLED(CHANNEL_REC_LED, ON, false);
+        setOctaveLed(currOctave, LedState::ON, false);
         triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case QUANTIZER:
