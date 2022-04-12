@@ -614,14 +614,14 @@ void TouchChannel::handlePitchBend(uint16_t value) {
     if (!touchPads->padIsTouched()) // only apply pitch bend when all pads have been released
     {
         uint16_t pitchbend;
-        // Pitch Bend UP
-        if (bender->currState == Bender::BENDING_UP)
+        // Pitch Bend UP (inverted)
+        if (value < bender->getIdleValue())
         {
             pitchbend = output.calculatePitchBend(value, bender->getMinBend(), bender->getIdleValue());
             output.setPitchBend(output.maxPitchBend - pitchbend, true); // NOTE: inverted mapping
         }
         // Pitch Bend DOWN
-        else if (bender->currState == Bender::BENDING_DOWN)
+        else if (value > bender->getIdleValue())
         {
             pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
             output.setPitchBend(pitchbend, false); // value needs to be negative
