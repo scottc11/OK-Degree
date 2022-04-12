@@ -46,6 +46,7 @@ namespace DEGREE {
             this->dac = _dac;
             this->dacChannel = _chan;
             this->adc = _adc;
+            this->setPitchBendRange(5);
         };
 
         void init();

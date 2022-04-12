@@ -37,10 +37,10 @@ void TouchChannel::init()
     touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
     touchPads->enable();
 
+    // you should actually be accessing a global settings buffer 
     display->drawSpiral(channelIndex, true, 25);
-
-    setPlaybackMode(MONO);
-    setBenderMode(PITCH_BEND);
+    setPlaybackMode(playbackMode); // value of playbackMode gets loaded and assigned from flash
+    setBenderMode((BenderMode)currBenderMode); // value of playbackMode gets loaded and assigned from flash
     logPeripherals();
 }
 
@@ -115,6 +115,7 @@ void TouchChannel::handlePitchBendRangeUI()
     setAllDegreeLeds(LedState::OFF, false);
     for (int i = 0; i < output.getPitchBendRange() + 1; i++)
     {
+        int inversion = 7 - i; // invert
         setDegreeLed(i, LedState::ON, false);
     }
 }
@@ -206,7 +207,7 @@ void TouchChannel::onTouch(uint8_t pad)
         break;
     case UIMode::UI_PITCH_BEND_RANGE:
         // take incoming pad and update the pitch bend range accordingly.
-        output.setPitchBendRange(pad);
+        output.setPitchBendRange(CHAN_TOUCH_PADS[pad]); // this applies the inverse of the pad (ie. pad = 7, gets mapped to 0)
         handlePitchBendRangeUI();
         break;
     }
@@ -1169,8 +1170,23 @@ void TouchChannel::logPeripherals() {
     logger_log("\nMPR121 Int Pin: ");
     logger_log(touchPads->readInterruptPin());
 
+    logger_log("\nBender Mode: ");
+    logger_log(currBenderMode);
     logger_log("\nBender ADC Value: ");
     logger_log(bender->adc.read_u16());
     bender->adc.log_noise_threshold_to_console("Bender");
+    logger_log("\nBender Min Bend: ");
+    logger_log(bender->adc.getInputMin());
+    logger_log("\nBender Max Bend: ");
+    logger_log(bender->adc.getInputMax());
+
+    logger_log("\nPitch Bend Range (index): ");
+    logger_log(output.getPitchBendRange());
+
+    logger_log("\nSequence Length: ");
+    logger_log(sequence.length);
+
+    logger_log("\nSequence Quantization: ");
+    logger_log((int)sequence.quantizeAmount);
     logger_log("\n");
 }

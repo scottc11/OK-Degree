@@ -21,24 +21,15 @@ typedef struct SequenceNode
 
 class SuperSeq {
 public:
-    
-    enum QuantizeAmount
-    {
-        QUANT_NONE = 0,
-        QUANT_Quarter = PPQN,
-        QUANT_8th = PPQN / 2,
-        QUANT_16th = PPQN / 4,
-        QUANT_32nd = PPQN / 8,
-        QUANT_64th = PPQN / 16,
-        QUANT_128th = PPQN / 32
-    };
 
     SuperSeq(Bender *benderPtr) {
         bender = benderPtr;
+        setLength(DEFAULT_SEQ_LENGTH);
+        setQuantizeAmount(QUANT::EIGTH);
     };
 
     Bender *bender;       // you need the instance of a bender for determing its idle value when clearing / initializing bender events
-    QuantizeAmount quantizeAmount;
+    QUANT quantizeAmount;
 
     int length;              // how many steps the sequence contains
     int lengthPPQN;          // how many PPQN the sequence contains
@@ -86,8 +77,8 @@ public:
     void advanceStep();
 
     void quantize();
-    void setQuantizeAmount(QuantizeAmount value);
-    int getQuantizedPosition(int pos, QuantizeAmount target);
+    void setQuantizeAmount(QUANT value);
+    int getQuantizedPosition(int pos, QUANT target);
 
     uint8_t constructEventData(uint8_t degree, bool gate, bool status);
     void setEventData(int position, uint8_t degree, bool gate, bool status);

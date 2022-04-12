@@ -39,7 +39,7 @@ namespace DEGREE {
 
     static const int DAC_OCTAVE_MAP[4] = { 0, 12, 24, 36 };               // for mapping a value between 0..3 to octaves
     static const int DEGREE_INDEX_MAP[8] = { 0, 2, 4, 6, 8, 10, 12, 14 }; // for mapping an index between 0..7 to a scale degree
-
+    
     class TouchChannel {
     public:
         enum Action
@@ -108,7 +108,8 @@ namespace DEGREE {
             bender = _bender;
             globalGateOut = global_gate_ptr;
             uiMode = UIMode::UI_PLAYBACK;
-            playbackMode = PlaybackMode::MONO;
+            playbackMode = PlaybackMode::MONO;       // assigned from flash after init
+            currBenderMode = BenderMode::PITCH_BEND; // assigned from flash after init
             currDegree = 0;
             currOctave = 0;
             
