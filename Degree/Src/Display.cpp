@@ -1,5 +1,7 @@
 #include "Display.h"
 
+Mutex Display::_mutex;
+
 void Display::init()
 {
     ledMatrix.init();
@@ -115,46 +117,6 @@ void Display::setColumn(int column, uint8_t pwm)
 void Display::setChannelLED(int chan, int index, uint8_t pwm)
 {
     this->setLED(CHAN_DISPLAY_LED_MAP[chan][index], pwm);
-}
-
-/**
- * @brief illuminates the number of LEDs equal to sequence length divided by 2
-*/
-void Display::setSequenceLEDs(int chan, int length, int diviser, bool on)
-{
-    // illuminate each channels sequence length
-    for (int i = 0; i < length / diviser; i++)
-    {
-        this->setChannelLED(chan, i, on ? PWM::PWM_LOW_MID : 0);
-    }
-
-    if (length % 2 == 1)
-    {
-        int oddLedIndex = (length / diviser);
-        this->setChannelLED(chan, oddLedIndex, on ? PWM::PWM_LOW : 0);
-    }
-}
-
-void Display::stepSequenceLED(int chan, int currStep, int prevStep, int length)
-{
-    if (currStep % 2 == 0)
-    {
-        // set currStep PWM High
-        this->setChannelLED(chan, currStep / 2, PWM::PWM_HIGH);
-
-        // handle odd sequence lengths.
-        //  The last LED in sequence gets set to a different PWM
-        if (prevStep == length - 1 && length % 2 == 1)
-        {
-            this->setChannelLED(chan, prevStep / 2, PWM::PWM_LOW);
-        }
-        // regular sequence lengths
-        else
-        {
-            // set prevStep PWM back to Mid
-            this->setChannelLED(chan, prevStep / 2, PWM::PWM_LOW_MID);
-        }
-    }
 }
 
 /**

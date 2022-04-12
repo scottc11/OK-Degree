@@ -17,7 +17,7 @@ void task_controller(void *params)
         {
         case CTRL_ACTION::ENTER_1VO_CALIBRATION:
             vTaskSuspend(main_task_handle);
-            vTaskSuspend(controller->channels[channel]->handleTouchTaskHandle);
+            suspend_sequencer_task();
             controller->channels[channel]->initializeCalibration();
             ctrl_dispatch(CTRL_ACTION::ENTER_VCO_TUNING, channel, 0);
             break;
@@ -31,15 +31,18 @@ void task_controller(void *params)
 
             controller->disableVCOCalibration();
             vTaskResume(main_task_handle);
-            vTaskResume(controller->channels[channel]->handleTouchTaskHandle);
+            resume_sequencer_task();
             break;
+            
         case CTRL_ACTION::EXIT_BENDER_CALIBRATION:
             // do something
             break;
+
         case CTRL_ACTION::ENTER_VCO_TUNING:
             xTaskCreate(task_tuner, "tuner", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_HIGH, &tuner_task_handle);
             xTaskCreate(taskObtainSignalFrequency, "detector", RTOS_STACK_SIZE_MIN, controller->channels[channel], RTOS_PRIORITY_MED, &thStartCalibration);
             break;
+
         case CTRL_ACTION::EXIT_VCO_TUNING:
             vTaskDelete(tuner_task_handle);
             controller->display->flash(3, 200);
@@ -47,11 +50,16 @@ void task_controller(void *params)
             controller->mode = GlobalControl::CALIBRATING_1VO;
             xTaskCreate(taskCalibrate, "calibrate", RTOS_STACK_SIZE_MIN, controller->channels[controller->selectedChannel], RTOS_PRIORITY_MED, &thCalibrate);
             break;
+
         case CTRL_ACTION::ADC_SAMPLING_PROGRESS:
             // channel -> which channel
             // data    -> value between 0..100
             // uint8_t channel = (uint8_t)bitwise_slice(notification, 8, 8);
             // uint16_t progress = (uint16_t)bitwise_slice(notification, 16, 16);
+            break;
+
+        case CTRL_ACTION::CONFIG_SAVE:
+            suspend_sequencer_task();
             break;
         default:
             break;

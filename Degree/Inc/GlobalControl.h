@@ -4,6 +4,7 @@
 #include "okSemaphore.h"
 #include "task_calibration.h"
 #include "task_display.h"
+#include "task_sequence_handler.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
@@ -15,7 +16,8 @@
 #include "AnalogHandle.h"
 
 namespace DEGREE {
-
+    class TouchChannel; // forward declaration
+    
     class GlobalControl
     {
     public:
@@ -89,7 +91,7 @@ namespace DEGREE {
         void pollTempoPot();
 
         void advanceSequencer(uint8_t pulse);
-        void resetSequencer();
+        void resetSequencer(uint8_t pulse);
 
         void handleTempoAdjustment(uint16_t value);
 
@@ -111,7 +113,9 @@ namespace DEGREE {
         void deleteCalibrationDataFromFlash();
         void resetCalibrationDataToDefault();
         void resetCalibration1VO(int chan);
-        int getCalibrationDataPosition(int data_index, int channel_index);
+        int calculatePositionInSettingsBuffer(int data_index, int channel_index);
+        int getSettingsBufferValue(int position, int channel);
+        void setSettingsBufferValue(int position, int channel, int data);
 
         void log_system_status();
 
@@ -160,7 +164,8 @@ namespace DEGREE {
         {
             QUANTIZE_AMOUNT = SHIFT | PB_RANGE,
             CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
-            RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
+            SETTINGS_RESET = SHIFT | FREEZE, // SHIFT + FREEZE
+            SETTINGS_SAVE = SHIFT | RECORD,
             CALIBRATE_1VO = SHIFT | CMODE,
             CLEAR_SEQ_ALL = CLEAR_SEQ_BEND | CLEAR_SEQ_TOUCH,
             ENTER_HARDWARE_TEST = SHIFT | SEQ_LENGTH | QUANTIZE_SEQ | CMODE,

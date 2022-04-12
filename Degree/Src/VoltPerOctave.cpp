@@ -5,7 +5,6 @@ using namespace DEGREE;
 void VoltPerOctave::init()
 {
     dac->init();
-    setPitchBendRange(5);
 }
 
 /**
@@ -17,7 +16,8 @@ void VoltPerOctave::setPitchBendRange(int value)
 {
     if (value < 8)
     {
-        pbRangeIndex = 7 - value; // temp hack: inverting
+        // NOTE: you may need to invert this value
+        pbRangeIndex = value;
         maxPitchBend = dacSemitone * PB_RANGE_MAP[pbRangeIndex]; // multiply semitone DAC value by the max desired number of semitones to be bent
     }
 }

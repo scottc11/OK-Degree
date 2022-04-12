@@ -2,8 +2,6 @@
 
 void SuperSeq::init()
 {
-    this->setLength(DEFAULT_SEQ_LENGTH);
-    this->setQuantizeAmount(QUANT_8th);
     this->clearAllEvents();
 };
 
@@ -230,49 +228,39 @@ void SuperSeq::setLength(int steps)
 
 /**
  * @brief set the level new events get quantized too
-*/ 
-void SuperSeq::setQuantizeAmount(QuantizeAmount value)
+*/
+void SuperSeq::setQuantizeAmount(QUANT value)
 {
     quantizeAmount = value;
 }
 
-const int Q_QUARTER_NOTE[2] = {0, 96};
-const int Q_EIGTH_NOTE[3] = {0, 48, 96};
-const int Q_SIXTEENTH_NOTE[4] = {0, 24, 48, 96};
-const int Q_THIRTY_SECOND_NOTE[9] = {0, 12, 24, 36, 48, 60, 72, 84, 96};
-const int Q_SIXTY_FOURTH_NOTE[12] = {0, 6, 12, 18, 24, 30, 36, 72, 78, 84, 90, 96};
-const int Q_ONE_28TH_NOTE[33] = {0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81, 84, 87, 90, 93, 96};
-
 /**
  * @brief snap input position to a quantized grid
 */
-int SuperSeq::getQuantizedPosition(int pos, QuantizeAmount target)
+int SuperSeq::getQuantizedPosition(int pos, QUANT target)
 {
     int ppqnPos = pos % PPQN;
     int stepPosition = pos - ppqnPos;
     int newPosition;
     switch (target)
     {
-    case QUANT_NONE:
+    case QUANT::NONE:
         newPosition = ppqnPos;
         break;
-    case QUANT_Quarter:
+    case QUANT::QUARTER:
         newPosition = arr_find_closest_int((int *)Q_QUARTER_NOTE, 2, ppqnPos);
         break;
-    case QUANT_8th:
+    case QUANT::EIGTH:
         newPosition = arr_find_closest_int((int *)Q_EIGTH_NOTE, 3, ppqnPos);
         break;
-    case QUANT_16th:
+    case QUANT::SIXTEENTH:
         newPosition = arr_find_closest_int((int *)Q_SIXTEENTH_NOTE, 4, ppqnPos);
         break;
-    case QUANT_32nd:
+    case QUANT::THIRTYSECOND:
         newPosition = arr_find_closest_int((int *)Q_THIRTY_SECOND_NOTE, 9, ppqnPos);
         break;
-    case QUANT_64th:
+    case QUANT::SIXTYFOURTH:
         newPosition = arr_find_closest_int((int *)Q_SIXTY_FOURTH_NOTE, 12, ppqnPos);
-        break;
-    case QUANT_128th:
-        newPosition = arr_find_closest_int((int *)Q_ONE_28TH_NOTE, 33, ppqnPos);
         break;
     default:
         newPosition = ppqnPos;
@@ -292,8 +280,8 @@ int SuperSeq::getQuantizedPosition(int pos, QuantizeAmount target)
  */
 void SuperSeq::quantize()
 {
-    logger_log("\nPRE-QUANTIZATION");
-    logSequenceToConsole();
+    // logger_log("\nPRE-QUANTIZATION");
+    // logSequenceToConsole();
     
     int pos = 0;
     int lastGateHighPos = 0;
@@ -366,15 +354,15 @@ void SuperSeq::quantize()
         }
         pos++;
     }
-    logger_log("\n\nPOST-QUANTIZATION");
-    logSequenceToConsole();
-    logger_log("\n");
+    // logger_log("\n\nPOST-QUANTIZATION");
+    // logSequenceToConsole();
+    // logger_log("\n");
 }
 
 void SuperSeq::quantizationTest()
 {
     setLength(8); // set sequence length to two steps, ie. 96 * 2 PPQN
-    setQuantizeAmount(QuantizeAmount::QUANT_8th);
+    setQuantizeAmount(QUANT::EIGTH);
 
     createTouchEvent(370, 7, true);
     createTouchEvent(387, 7, false);

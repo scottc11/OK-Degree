@@ -21,6 +21,7 @@
 #pragma once
 
 #include "main.h"
+#include "Mutex.h"
 #include <array>
 #include "IS31FL3739.h"
 
@@ -73,8 +74,6 @@ public:
     void setLED(int index, uint8_t pwm);
     void setColumn(int column, uint8_t pwm);
     void setChannelLED(int chan, int index, uint8_t pwm);
-    void setSequenceLEDs(int chan, int length, int diviser, bool on);
-    void stepSequenceLED(int chan, int currStep, int prevStep, int length);
     void benderCalibration();
 
     void drawSquare(int chan, TickType_t speed);
@@ -86,4 +85,6 @@ private:
     bool _blinkState;
     std::array<uint8_t, 64> _state;
     std::array< std::array<uint8_t, 2>, 64> _scene_storage; // array to store the PWM value of each LED
+
+    static Mutex _mutex;
 };
