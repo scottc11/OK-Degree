@@ -26,10 +26,10 @@ int VoltPerOctave::getPitchBendRange() {
     return pbRangeIndex;
 }
 
-void VoltPerOctave::setPitchBend(uint16_t value)
+void VoltPerOctave::setPitchBend(uint16_t value, bool direction)
 {
     currPitchBend = value;
-    this->updateDAC(currNoteIndex, currPitchBend);
+    this->updateDAC(currNoteIndex, currPitchBend, direction);
 }
 
 /**
@@ -47,12 +47,25 @@ uint16_t VoltPerOctave::calculatePitchBend(uint16_t input, uint16_t min, uint16_
  * @param index index to be mapped to voltage map. ranging 0..DAC_1VO_ARR_SIZE
  * @param pitchBend DAC value corrosponing to the amount of pitch bend to apply to output. positive or negative
 */
-void VoltPerOctave::updateDAC(int index, uint16_t pitchBend)
+void VoltPerOctave::updateDAC(int index, uint16_t pitchBend, bool direction)
 {
     if (index < DAC_1VO_ARR_SIZE)
     {
         currNoteIndex = index;
-        currOutput = dacVoltageMap[currNoteIndex] + pitchBend;
+        if (!direction)
+        {
+            uint16_t nValue = dacVoltageMap[currNoteIndex] - pitchBend;
+            if (nValue <= dacVoltageMap[currNoteIndex])
+            {
+                currOutput = nValue;
+            }
+        } else {
+            uint16_t pValue = dacVoltageMap[currNoteIndex] + pitchBend;
+            if (pValue >= dacVoltageMap[currNoteIndex])
+            {
+                currOutput = pValue;
+            }
+        }
         dac->write(dacChannel, currOutput);
     }
 }

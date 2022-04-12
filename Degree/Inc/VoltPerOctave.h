@@ -50,11 +50,11 @@ namespace DEGREE {
         };
 
         void init();
-        void updateDAC(int index, uint16_t pitchBend);
+        void updateDAC(int index, uint16_t pitchBend, bool direction = false);
         void resetDAC();
         void setPitchBendRange(int value);
         int getPitchBendRange();
-        void setPitchBend(uint16_t value);
+        void setPitchBend(uint16_t value, bool direction = false);
         void bend(uint16_t value);
         uint16_t calculatePitchBend(uint16_t input, uint16_t min, uint16_t max);
         void resetVoltageMap();
