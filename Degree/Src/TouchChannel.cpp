@@ -719,6 +719,7 @@ void TouchChannel::benderIdleCallback()
         setLED(CHANNEL_RATCHET_LED, ON, true);
         break;
     case RATCHET_PITCH_BEND:
+        setLED(CHANNEL_RATCHET_LED, ON, true);
         break;
     case BEND_MENU:
         // set var to no longer active?
