@@ -29,7 +29,7 @@
  */
 class SoftwareTimer {
 public:
-    SoftwareTimer(TickType_t period, bool repeated);
+    SoftwareTimer();
     ~SoftwareTimer();
 
     void start(TickType_t delay = 0);
@@ -37,7 +37,7 @@ public:
     void reset(TickType_t delay = 0);
     TickType_t period();
 
-    void attachCallback(Callback<void()> func);
+    void attachCallback(Callback<void()> func, TickType_t period, bool repeated);
 
 private:
     TimerHandle_t handle;

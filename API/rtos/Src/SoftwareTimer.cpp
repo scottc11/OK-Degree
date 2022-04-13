@@ -1,14 +1,6 @@
 #include "SoftwareTimer.h"
 
-SoftwareTimer::SoftwareTimer(TickType_t period, bool repeated)
-{
-    handle = xTimerCreate(
-        "timer",                     // name for timer
-        period,                      // period of timer in ticks
-        repeated ? pdTRUE : pdFALSE, // auto-reload flag
-        this,                        // unique ID for timer
-        callbackHandler);            // callback function
-}
+SoftwareTimer::SoftwareTimer() {}
 
 SoftwareTimer::~SoftwareTimer()
 {
@@ -43,9 +35,22 @@ TickType_t SoftwareTimer::period()
     return xTimerGetPeriod(handle);
 }
 
-void SoftwareTimer::attachCallback(Callback<void()> func)
+/**
+ * @brief attach a callback for the timer to execute
+ * 
+ * @param func 
+ * @param period frequency
+ * @param repeated one-shot or autoreload
+ */
+void SoftwareTimer::attachCallback(Callback<void()> func, TickType_t period, bool repeated)
 {
     _callback = func;
+    handle = xTimerCreate(
+        "timer",                     // name for timer
+        period,                      // period of timer in ticks
+        repeated ? pdTRUE : pdFALSE, // auto-reload flag
+        this,                        // unique ID for timer
+        callbackHandler);            // callback function
 }
 
 void SoftwareTimer::callbackHandler(TimerHandle_t xTimer)

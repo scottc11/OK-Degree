@@ -22,8 +22,8 @@ void task_tuner(void *params)
     int sampledColumn; // column to illuminate in display when representing the sampled frequency
     tuner_queue = xQueueCreate(1, sizeof(float));
     Callback<void()> cb = callback(timer_callback);
-    SoftwareTimer timer(3000, false);
-    timer.attachCallback(cb);
+    SoftwareTimer timer;
+    timer.attachCallback(cb, 3000, false);
     while (1)
     {
         // listen for items on queue
