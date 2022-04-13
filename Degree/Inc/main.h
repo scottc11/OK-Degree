@@ -5,7 +5,6 @@
 #include "task_handles.h"
 
 #include "common.h"
-#include "Quantization.h"
 
 #define BOARD_VERSION 42
 

@@ -3,6 +3,7 @@
 #include "main.h"
 #include "Bender.h"
 #include "ArrayMethods.h"
+#include "Quantization.h"
 
 #define NULL_NOTE_INDEX 99 // used to identify a 'null' or 'deleted' sequence event
 #define SEQ_EVENT_STATUS_BIT 5
@@ -78,7 +79,6 @@ public:
 
     void quantize();
     void setQuantizeAmount(QUANT value);
-    int getQuantizedPosition(int pos, QUANT target);
 
     uint8_t constructEventData(uint8_t degree, bool gate, bool status);
     void setEventData(int position, uint8_t degree, bool gate, bool status);
