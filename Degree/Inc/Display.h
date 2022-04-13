@@ -64,6 +64,9 @@ public:
     void fill(uint8_t pwm);
     void fill(int chan, uint8_t pwm);
 
+    void enableBlink();
+    void disableBlink();
+
     void blinkScene();
 
     void saveScene(int scene);
@@ -83,6 +86,7 @@ public:
 private:
     uint8_t channel_blink_status; // value to hold the blink state of each channel. If bit is HIGH, blink all those LEDs
     bool _blinkState;
+    bool _blink;
     std::array<uint8_t, 64> _state;
     std::array< std::array<uint8_t, 2>, 64> _scene_storage; // array to store the PWM value of each LED
 

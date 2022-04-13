@@ -43,21 +43,28 @@ void Display::fill(int chan, uint8_t pwm)
     }
 }
 
+void Display::enableBlink() { _blink = true; }
+void Display::disableBlink() { _blink = false; }
+
 void Display::blinkScene()
 {
-    for (int channel = 0; channel < 4; channel++)
+    if (_blink)
     {
-        if (bitwise_read_bit(channel_blink_status, channel))
+        for (int channel = 0; channel < 4; channel++)
         {
-            for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
+            if (bitwise_read_bit(channel_blink_status, channel))
             {
-                uint8_t led_index = CHAN_DISPLAY_LED_MAP[channel][i];
-                ledMatrix.setPWM(led_index, _blinkState ? _state[led_index] : 0);
+                for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
+                {
+                    uint8_t led_index = CHAN_DISPLAY_LED_MAP[channel][i];
+                    ledMatrix.setPWM(led_index, _blinkState ? _state[led_index] : 0);
+                }
             }
         }
+
+        _blinkState = !_blinkState;
     }
     
-    _blinkState = !_blinkState;
 }
 
 void Display::saveScene(int scene)
