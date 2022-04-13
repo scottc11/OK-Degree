@@ -1,8 +1,7 @@
 #include "SoftwareTimer.h"
 
-SoftwareTimer::SoftwareTimer(void (*func)(), TickType_t period, bool repeated)
+SoftwareTimer::SoftwareTimer(TickType_t period, bool repeated)
 {
-    callback = func;
     handle = xTimerCreate(
         "timer",                     // name for timer
         period,                      // period of timer in ticks
@@ -16,7 +15,12 @@ SoftwareTimer::~SoftwareTimer()
     xTimerDelete(handle, 1);
 }
 
-// If the timer had already been started and was already in the active state, then xTimerStart() has equivalent functionality to the xTimerReset() API function.
+/**
+ * @brief Start the software timer
+ * 
+ * @note  If the timer had already been started and was already in the active state, then xTimerStart() 
+ * has equivalent functionality to the xTimerReset() API function.
+ */
 void SoftwareTimer::start(TickType_t delay /*= 0*/)
 {
     if (!xTimerIsTimerActive(handle))
@@ -39,8 +43,16 @@ TickType_t SoftwareTimer::period()
     return xTimerGetPeriod(handle);
 }
 
+void SoftwareTimer::attachCallback(Callback<void()> func)
+{
+    _callback = func;
+}
+
 void SoftwareTimer::callbackHandler(TimerHandle_t xTimer)
 {
     SoftwareTimer *timer = static_cast<SoftwareTimer *>(pvTimerGetTimerID(xTimer));
-    timer->callback();
+    if (timer->_callback)
+    {
+        timer->_callback();
+    }   
 }

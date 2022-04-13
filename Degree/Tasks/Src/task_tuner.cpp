@@ -11,7 +11,7 @@ static const float TUNER_TARGET_FREQUENCIES[3] = {
 QueueHandle_t tuner_queue;
 TaskHandle_t tuner_task_handle;
 
-void timer_callback() {
+static void timer_callback() {
     ctrl_dispatch(CTRL_ACTION::EXIT_VCO_TUNING, 0, 0);
 }
 
@@ -21,8 +21,9 @@ void task_tuner(void *params)
     float sampledFrequency;
     int sampledColumn; // column to illuminate in display when representing the sampled frequency
     tuner_queue = xQueueCreate(1, sizeof(float));
-    SoftwareTimer timer(timer_callback, 3000, false);
-    
+    Callback<void()> cb = callback(timer_callback);
+    SoftwareTimer timer(3000, false);
+    timer.attachCallback(cb);
     while (1)
     {
         // listen for items on queue
