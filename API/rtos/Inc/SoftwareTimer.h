@@ -33,11 +33,14 @@ public:
     ~SoftwareTimer();
 
     void start(TickType_t delay = 0);
-    void stop();
+    void stop(TickType_t delay = 0);
     void reset(TickType_t delay = 0);
-    TickType_t period();
+    
+    TickType_t getPeriod();
+    void setPeriod(TickType_t period);
 
     void attachCallback(Callback<void()> func, TickType_t period, bool repeated);
+    void detachCallback();
 
 private:
     TimerHandle_t handle;

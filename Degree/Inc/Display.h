@@ -71,6 +71,10 @@ public:
 
     void saveScene(int scene);
     void restoreScene(int scene);
+    // having two display scenes would be helpful. The sequencer task could continue to run
+    // and set LEDs in "scene A", while other tasks and functions which ise the display set LEDs in "scene B"
+    // Then when you go back to the default mode, you just need to update the display
+    // with the "scene A" and all should be good.
 
     void setGlobalCurrent(uint8_t value);
     void setBlinkStatus(int chan, bool status);
@@ -79,8 +83,10 @@ public:
     void setChannelLED(int chan, int index, uint8_t pwm);
     void benderCalibration();
 
+    void setSpiralLED(int chan, int index, uint8_t pwm);
+
     void drawSquare(int chan, TickType_t speed);
-    void drawSpiral(int chan, bool direction, TickType_t speed);
+    void drawSpiral(int chan, bool direction, uint8_t pwm, TickType_t speed);
     void flash(int flashes, TickType_t ticks);
 
 private:

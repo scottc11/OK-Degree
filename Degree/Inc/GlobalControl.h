@@ -8,6 +8,7 @@
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
+#include "SoftwareTimer.h"
 #include "Flash.h"
 #include "MCP23017.h"
 #include "CAP1208.h"
@@ -22,10 +23,10 @@ namespace DEGREE {
     {
     public:
         
-        enum Mode
+        enum ControlMode
         {
             DEFAULT,
-            CALIBRATING_1VO,
+            VCO_CALIBRATION,
             CALIBRATING_BENDER,
             HARDWARE_TESTING
         };
@@ -53,7 +54,7 @@ namespace DEGREE {
             display = display_ptr;
         };
 
-        Mode mode;
+        ControlMode mode;
         SuperClock *clock;
         TouchChannel *channels[CHANNEL_COUNT];
         CAP1208 *touchPads;
@@ -67,6 +68,11 @@ namespace DEGREE {
         AnalogHandle tempoPot;
         DigitalOut tempoLED;
         DigitalOut tempoGate;
+
+        SoftwareTimer actionTimer;   // triggers a callback for handling timed gestures
+        int actionCounter;           // this value gets incremented by timer when a pad is touched, and resets to 0 when released
+        int actionCounterLimit;      // 
+        int actionExitFlag;          // Used to exit current mode and dismiss button presses and releases. Pressing any tactile button will exit the current mode
 
         int selectedChannel;
 
@@ -89,6 +95,7 @@ namespace DEGREE {
         void pollButtons();
         void pollTouchPads();
         void pollTempoPot();
+        void exitCurrentMode();
 
         void advanceSequencer(uint8_t pulse);
         void resetSequencer(uint8_t pulse);
@@ -105,8 +112,8 @@ namespace DEGREE {
         void handleButtonInterrupt();
         void handleTouchInterrupt();
 
-        void enableVCOCalibration(TouchChannel *channel);
         void disableVCOCalibration();
+        void pressHold();
 
         void loadCalibrationDataFromFlash();
         void saveCalibrationDataToFlash();

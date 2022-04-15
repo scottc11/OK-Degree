@@ -38,34 +38,12 @@ void TouchChannel::init()
     touchPads->enable();
 
     // you should actually be accessing a global settings buffer 
-    display->drawSpiral(channelIndex, true, 25);
+    display->drawSpiral(channelIndex, true, PWM::PWM_HIGH, 25);
     setPlaybackMode(playbackMode); // value of playbackMode gets loaded and assigned from flash
     setBenderMode((BenderMode)currBenderMode); // value of playbackMode gets loaded and assigned from flash
     logPeripherals();
 }
 
-/** ------------------------------------------------------------------------
- *         POLL    POLL    POLL    POLL    POLL    POLL    POLL    POLL    
- *  ------------------------------------------------------------------------
-*/
-void TouchChannel::poll()
-{
-    switch (uiMode)
-    {
-    case UI_PLAYBACK:
-        break;
-    case UI_PITCH_BEND_RANGE:
-        break;
-    case UI_QUANTIZE_AMOUNT:
-        break;
-    case UI_SEQUENCE_LENGTH:
-        if (tickerFlag)
-        {
-            bender->poll();
-            clearTickerFlag();
-        }
-    }
-}
 
 /**
  * @brief gets called once every PPQN automatically by a task
@@ -1131,9 +1109,8 @@ void TouchChannel::disableSequenceRecording()
 void TouchChannel::initializeCalibration() {
     output.resetVoltageMap(); // You should reset prior to tuning
     output.resetDAC();
-    display->clear();
-    display->drawSpiral(channelIndex, true, 0);
-    display->flash(3, 200);
+    display->flash(3, 100);
+    display->drawSpiral(channelIndex, false, PWM::PWM_OFF, 50);
     display->clear();
 }
 

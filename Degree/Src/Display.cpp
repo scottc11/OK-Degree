@@ -13,34 +13,42 @@ void Display::init()
 */ 
 void Display::clear()
 {
+    _mutex.lock();
     for (int i = 0; i < DISPLAY_LED_COUNT; i++)
     {
         this->setLED(i, PWM::PWM_OFF);
     }
+    _mutex.unlock();
 }
 
 void Display::clear(int chan)
 {
+    _mutex.lock();
     for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
     {
         this->setChannelLED(chan, i, PWM::PWM_OFF);
     }
+    _mutex.unlock();
 }
 
 void Display::fill(uint8_t pwm)
 {
+    _mutex.lock();
     for (int i = 0; i < DISPLAY_LED_COUNT; i++)
     {
         this->setLED(i, pwm);
     }
+    _mutex.unlock();
 }
 
 void Display::fill(int chan, uint8_t pwm)
 {
+    _mutex.lock();
     for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
     {
         this->setChannelLED(chan, i, pwm);
     }
+    _mutex.unlock();
 }
 
 void Display::enableBlink() { _blink = true; }
@@ -166,19 +174,31 @@ void Display::drawSquare(int chan, TickType_t speed)
 }
 
 /**
+ * @brief given an index between 0..15, set the LED relative spiral LED
+ * 
+ * @param chan 
+ * @param index 
+ * @param pwm 
+ */
+void Display::setSpiralLED(int chan, int index, uint8_t pwm)
+{
+    this->setChannelLED(chan, DISPLAY_SPIRAL_LED_MAP[index], pwm);
+}
+
+/**
  * @brief Illuminate a channels LEDs in a spiral / circular direction
  *
  * @param chan channel index
  * @param direction true = clockwise, false = counter clockwise
  * @param speed how fast
  */
-void Display::drawSpiral(int chan, bool direction, TickType_t speed)
+void Display::drawSpiral(int chan, bool direction, uint8_t pwm, TickType_t speed)
 {
     int index;
     for (int i = 0; i < DISPLAY_SPIRAL_LENGTH; i++)
     {
         index = direction ? i : (DISPLAY_SPIRAL_LENGTH - 1) - i;
-        this->setChannelLED(chan, DISPLAY_SPIRAL_LED_MAP[index], PWM::PWM_HIGH);
+        this->setSpiralLED(chan, i, pwm);
         vTaskDelay(speed);
     }
 }

@@ -91,13 +91,9 @@ void GlobalControl::poll()
     switch (mode)
     {
     case DEFAULT:
-        pollTempoPot();
-        channels[0]->poll();
-        channels[1]->poll();
-        channels[2]->poll();
-        channels[3]->poll();
+        pollTempoPot(); // TODO: possibly move this into sequence handler on every clock tick
         break;
-    case CALIBRATING_1VO:
+    case VCO_CALIBRATION:
         break;
     case CALIBRATING_BENDER:
         for (int i = 0; i < 4; i++)
@@ -109,6 +105,35 @@ void GlobalControl::poll()
     case HARDWARE_TESTING:
         break;
     default:
+        break;
+    }
+}
+
+/**
+ * @brief exit out of current mode
+ */
+void GlobalControl::exitCurrentMode()
+{
+    switch (mode)
+    {
+    case ControlMode::DEFAULT:
+        /* code */
+        break;
+    case ControlMode::VCO_CALIBRATION:
+        actionTimer.stop();
+        actionTimer.detachCallback();
+        display->disableBlink();
+        display->clear();
+        mode = ControlMode::DEFAULT;
+        resume_sequencer_task();
+        dispatch_sequencer_event(CHAN::ALL, SEQ::DISPLAY, 0);
+        // enter default mode, check if any sequences are active and running, if so, update the display
+        break;
+    case ControlMode::CALIBRATING_BENDER:
+        /* code */
+        break;
+    case ControlMode::HARDWARE_TESTING:
+        /* code */
         break;
     }
 }
@@ -172,26 +197,9 @@ void GlobalControl::pollTouchPads() {
     currTouched = touchPads->touched();
 #endif
 
-    // for (int i = 0; i < CHANNEL_COUNT; i++)
-    // {
-    //     if (touchPads->padIsTouched(i, currTouched))
-    //     {
-    //         display->fill(i, 127);
-    //         // display->setBlinkStatus(i, true);
-    //     }
-    //     else
-    //     {
-    //         display->clear(i);
-    //         // display->setBlinkStatus(i, false);
-    //     }
-    // }
-
-    if (currTouched == 0x00)
-    {
+    if (currTouched == 0x00) {
         gestureFlag = false;
-    }
-    else
-    {
+    } else {
         gestureFlag = true;
     }
 }
@@ -209,7 +217,7 @@ void GlobalControl::pollButtons()
             // if state went HIGH and was LOW before
             if (bitwise_read_bit(currButtonsState, i) && !bitwise_read_bit(prevButtonsState, i))
             {
-                if (mode == Mode::HARDWARE_TESTING)
+                if (mode == ControlMode::HARDWARE_TESTING)
                 {
                     this->handleHardwareTest(currButtonsState);
                 }
@@ -221,7 +229,7 @@ void GlobalControl::pollButtons()
             // if state went LOW and was HIGH before
             if (!bitwise_read_bit(currButtonsState, i) && bitwise_read_bit(prevButtonsState, i))
             {
-                if (mode != Mode::HARDWARE_TESTING)
+                if (mode != ControlMode::HARDWARE_TESTING)
                 {
                     this->handleButtonRelease(prevButtonsState);
                 }
@@ -237,7 +245,13 @@ void GlobalControl::pollButtons()
  * Handle Button Press
 */
 void GlobalControl::handleButtonPress(int pad)
-{    
+{
+    // let any butten press break out of currently running "mode"
+    if (actionExitFlag == 1)
+    {
+        actionExitFlag = 2;
+        return;
+    }
     switch (pad)
     {
     case CMODE:
@@ -300,22 +314,19 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case Gestures::CALIBRATE_1VO:
-        if (gestureFlag) {
-            for (int i = 0; i < 4; i++)
-            {
-                if (touchPads->padIsTouched(i, currTouched))
-                {
-                    selectedChannel = i;
-                    break;
-                }
-            }
-            gestureFlag = false;
-            this->enableVCOCalibration(channels[selectedChannel]);
-        }
+        actionExitFlag = 1; // set exit flag
+        mode = ControlMode::VCO_CALIBRATION;
+        suspend_sequencer_task();
+        display->enableBlink();
+        display->fill(30);
+        actionCounter = 0; // reset
+        actionCounterLimit = 15;
+        actionTimer.attachCallback(callback(this, &GlobalControl::pressHold), 100, true);
+        actionTimer.start();
         break;
     
     case Gestures::ENTER_HARDWARE_TEST:
-        mode = Mode::HARDWARE_TESTING;
+        mode = ControlMode::HARDWARE_TESTING;
         break;
 
     case Gestures::LOG_SYSTEM_STATUS:
@@ -383,6 +394,12 @@ void GlobalControl::handleButtonPress(int pad)
 */
 void GlobalControl::handleButtonRelease(int pad)
 {
+    if (actionExitFlag == 2)
+    {
+        exitCurrentMode();
+        actionExitFlag = 0;
+        return;
+    }
     switch (pad)
     {
     case FREEZE:
@@ -410,6 +427,7 @@ void GlobalControl::handleButtonRelease(int pad)
             dispatch_sequencer_event((CHAN)getTouchedChannel(), SEQ::CLEAR_TOUCH, 0);
             if (!recordEnabled)
                 dispatch_sequencer_event((CHAN)getTouchedChannel(), SEQ::RECORD_DISABLE, 0);
+            gestureFlag = false;
         }
         break;
 
@@ -423,6 +441,7 @@ void GlobalControl::handleButtonRelease(int pad)
         } else {
             channels[getTouchedChannel()]->sequence.clearAllBendEvents();
             channels[getTouchedChannel()]->disableSequenceRecording();
+            gestureFlag = false;
         }
         break;
     case SEQ_LENGTH: // exit sequence length UI
@@ -613,13 +632,32 @@ void GlobalControl::resetSequencer(uint8_t pulse)
     dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::CORRECT, 0);
 }
 
-void GlobalControl::enableVCOCalibration(TouchChannel *channel)
-{
-    ctrl_dispatch(CTRL_ACTION::ENTER_1VO_CALIBRATION, channel->channelIndex, 0);
+void GlobalControl::disableVCOCalibration() {
+    this->mode = ControlMode::DEFAULT;
 }
 
-void GlobalControl::disableVCOCalibration() {
-    this->mode = GlobalControl::Mode::DEFAULT;
+/**
+ * @brief auto-reload software timer callback function which steps through the currently selected channels 16 display LEDs
+ * and makes them brighter. Once function increments its counter to 16, enter that channel into VCO calibration
+ */
+void GlobalControl::pressHold() {
+    if (gestureFlag)
+    {
+        int touchedChannel = getTouchedChannel();
+        display->setSpiralLED(touchedChannel, actionCounter, 255);
+        actionCounter++;
+        if (actionCounter > actionCounterLimit) {
+            actionTimer.stop();
+            ctrl_dispatch(CTRL_ACTION::ENTER_1VO_CALIBRATION, touchedChannel, 0);
+        }
+    } else {
+        // reset
+        if (actionCounter != 0)
+        {
+            display->fill(30);
+        }
+        actionCounter = 0;
+    }
 }
 
 void GlobalControl::handleChannelGesture(Callback<void(int chan)> callback)
@@ -649,7 +687,6 @@ int GlobalControl::getTouchedChannel() {
             break;
         }
     }
-    gestureFlag = false;
     return channel;
 }
 
@@ -702,7 +739,7 @@ void GlobalControl::handleHardwareTest(uint16_t pressedButtons)
             channels[i]->setGate(false);
         break;
     case HardwareTest::EXIT_HARDWARE_TEST:
-        mode = Mode::DEFAULT;
+        mode = ControlMode::DEFAULT;
         break;
     default:
         break;
