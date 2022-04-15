@@ -47,7 +47,7 @@ void task_controller(void *params)
             vTaskDelete(tuner_task_handle);
             controller->display->flash(3, 200);
             controller->display->clear();
-            controller->display->fill(30);
+            controller->display->fill(30, true);
             controller->mode = GlobalControl::VCO_CALIBRATION;
             xTaskCreate(taskCalibrate, "calibrate", RTOS_STACK_SIZE_MIN, controller->channels[controller->selectedChannel], RTOS_PRIORITY_MED, &thCalibrate);
             break;

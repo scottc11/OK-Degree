@@ -318,7 +318,7 @@ void GlobalControl::handleButtonPress(int pad)
         mode = ControlMode::VCO_CALIBRATION;
         suspend_sequencer_task();
         display->enableBlink();
-        display->fill(30);
+        display->fill(30, true);
         actionCounter = 0; // reset
         actionCounterLimit = 15;
         actionTimer.attachCallback(callback(this, &GlobalControl::pressHold), 100, true);
@@ -509,7 +509,7 @@ void GlobalControl::saveCalibrationDataToFlash()
 {
     // disable interupts?
     taskENTER_CRITICAL();
-    this->display->fill(PWM::PWM_MID);
+    this->display->fill(PWM::PWM_MID, true);
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
     {
@@ -644,7 +644,7 @@ void GlobalControl::pressHold() {
     if (gestureFlag)
     {
         int touchedChannel = getTouchedChannel();
-        display->setSpiralLED(touchedChannel, actionCounter, 255);
+        display->setSpiralLED(touchedChannel, actionCounter, 255, false);
         actionCounter++;
         if (actionCounter > actionCounterLimit) {
             actionTimer.stop();
@@ -654,7 +654,7 @@ void GlobalControl::pressHold() {
         // reset
         if (actionCounter != 0)
         {
-            display->fill(30);
+            display->fill(30, true);
         }
         actionCounter = 0;
     }

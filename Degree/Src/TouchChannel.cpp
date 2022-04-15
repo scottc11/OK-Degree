@@ -1014,7 +1014,7 @@ void TouchChannel::updateSequenceLength(uint8_t steps)
 void TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm)
 {
     uint8_t ledIndex = step / 2; // 32 step seq displayed with 16 LEDs
-    display->setChannelLED(channelIndex, ledIndex, pwm); // it is possible ledIndex needs to be subracted by 1 🤔
+    display->setChannelLED(channelIndex, ledIndex, pwm, false); // it is possible ledIndex needs to be subracted by 1 🤔
 }
 
 /**
@@ -1125,7 +1125,7 @@ void TouchChannel::displayProgressCallback(uint16_t progress)
 {
     // map the incoming progress to a value between 0..16
     uint8_t displayProgress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, 15);
-    this->display->setChannelLED(this->channelIndex, displayProgress, PWM::PWM_MID_HIGH);
+    this->display->setChannelLED(this->channelIndex, displayProgress, PWM::PWM_MID_HIGH, false);
     this->setLED(DEGREE_LED_RAINBOW[displayProgress], LedState::ON, false);
     uint16_t dacProgress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, BIT_MAX_16);
     bender->dac->write(bender->dacChan, dacProgress);

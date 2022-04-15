@@ -163,7 +163,7 @@ void taskCalibrate(void *params)
             logger_log(calibrationAttemps);
 
             int ledIndex = map_num_in_range<int>(iteration, 0, DAC_1VO_ARR_SIZE, 0, 63);
-            channel->display->setLED(ledIndex, PWM::PWM_HIGH);
+            channel->display->setLED(ledIndex, PWM::PWM_HIGH, false);
 
             // if we are on the final iteration, then some how breakout of all this crap.
             if (iteration == DAC_1VO_ARR_SIZE - 1) {

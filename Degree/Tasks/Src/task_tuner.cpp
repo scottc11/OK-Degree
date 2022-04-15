@@ -29,8 +29,8 @@ void task_tuner(void *params)
         // listen for items on queue
         xQueueReceive(tuner_queue, &sampledFrequency, portMAX_DELAY);
         channel->display->clear();
-        channel->display->setColumn(7, PWM::PWM_HIGH);
-        channel->display->setColumn(8, PWM::PWM_HIGH);
+        channel->display->setColumn(7, PWM::PWM_HIGH, false);
+        channel->display->setColumn(8, PWM::PWM_HIGH, false);
 
         // find the closest target frequence relative to incoming frequency
         int index = arr_find_closest_float(const_cast<float *>(TUNER_TARGET_FREQUENCIES), 3, sampledFrequency);
@@ -44,11 +44,11 @@ void task_tuner(void *params)
         {
             if (sampledFrequency > nextFrequency) // indicate
             {
-                channel->display->setColumn(15, PWM::PWM_LOW_MID);
-                channel->display->setColumn(14, PWM::PWM_LOW);
+                channel->display->setColumn(15, PWM::PWM_LOW_MID, false);
+                channel->display->setColumn(14, PWM::PWM_LOW, false);
             } else {
                 sampledColumn = map_num_in_range<float>(sampledFrequency, targetFrequency, nextFrequency, 9, 15);
-                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID);
+                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID, false);
             }
             timer.reset();
         }
@@ -57,12 +57,12 @@ void task_tuner(void *params)
             if (sampledFrequency < prevFrequency)
             {
                 // definetely blink the LEDs when it reaches this point.
-                channel->display->setColumn(0, PWM::PWM_LOW_MID);
-                channel->display->setColumn(1, PWM::PWM_LOW);
+                channel->display->setColumn(0, PWM::PWM_LOW_MID, false);
+                channel->display->setColumn(1, PWM::PWM_LOW, false);
             } else {
                 // maybe increase the blink frequency the closer you get to target?
                 sampledColumn = map_num_in_range<float>(sampledFrequency, prevFrequency, targetFrequency, 0, 7);
-                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID);
+                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID, false);
             }
             timer.reset();
         }

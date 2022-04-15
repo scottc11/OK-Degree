@@ -61,8 +61,8 @@ public:
     void init();
     void clear();
     void clear(int chan);
-    void fill(uint8_t pwm);
-    void fill(int chan, uint8_t pwm);
+    void fill(uint8_t pwm, bool blink);
+    void fill(int chan, uint8_t pwm, bool blink);
 
     void enableBlink();
     void disableBlink();
@@ -78,12 +78,12 @@ public:
 
     void setGlobalCurrent(uint8_t value);
     void setBlinkStatus(int chan, bool status);
-    void setLED(int index, uint8_t pwm);
-    void setColumn(int column, uint8_t pwm);
-    void setChannelLED(int chan, int index, uint8_t pwm);
+    void setLED(int index, uint8_t pwm, bool blink);
+    void setColumn(int column, uint8_t pwm, bool blink);
+    void setChannelLED(int chan, int index, uint8_t pwm, bool blink);
     void benderCalibration();
 
-    void setSpiralLED(int chan, int index, uint8_t pwm);
+    void setSpiralLED(int chan, int index, uint8_t pwm, bool blink);
 
     void drawSquare(int chan, TickType_t speed);
     void drawSpiral(int chan, bool direction, uint8_t pwm, TickType_t speed);
@@ -92,8 +92,9 @@ public:
 private:
     uint8_t channel_blink_status; // value to hold the blink state of each channel. If bit is HIGH, blink all those LEDs
     bool _blinkState;
-    bool _blink;
-    std::array<uint8_t, 64> _state;
+    bool _blinkEnabled;
+    std::array<uint8_t, 64> _state_pwm;
+    std::array<bool, 64> _state_blink;
     std::array< std::array<uint8_t, 2>, 64> _scene_storage; // array to store the PWM value of each LED
 
     static Mutex _mutex;
