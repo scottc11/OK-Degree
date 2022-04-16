@@ -521,7 +521,7 @@ void GlobalControl::saveCalibrationDataToFlash()
         setSettingsBufferValue(SETTINGS_BENDER_MAX, chan, channels[chan]->bender->adc.getInputMax());
         setSettingsBufferValue(SETTINGS_BENDER_MODE, chan, channels[chan]->currBenderMode);
         setSettingsBufferValue(SETTINGS_PITCH_BEND_RANGE, chan, channels[chan]->output.pbRangeIndex);
-        setSettingsBufferValue(SETTINGS_QUANTIZE_AMOUNT, chan, (int)channels[chan]->sequence.quantizeAmount);
+        setSettingsBufferValue(SETTINGS_QUANTIZE_AMOUNT, chan, (uint16_t)channels[chan]->sequence.quantizeAmount);
         setSettingsBufferValue(SETTINGS_SEQ_LENGTH, chan, channels[chan]->sequence.length);
     }
     // now load this buffer into flash memory
