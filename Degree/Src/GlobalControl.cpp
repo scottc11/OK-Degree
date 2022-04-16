@@ -282,7 +282,6 @@ void GlobalControl::handleButtonPress(int pad)
         if (this->mode == CALIBRATING_BENDER)
         {
             this->saveCalibrationDataToFlash();
-            display->clear();
             this->mode = DEFAULT;
             logger_log("\nEXIT Bender Calibration");
             resume_sequencer_task();
