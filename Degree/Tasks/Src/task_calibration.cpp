@@ -122,6 +122,8 @@ void taskCalibrate(void *params)
             initialPitchIndex = arr_find_closest_float(const_cast<float *>(PITCH_FREQ_ARR), NUM_PITCH_FREQENCIES, currAvgFreq);
             initialized = true;
             logger_log("\n** CALIBRATION BEGIN ** ");
+            logger_log("\Channel: ");
+            logger_log(channel->channelIndex);
             logger_log("\nStarting Frequency: ");
             logger_log(currAvgFreq);
             logger_log("\nStarting DAC Value: ");
