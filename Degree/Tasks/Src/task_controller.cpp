@@ -45,6 +45,8 @@ void task_controller(void *params)
 
         case CTRL_ACTION::EXIT_VCO_TUNING:
             vTaskDelete(tuner_task_handle);
+            controller->display->setColumn(7, PWM::PWM_HIGH, false);
+            controller->display->setColumn(8, PWM::PWM_HIGH, false);
             controller->display->flash(3, 200);
             controller->display->clear();
             controller->display->fill(30, true);
