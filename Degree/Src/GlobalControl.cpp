@@ -648,6 +648,7 @@ void GlobalControl::pressHold() {
         actionCounter++;
         if (actionCounter > actionCounterLimit) {
             actionTimer.stop();
+            selectedChannel = touchedChannel; // this is kinda meh
             ctrl_dispatch(CTRL_ACTION::ENTER_1VO_CALIBRATION, touchedChannel, 0);
         }
     } else {
