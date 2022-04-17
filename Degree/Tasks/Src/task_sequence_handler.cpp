@@ -146,11 +146,11 @@ void task_sequence_handler(void *params)
             {
                 for (int i = 0; i < CHANNEL_COUNT; i++)
                 {
-                    if (ctrl->channels[i]->sequence.playbackEnabled) ctrl->channels[i]->drawSequenceToDisplay();
+                    if (ctrl->channels[i]->sequence.playbackEnabled) ctrl->channels[i]->drawSequenceToDisplay(false);
                 }
             }
             else {
-                if (ctrl->channels[channel]->sequence.playbackEnabled) ctrl->channels[channel]->drawSequenceToDisplay();
+                if (ctrl->channels[channel]->sequence.playbackEnabled) ctrl->channels[channel]->drawSequenceToDisplay(false);
             }
         }
     }

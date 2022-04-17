@@ -365,12 +365,14 @@ void GlobalControl::handleButtonPress(int pad)
         {
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_SEQUENCE_LENGTH);
             channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
+            display->enableBlink();
             if (!channels[chan]->sequence.playbackEnabled)
             {
-                channels[chan]->drawSequenceToDisplay();
+                channels[chan]->drawSequenceToDisplay(true);
             }
         }
         break;
+
     case RECORD:
         if (!recordEnabled)
         {
@@ -453,6 +455,7 @@ void GlobalControl::handleButtonRelease(int pad)
             }
             channels[chan]->setBenderMode((TouchChannel::BenderMode)channels[chan]->prevBenderMode);
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
+            display->disableBlink();
         }
         break;
     case RECORD:
