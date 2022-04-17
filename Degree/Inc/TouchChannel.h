@@ -185,7 +185,7 @@ namespace DEGREE {
         void setOctave(int octave);
         void updateOctaveLeds(int octave, bool isPlaybackEvent);
 
-        void setLED(int io_pin, LedState state, bool isPlaybackEvent);
+        void setLED(int io_pin, LedState state, bool isPlaybackEvent); // if you use a "scene" here, you could remove the boolean
         void setDegreeLed(int degree, LedState state, bool isPlaybackEvent);
         void setAllDegreeLeds(LedState state, bool isPlaybackEvent);
         void setOctaveLed(int octave, LedState state, bool isPlaybackEvent);

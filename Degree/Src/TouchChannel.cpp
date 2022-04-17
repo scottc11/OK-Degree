@@ -132,6 +132,8 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
         break;
     case MONO_LOOP:
         sequence.playbackEnabled = true;
+        drawSequenceToDisplay(false);
+        setSequenceLED(sequence.currStep, PWM::PWM_HIGH, false);
         setLED(CHANNEL_REC_LED, ON, false);
         setOctaveLed(currOctave, LedState::ON, false);
         triggerNote(currDegree, currOctave, SUSTAIN);
@@ -905,10 +907,13 @@ void TouchChannel::setActiveOctaves(int octave)
 */
 void TouchChannel::handleSequence(int position)
 {
-    // always disp;ay sequence progresion regardless if there are events or not
-    if (sequence.currStep != sequence.prevStep) // why?
+    // always display sequence progresion regardless if there are events or not
+    if (sequence.currStep != sequence.prevStep) // only set led every step
     {
-        stepSequenceLED(sequence.currStep, sequence.prevStep, sequence.length);
+        if (uiMode == UIMode::UI_PLAYBACK)
+        {
+            stepSequenceLED(sequence.currStep, sequence.prevStep, sequence.length);
+        }
     }
 
     // break out if there are no sequence events
@@ -1026,7 +1031,7 @@ void TouchChannel::drawSequenceToDisplay(bool blink)
     {
         if (i < sequence.length)
         {
-            if (i == sequence.currStep && sequence.playbackEnabled)
+            if (i == sequence.currStep && sequence.playbackEnabled && uiMode == UIMode::UI_PLAYBACK)
             {
                 setSequenceLED(i, PWM::PWM_HIGH, blink);
             }
@@ -1043,7 +1048,7 @@ void TouchChannel::drawSequenceToDisplay(bool blink)
 }
 
 void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
-{
+{    
     if (currStep % 2 == 0)
     {
         // set currStep PWM High
@@ -1067,7 +1072,6 @@ void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
 void TouchChannel::enableSequenceRecording()
 {
     sequence.recordEnabled = true;
-    drawSequenceToDisplay(false);
     if (playbackMode == MONO)
     {
         setPlaybackMode(MONO_LOOP);

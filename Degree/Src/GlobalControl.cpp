@@ -366,10 +366,7 @@ void GlobalControl::handleButtonPress(int pad)
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_SEQUENCE_LENGTH);
             channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
             display->enableBlink();
-            if (!channels[chan]->sequence.playbackEnabled)
-            {
-                channels[chan]->drawSequenceToDisplay(true);
-            }
+            channels[chan]->drawSequenceToDisplay(true);
         }
         break;
 
