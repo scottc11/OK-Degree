@@ -512,8 +512,6 @@ void GlobalControl::loadCalibrationDataFromFlash()
 */
 void GlobalControl::saveCalibrationDataToFlash()
 {
-    // disable interupts?
-    taskENTER_CRITICAL();
     this->display->fill(PWM::PWM_MID, true);
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
@@ -538,13 +536,26 @@ void GlobalControl::saveCalibrationDataToFlash()
     this->display->flash(3, 300);
     this->display->clear();
     logger_log("\nSaved Calibration Data to Flash");
-    taskEXIT_CRITICAL();
 }
 
 void GlobalControl::deleteCalibrationDataFromFlash()
 {
+    display->setScene(SCENE::SETTINGS);
+    display->resetScene();
+    display->enableBlink();
+    display->fill(127, true);
+
     Flash flash;
     flash.erase(FLASH_CONFIG_ADDR);
+
+    for (int i = 0; i < DISPLAY_COLUMN_COUNT; i++)
+    {
+        int led = DISPLAY_COLUMN_COUNT - 1 - i; // go backwards
+        display->setColumn(led, 30, true);
+        vTaskDelay(50);
+    }
+    display->setScene(SCENE::SEQUENCER);
+    display->redrawScene();
 }
 
 void GlobalControl::resetCalibrationDataToDefault()
