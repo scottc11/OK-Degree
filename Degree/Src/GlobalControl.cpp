@@ -132,6 +132,21 @@ void GlobalControl::exitCurrentMode()
     case ControlMode::CALIBRATING_BENDER:
         /* code */
         break;
+
+    case ControlMode::SETTING_SEQUENCE_LENGTH:
+        // iterate over each channel and then keep the display LEDs on or off based on sequence containing events
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
+        {
+            if (!channels[chan]->sequence.containsEvents())
+            {
+                display->clear(chan);
+            }
+            channels[chan]->setBenderMode((TouchChannel::BenderMode)channels[chan]->prevBenderMode);
+            channels[chan]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
+            display->disableBlink();
+        }
+        mode = ControlMode::DEFAULT;
+        break;
     case ControlMode::HARDWARE_TESTING:
         /* code */
         break;
@@ -247,9 +262,9 @@ void GlobalControl::pollButtons()
 void GlobalControl::handleButtonPress(int pad)
 {
     // let any butten press break out of currently running "mode"
-    if (actionExitFlag == 1)
+    if (actionExitFlag == ACTION_EXIT_STAGE_1)
     {
-        actionExitFlag = 2;
+        actionExitFlag = ACTION_EXIT_STAGE_2;
         return;
     }
     switch (pad)
@@ -313,7 +328,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case Gestures::CALIBRATE_1VO:
-        actionExitFlag = 1; // set exit flag
+        actionExitFlag = ACTION_EXIT_STAGE_1; // set exit flag
         mode = ControlMode::VCO_CALIBRATION;
         suspend_sequencer_task();
         display->enableBlink();
@@ -361,6 +376,8 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case SEQ_LENGTH:
+        actionExitFlag = ACTION_EXIT_STAGE_1;
+        mode = ControlMode::SETTING_SEQUENCE_LENGTH;
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_SEQUENCE_LENGTH);
@@ -392,10 +409,10 @@ void GlobalControl::handleButtonPress(int pad)
 */
 void GlobalControl::handleButtonRelease(int pad)
 {
-    if (actionExitFlag == 2)
+    if (actionExitFlag == ACTION_EXIT_STAGE_2)
     {
         exitCurrentMode();
-        actionExitFlag = 0;
+        actionExitFlag = ACTION_EXIT_CLEAR;
         return;
     }
     switch (pad)
@@ -442,18 +459,7 @@ void GlobalControl::handleButtonRelease(int pad)
             gestureFlag = false;
         }
         break;
-    case SEQ_LENGTH: // exit sequence length UI
-        // iterate over each channel and then keep the display LEDs on or off based on sequence containing events
-        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
-        {
-            if (!channels[chan]->sequence.containsEvents())
-            {
-                display->clear(chan);
-            }
-            channels[chan]->setBenderMode((TouchChannel::BenderMode)channels[chan]->prevBenderMode);
-            channels[chan]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
-            display->disableBlink();
-        }
+    case SEQ_LENGTH:
         break;
     case RECORD:
         break;

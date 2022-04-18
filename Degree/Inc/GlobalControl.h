@@ -16,6 +16,10 @@
 #include "Display.h"
 #include "AnalogHandle.h"
 
+#define ACTION_EXIT_CLEAR   0
+#define ACTION_EXIT_STAGE_1 1
+#define ACTION_EXIT_STAGE_2 2
+
 namespace DEGREE {
     class TouchChannel; // forward declaration
     
@@ -28,6 +32,7 @@ namespace DEGREE {
             DEFAULT,
             VCO_CALIBRATION,
             CALIBRATING_BENDER,
+            SETTING_SEQUENCE_LENGTH,
             HARDWARE_TESTING
         };
 
@@ -76,7 +81,9 @@ namespace DEGREE {
 
         int selectedChannel;
 
-        bool recordEnabled;      // global recording flag
+        bool recordEnabled;          // global recording flag
+        bool settingSequenceLength;  //
+
         bool sampleVCO;          // global flag for calibration routine
         bool hardwareTesting;    // hardware testing mode
 
