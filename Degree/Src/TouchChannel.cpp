@@ -357,6 +357,7 @@ void TouchChannel::updateDegrees()
         triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case MONO_LOOP:
+        triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case QUANTIZER:
         break;
