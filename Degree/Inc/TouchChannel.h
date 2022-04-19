@@ -178,9 +178,8 @@ namespace DEGREE {
         void freeze(bool state);
         void updateDegrees();
 
-        // Alt UI Handlers
-        void handlePitchBendRangeUI();
-        void handleQuantizeAmountUI();
+        // UI Handler
+        void updateUI(UIMode mode);
 
         void setOctave(int octave);
         void updateOctaveLeds(int octave, bool isPlaybackEvent);

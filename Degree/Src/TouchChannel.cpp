@@ -12,12 +12,12 @@ void TouchChannel::init()
 
     // initialize LED Driver
     _leds->init();
-    _leds->setBlinkFrequency(SX1509::ClockSpeed::FAST);
+    _leds->setBlinkFrequency(SX1509::ClockSpeed::ULTRA_FAST);
 
     for (int i = 0; i < 16; i++)
     {
         _leds->ledConfig(i);
-        setLED(i, OFF, false);
+        setLED(i, OFF, false); // note: default PWM is 255
     }
 
     bender->adc.attachSamplingProgressCallback(callback(this, &TouchChannel::displayProgressCallback));
@@ -71,42 +71,56 @@ void TouchChannel::setUIMode(UIMode targetMode) {
     switch (targetMode)
     {
     case UIMode::UI_PLAYBACK:
+        updateUI(uiMode);
         setPlaybackMode(playbackMode);
         break;
     case UIMode::UI_PITCH_BEND_RANGE:
-        setAllOctaveLeds(LedState::OFF, false);
-        handlePitchBendRangeUI();
+        updateUI(uiMode);
         break;
     case UI_SEQUENCE_LENGTH:
         break;
     case UI_QUANTIZE_AMOUNT:
-        handleQuantizeAmountUI();
+        updateUI(uiMode);
         break;
     }
 }
 
-/**
- * @brief determine current pitch bend range index and update LEDs accordingly
-*/
-void TouchChannel::handlePitchBendRangeUI()
+void TouchChannel::updateUI(UIMode mode)
 {
-    setAllDegreeLeds(LedState::OFF, false);
-    for (int i = 0; i < output.getPitchBendRange() + 1; i++)
+    switch (mode)
     {
-        int inversion = 7 - i; // invert
-        setDegreeLed(i, LedState::ON, false);
-    }
-}
+    case UIMode::UI_PLAYBACK:
+        setAllOctaveLeds(LedState::BLINK_OFF, false);
+        setAllDegreeLeds(LedState::BLINK_OFF, false);
+        break;
 
-/**
- * @brief what if you flashed the degree leds at a rate relative to their corrosponding value
- * ie. if you want to quantize to an 8th note grid, then you would touch the degree LED that is flashing
- * at a rate of 8th notes (relative to clock)
- */
-void TouchChannel::handleQuantizeAmountUI()
-{
-    setAllOctaveLeds(LedState::OFF, false);
-    setAllDegreeLeds(LedState::OFF, false);
+    case UIMode::UI_PITCH_BEND_RANGE:
+        // determine current pitch bend range index and update LEDs accordingly
+        setAllOctaveLeds(LedState::OFF, false);
+        setAllDegreeLeds(LedState::OFF, false);
+        setAllDegreeLeds(LedState::BLINK_ON, false);
+        for (int i = 0; i < output.getPitchBendRange() + 1; i++)
+        {
+            setDegreeLed(i, LedState::ON, false);
+        }
+        break;
+
+    case UIMode::UI_SEQUENCE_LENGTH:
+        break;
+
+    case UIMode::UI_QUANTIZE_AMOUNT:
+        /**
+         * @brief what if you flashed the degree leds at a rate relative to their corrosponding value
+         * ie. if you want to quantize to an 8th note grid, then you would touch the degree LED that is flashing
+         * at a rate of 8th notes (relative to clock)
+         */
+        setAllOctaveLeds(LedState::OFF, false);
+        setAllDegreeLeds(LedState::OFF, false);
+
+        // DIM all LEDs, and flash / blink them a bit
+
+        break;
+    }
 }
 
 /**
@@ -188,7 +202,7 @@ void TouchChannel::onTouch(uint8_t pad)
     case UIMode::UI_PITCH_BEND_RANGE:
         // take incoming pad and update the pitch bend range accordingly.
         output.setPitchBendRange(CHAN_TOUCH_PADS[pad]); // this applies the inverse of the pad (ie. pad = 7, gets mapped to 0)
-        handlePitchBendRangeUI();
+        updateUI(uiMode);
         break;
     }
 }
@@ -368,7 +382,7 @@ void TouchChannel::updateDegrees()
 
 void TouchChannel::setLED(int io_pin, LedState state, bool isPlaybackEvent)
 {
-    if (isPlaybackEvent && uiMode != UI_PLAYBACK)
+    if (isPlaybackEvent && uiMode != UI_PLAYBACK) // this will prevent a sequence from setting LEDs while in any other UI mode
     {
         if (uiMode == UI_PITCH_BEND_RANGE || uiMode == UI_QUANTIZE_AMOUNT)
         {
@@ -378,15 +392,13 @@ void TouchChannel::setLED(int io_pin, LedState state, bool isPlaybackEvent)
     
     switch (state) {
         case OFF:
-            _leds->setOnTime(io_pin, 0);
             _leds->digitalWrite(io_pin, 1);
             break;
         case ON:
-            _leds->setOnTime(io_pin, 0);
             _leds->digitalWrite(io_pin, 0);
             break;
         case BLINK_ON:
-            _leds->blinkLED(io_pin, 1, 1, 127, 0);
+            _leds->blinkLED(io_pin, 2, 2, 100, 0); // relative to ICs configured clock speed
             break;
         case BLINK_OFF:
             _leds->setOnTime(io_pin, 0);
