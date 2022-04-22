@@ -36,6 +36,7 @@ namespace DEGREE {
     static const int DEGREE_LED_PINS[8] = { 15, 14, 13, 12, 7, 6, 5, 4 }; // led driver pin map for channel LEDs
     static const int DEGREE_LED_RAINBOW[16] = { 15, 14, 13, 12, 7, 6, 5, 4, 3, 2, 1, 0, CHANNEL_PB_LED, CHANNEL_RATCHET_LED, CHANNEL_REC_LED, CHANNEL_QUANT_LED };
     static const int CHAN_TOUCH_PADS[12] = { 7, 6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0 }; // for mapping touch pads to index values
+    static const int QUANTIZATION_LED_INDEX_MAP[QUANT_NUM_OPTIONS] = { 1, 2, 3, 4, 5, 6 };
 
     static const int DAC_OCTAVE_MAP[4] = { 0, 12, 24, 36 };               // for mapping a value between 0..3 to octaves
     static const int DEGREE_INDEX_MAP[8] = { 0, 2, 4, 6, 8, 10, 12, 14 }; // for mapping an index between 0..7 to a scale degree
@@ -80,6 +81,7 @@ namespace DEGREE {
         {
             OFF,
             ON,
+            TOGGLE,
             BLINK_ON,
             BLINK_OFF,
             DIM_LOW,
@@ -129,6 +131,8 @@ namespace DEGREE {
         DigitalOut gateOut; // gate output
         AnalogHandle adc;   // CV input ADC
         VoltPerOctave output;        
+
+        bool led_state[16];
 
         uint8_t currRatchetRate;      //
         bool gateState;               // state of the gate output
@@ -209,6 +213,7 @@ namespace DEGREE {
         void stepSequenceLED(int currStep, int prevStep, int length);
         void enableSequenceRecording();
         void disableSequenceRecording();
+        void handleQuantAmountLEDs();
 
         void setTickerFlag()   { tickerFlag = true; };  // obsolete
         void clearTickerFlag() { tickerFlag = false; }; // obsolete

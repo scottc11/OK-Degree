@@ -124,7 +124,6 @@ void GlobalControl::exitCurrentMode()
         actionTimer.detachCallback();
         display->disableBlink();
         display->clear();
-        mode = ControlMode::DEFAULT;
         resume_sequencer_task();
         dispatch_sequencer_event(CHAN::ALL, SEQ::DISPLAY, 0);
         // enter default mode, check if any sequences are active and running, if so, update the display
@@ -145,12 +144,21 @@ void GlobalControl::exitCurrentMode()
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
             display->disableBlink();
         }
-        mode = ControlMode::DEFAULT;
         break;
+
+    case ControlMode::SETTING_QUANTIZE_AMOUNT:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+        {
+            channels[i]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
+        }
+        break;
+
     case ControlMode::HARDWARE_TESTING:
         /* code */
         break;
     }
+    // always revert to default mode
+    mode = ControlMode::DEFAULT;
 }
 
 void GlobalControl::handleSwitchChange()
@@ -369,6 +377,8 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case QUANTIZE_AMOUNT:
+        actionExitFlag = ACTION_EXIT_STAGE_1;
+        mode = ControlMode::SETTING_SEQUENCE_LENGTH;
         for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->setUIMode(TouchChannel::UIMode::UI_QUANTIZE_AMOUNT);

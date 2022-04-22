@@ -33,6 +33,7 @@ namespace DEGREE {
             VCO_CALIBRATION,
             CALIBRATING_BENDER,
             SETTING_SEQUENCE_LENGTH,
+            SETTING_QUANTIZE_AMOUNT,
             HARDWARE_TESTING
         };
 

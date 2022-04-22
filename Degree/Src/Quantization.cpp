@@ -42,3 +42,26 @@ int getQuantizedPosition(int pos, int length, QUANT target)
         return stepPosition + newPosition;
     }
 };
+
+int quant_value_to_index(QUANT value)
+{
+    switch (value)
+    {
+    case QUANT::NONE:
+        return 0;
+    case QUANT::QUARTER:
+        return 1;
+    case QUANT::EIGTH:
+        return 2;
+    case QUANT::SIXTEENTH:
+        return 3;
+    case QUANT::THIRTYSECOND:
+        return 4;
+    case QUANT::SIXTYFOURTH:
+        return 5;
+    }
+}
+
+int quant_value_to_int(QUANT value) {
+    return static_cast<int>(value);
+}

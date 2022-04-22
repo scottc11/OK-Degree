@@ -63,6 +63,10 @@ void TouchChannel::handleClock() {
         {
             handleSequence(sequence.currPosition);
         }
+        if (uiMode == UI_QUANTIZE_AMOUNT)
+        {
+            handleQuantAmountLEDs();
+        }
     }
 }
 
@@ -117,7 +121,20 @@ void TouchChannel::updateUI(UIMode mode)
         setAllOctaveLeds(LedState::OFF, false);
         setAllDegreeLeds(LedState::OFF, false);
 
-        // DIM all LEDs, and flash / blink them a bit
+        // flash each degree led at a rate relative to a corrosponding quantization value
+        // the active quantization value will be set with a HIGH PWM
+        // the in-active options set to a LOW PWM
+        // OFF / No Quantization will be solid, no blink
+        for (int i = 0; i < QUANT_NUM_OPTIONS; i++)
+        {
+            if (i == quant_value_to_index(sequence.quantizeAmount))
+            {
+                setDegreeLed(QUANTIZATION_LED_INDEX_MAP[i], LedState::DIM_HIGH, false);
+            } else {
+                setDegreeLed(QUANTIZATION_LED_INDEX_MAP[i], LedState::DIM_LOW, false);
+            }
+            setDegreeLed(QUANTIZATION_LED_INDEX_MAP[i], LedState::ON, false);
+        }
 
         break;
     }
@@ -198,6 +215,30 @@ void TouchChannel::onTouch(uint8_t pad)
     case UIMode::UI_SEQUENCE_LENGTH:
         break;
     case UIMode::UI_QUANTIZE_AMOUNT:
+        switch (CHAN_TOUCH_PADS[pad])
+        {
+        case 1:
+            sequence.setQuantizeAmount(QUANT::NONE);
+            break;
+        case 2:
+            sequence.setQuantizeAmount(QUANT::QUARTER);
+            break;
+        case 3:
+            sequence.setQuantizeAmount(QUANT::EIGTH);
+            break;
+        case 4:
+            sequence.setQuantizeAmount(QUANT::SIXTEENTH);
+            break;
+        case 5:
+            sequence.setQuantizeAmount(QUANT::THIRTYSECOND);
+            break;
+        case 6:
+            sequence.setQuantizeAmount(QUANT::SIXTYFOURTH);
+            break;
+        default:
+            break;
+        }
+        updateUI(this->uiMode);
         break;
     case UIMode::UI_PITCH_BEND_RANGE:
         // take incoming pad and update the pitch bend range accordingly.
@@ -221,10 +262,6 @@ void TouchChannel::onRelease(uint8_t pad)
     case UIMode::UI_PITCH_BEND_RANGE:
         break;
     }
-}
-
-void TouchChannel::handleTouchUIEvent(uint8_t pad) {
-
 }
 
 void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
@@ -392,10 +429,16 @@ void TouchChannel::setLED(int io_pin, LedState state, bool isPlaybackEvent)
     
     switch (state) {
         case OFF:
+            led_state[io_pin] = false;
             _leds->digitalWrite(io_pin, 1);
             break;
         case ON:
+            led_state[io_pin] = true;
             _leds->digitalWrite(io_pin, 0);
+            break;
+        case TOGGLE:
+            led_state[io_pin] = !led_state[io_pin];
+            _leds->digitalWrite(io_pin, !led_state[io_pin]);
             break;
         case BLINK_ON:
             _leds->blinkLED(io_pin, 2, 2, 100, 0); // relative to ICs configured clock speed
@@ -404,7 +447,7 @@ void TouchChannel::setLED(int io_pin, LedState state, bool isPlaybackEvent)
             _leds->setOnTime(io_pin, 0);
             break;
         case DIM_LOW:
-            _leds->setPWM(io_pin, 40);
+            _leds->setPWM(io_pin, 20);
             break;
         case DIM_MED:
             _leds->setPWM(io_pin, 127);
@@ -1183,4 +1226,40 @@ void TouchChannel::logPeripherals() {
     logger_log("\nSequence Quantization: ");
     logger_log((int)sequence.quantizeAmount);
     logger_log("\n");
+}
+
+/**
+ * @brief based on the current ppqn position, flash the corrosponding LED
+ * 
+ * @param position 
+ */
+void TouchChannel::handleQuantAmountLEDs()
+{
+    if (sequence.currStepPosition == 0)
+    {
+        setDegreeLed(2, LedState::OFF, false);
+    }
+    else
+    {
+        if (sequence.currStepPosition % (quant_value_to_int(QUANT::EIGTH) - 1) == 0)
+        {
+            setDegreeLed(3, LedState::OFF, false);
+        }
+        else if (sequence.currStepPosition % (quant_value_to_int(QUANT::SIXTEENTH) - 1) == 0)
+        {
+            setDegreeLed(4, LedState::OFF, false);
+        }
+        else if (sequence.currStepPosition % (quant_value_to_int(QUANT::THIRTYSECOND) - 1) == 0)
+        {
+            setDegreeLed(2, LedState::ON, false);
+            setDegreeLed(3, LedState::ON, false);
+            setDegreeLed(4, LedState::ON, false);
+            setDegreeLed(5, LedState::OFF, false);
+        }
+        else if (sequence.currStepPosition % (quant_value_to_int(QUANT::SIXTYFOURTH) - 1) == 0)
+        {
+            setDegreeLed(5, LedState::ON, false);
+            setDegreeLed(6, LedState::TOGGLE, false);
+        }
+    }
 }
