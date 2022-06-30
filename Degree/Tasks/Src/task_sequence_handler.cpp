@@ -139,6 +139,19 @@ void task_sequence_handler(void *params)
                 }
             }
             break;
+        
+        // Re-Draw the sequence to the display
+        case SEQ::DISPLAY:
+            if (channel == CHAN::ALL)
+            {
+                for (int i = 0; i < CHANNEL_COUNT; i++)
+                {
+                    if (ctrl->channels[i]->sequence.playbackEnabled) ctrl->channels[i]->drawSequenceToDisplay(false);
+                }
+            }
+            else {
+                if (ctrl->channels[channel]->sequence.playbackEnabled) ctrl->channels[channel]->drawSequenceToDisplay(false);
+            }
         }
     }
 }

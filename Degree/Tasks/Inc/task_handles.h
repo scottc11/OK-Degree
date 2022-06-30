@@ -3,7 +3,7 @@
 #include "main.h"
 #include "BitwiseMethods.h"
 
-#define TUNING_TOLERANCE 0.1f // tolerable frequency tuning difference
+#define TUNING_TOLERANCE 0.5f // tolerable frequency tuning difference
 
 extern TaskHandle_t main_task_handle;
 extern TaskHandle_t thStartCalibration;

@@ -21,6 +21,7 @@ public:
 
     void write(int value);
     int read();
+    void toggle();
 
     void gpio_init(PinName pin, int value);
 };

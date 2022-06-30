@@ -102,6 +102,7 @@ Degree/Src/SuperSeq.cpp \
 Degree/Src/TouchChannel.cpp \
 Degree/Src/GlobalControl.cpp \
 Degree/Src/VoltPerOctave.cpp \
+Degree/Src/Quantization.cpp \
 Degree/Tasks/Src/task_calibration.cpp \
 Degree/Tasks/Src/task_controller.cpp \
 Degree/Tasks/Src/task_display.cpp \

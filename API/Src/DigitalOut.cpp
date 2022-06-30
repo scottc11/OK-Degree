@@ -49,3 +49,7 @@ void DigitalOut::write(int value) {
 int DigitalOut::read() {
     return HAL_GPIO_ReadPin(_port, _pin);
 }
+
+void DigitalOut::toggle() {
+    this->write(!this->read());
+}

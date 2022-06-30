@@ -11,7 +11,7 @@ static const float TUNER_TARGET_FREQUENCIES[3] = {
 QueueHandle_t tuner_queue;
 TaskHandle_t tuner_task_handle;
 
-void timer_callback() {
+static void timer_callback() {
     ctrl_dispatch(CTRL_ACTION::EXIT_VCO_TUNING, 0, 0);
 }
 
@@ -20,16 +20,18 @@ void task_tuner(void *params)
     TouchChannel *channel = (TouchChannel *)params;
     float sampledFrequency;
     int sampledColumn; // column to illuminate in display when representing the sampled frequency
+    bool inTune = false;
     tuner_queue = xQueueCreate(1, sizeof(float));
-    SoftwareTimer timer(timer_callback, 3000, false);
-    
+    Callback<void()> cb = callback(timer_callback);
+    SoftwareTimer timer;
+    timer.attachCallback(cb, 3000, false);
     while (1)
     {
         // listen for items on queue
         xQueueReceive(tuner_queue, &sampledFrequency, portMAX_DELAY);
         channel->display->clear();
-        channel->display->setColumn(7, PWM::PWM_HIGH);
-        channel->display->setColumn(8, PWM::PWM_HIGH);
+        channel->display->setColumn(7, PWM::PWM_HIGH, inTune);
+        channel->display->setColumn(8, PWM::PWM_HIGH, inTune);
 
         // find the closest target frequence relative to incoming frequency
         int index = arr_find_closest_float(const_cast<float *>(TUNER_TARGET_FREQUENCIES), 3, sampledFrequency);
@@ -43,12 +45,14 @@ void task_tuner(void *params)
         {
             if (sampledFrequency > nextFrequency) // indicate
             {
-                channel->display->setColumn(15, PWM::PWM_LOW_MID);
-                channel->display->setColumn(14, PWM::PWM_LOW);
+                channel->display->setColumn(15, PWM::PWM_HIGH, true);
+                channel->display->setColumn(14, PWM::PWM_MID, true);
+                channel->display->setColumn(13, PWM::PWM_LOW, true);
             } else {
                 sampledColumn = map_num_in_range<float>(sampledFrequency, targetFrequency, nextFrequency, 9, 15);
-                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID);
+                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID, false);
             }
+            inTune = false;
             timer.reset();
         }
         else if (sampledFrequency < targetFrequency - TUNING_TOLERANCE)
@@ -56,18 +60,21 @@ void task_tuner(void *params)
             if (sampledFrequency < prevFrequency)
             {
                 // definetely blink the LEDs when it reaches this point.
-                channel->display->setColumn(0, PWM::PWM_LOW_MID);
-                channel->display->setColumn(1, PWM::PWM_LOW);
+                channel->display->setColumn(0, PWM::PWM_HIGH, true);
+                channel->display->setColumn(1, PWM::PWM_MID, true);
+                channel->display->setColumn(2, PWM::PWM_LOW, true);
             } else {
                 // maybe increase the blink frequency the closer you get to target?
                 sampledColumn = map_num_in_range<float>(sampledFrequency, prevFrequency, targetFrequency, 0, 7);
-                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID);
+                channel->display->setColumn(sampledColumn, PWM::PWM_LOW_MID, false);
             }
+            inTune = false;
             timer.reset();
         }
         else if (sampledFrequency > targetFrequency - TUNING_TOLERANCE && sampledFrequency < targetFrequency + TUNING_TOLERANCE)
         {
             // flash the columns
+            inTune = true;
             timer.start();
         }
     }
