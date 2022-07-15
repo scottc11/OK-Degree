@@ -140,7 +140,7 @@ void GlobalControl::exitCurrentMode()
             {
                 display->clear(chan);
             }
-            channels[chan]->setBenderMode((TouchChannel::BenderMode)channels[chan]->prevBenderMode);
+            channels[chan]->disableBenderOverride();
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
             display->disableBlink();
         }
@@ -391,7 +391,7 @@ void GlobalControl::handleButtonPress(int pad)
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_SEQUENCE_LENGTH);
-            channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
+            channels[chan]->enableBenderOverride();
             display->enableBlink();
             channels[chan]->drawSequenceToDisplay(true);
         }

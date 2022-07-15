@@ -58,8 +58,7 @@ namespace DEGREE {
             PITCH_BEND = 1,
             RATCHET = 2,
             RATCHET_PITCH_BEND = 3,
-            INCREMENT_BENDER_MODE = 4,
-            BEND_MENU = 5
+            INCREMENT_BENDER_MODE = 4
         };
 
         enum UIMode {
@@ -142,6 +141,7 @@ namespace DEGREE {
 
         int currBenderMode;
         int prevBenderMode;
+        bool benderOverride;  // boolean which is used to disable the bender playback events (for menues)
 
         uint8_t currDegree;
         uint8_t currOctave;
@@ -222,6 +222,8 @@ namespace DEGREE {
         void handleBend(uint16_t value);
         void handlePitchBend(uint16_t value);
         int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);
+        void enableBenderOverride();
+        void disableBenderOverride();
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();
         void benderTriStateCallback(Bender::BendState state);

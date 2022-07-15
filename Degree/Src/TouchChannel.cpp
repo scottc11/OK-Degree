@@ -625,6 +625,11 @@ void TouchChannel::handleRatchet(int position, uint16_t value)
  * ------------------ BENDER ------------------
 */
 
+/**
+ * @brief This function handles all bender actions in regards to the 1vo ooutput, bender output, and gate output
+ * 
+ * @param value current bend value
+ */
 void TouchChannel::handleBend(uint16_t value) {
     switch (this->currBenderMode)
     {
@@ -640,8 +645,6 @@ void TouchChannel::handleBend(uint16_t value) {
     case RATCHET_PITCH_BEND:
         handleRatchet(sequence.currStepPosition, value);
         handlePitchBend(value);
-        break;
-    case BEND_MENU:
         break;
     }
 }
@@ -671,7 +674,7 @@ void TouchChannel::handlePitchBend(uint16_t value) {
 */
 int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
 {
-    if (targetMode != INCREMENT_BENDER_MODE || targetMode != BEND_MENU) {
+    if (targetMode != INCREMENT_BENDER_MODE) {
         prevBenderMode = currBenderMode;
     }
 
@@ -707,10 +710,16 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
         break;
     case INCREMENT_BENDER_MODE:
         break;
-    case BEND_MENU:
-        break;
     }
     return currBenderMode;
+}
+
+void TouchChannel::enableBenderOverride() {
+    this->benderOverride = true;
+}
+
+void TouchChannel::disableBenderOverride() {
+    this->benderOverride = false;
 }
 
 /**
@@ -720,15 +729,18 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
  */
 void TouchChannel::benderActiveCallback(uint16_t value)
 {
-    bender->updateDAC(value);
-
-    // overdub existing bend events when record enabled
-    // override existng bend events when record disabled (but sequencer still ON)
-    if (sequence.recordEnabled)
+    if (!this->benderOverride)
     {
-        sequence.createBendEvent(sequence.currPosition, value);
+        bender->updateDAC(value);
+
+        // overdub existing bend events when record enabled
+        // override existng bend events when record disabled (but sequencer still ON)
+        if (sequence.recordEnabled)
+        {
+            sequence.createBendEvent(sequence.currPosition, value);
+        }
+        this->handleBend(value);
     }
-    this->handleBend(value);
 }
 
 void TouchChannel::benderIdleCallback()
@@ -757,25 +769,19 @@ void TouchChannel::benderIdleCallback()
     case RATCHET_PITCH_BEND:
         setLED(CHANNEL_RATCHET_LED, ON, true);
         break;
-    case BEND_MENU:
-        // set var to no longer active?
-        break;
     }
 }
 
+/**
+ * @brief Use this callback to handle any menues which want to use the benders for adjstiing the value
+ * 
+ * @param state 
+ */
 void TouchChannel::benderTriStateCallback(Bender::BendState state)
 {
-    switch (this->currBenderMode)
+    switch (this->uiMode)
     {
-    case BEND_OFF:
-        break;
-    case PITCH_BEND:
-        break;
-    case RATCHET:
-        break;
-    case RATCHET_PITCH_BEND:
-        break;
-    case BEND_MENU:
+    case TouchChannel::UIMode::UI_SEQUENCE_LENGTH:
         if (state == Bender::BendState::BENDING_UP)
         {
             dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length + 2);
@@ -784,6 +790,8 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
         {
             dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length - 2);
         }
+        break;
+    default:
         break;
     }
 }
