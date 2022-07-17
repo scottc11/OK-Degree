@@ -6,6 +6,7 @@
 
 #include "common.h"
 
+// #define LOGGING_ENABLED
 #define BOARD_VERSION 42
 
 #define PPQN 96

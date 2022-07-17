@@ -101,9 +101,11 @@ void logger_log_err(char const *func_name, HAL_StatusTypeDef error)
  */
 void uart_transmit(uint8_t *data)
 {
+    #ifdef LOGGING_ENABLED
     vTaskSuspendAll();
     HAL_UART_Transmit(&huart3, data, strlen((const char *)data), HAL_MAX_DELAY);
     xTaskResumeAll();
+    #endif
 }
 
 void logger_log_system_config()
