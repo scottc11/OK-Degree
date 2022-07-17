@@ -163,7 +163,6 @@ namespace DEGREE {
         QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
         SuperSeq sequence;
-        bool tickerFlag;                   // 
 
         void init();
         void poll();
@@ -214,9 +213,6 @@ namespace DEGREE {
         void enableSequenceRecording();
         void disableSequenceRecording();
         void handleQuantAmountLEDs();
-
-        void setTickerFlag()   { tickerFlag = true; };  // obsolete
-        void clearTickerFlag() { tickerFlag = false; }; // obsolete
 
         // Bender methods
         void handleBend(uint16_t value);
