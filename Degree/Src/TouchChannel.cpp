@@ -150,7 +150,10 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
     // start from a clean slate by setting all the LEDs LOW
     for (int i = 0; i < DEGREE_COUNT; i++) {
         setDegreeLed(i, OFF, false);
+        setDegreeLed(i, BLINK_OFF, false);
     }
+    setAllOctaveLeds(OFF, false);
+    setAllOctaveLeds(BLINK_OFF, false);
     setLED(CHANNEL_REC_LED, OFF, false);
     setLED(CHANNEL_QUANT_LED, OFF, false);
     sequence.playbackEnabled = false;
