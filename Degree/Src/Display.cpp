@@ -173,13 +173,13 @@ void Display::benderCalibration()
     {
         for (int i = 0; i < 16; i++)
         {
-            if (i >= 0 && i < 4)
+            if (i >= 1 && i < 3)
             {
-                this->setChannelLED(chan, i, PWM::PWM_LOW_MID, false);
+                this->setChannelLED(chan, i, PWM::PWM_LOW_MID, true);
             }
-            else if (i > 11)
+            else if (i >= 13 && i < 15)
             {
-                this->setChannelLED(chan, i, PWM::PWM_LOW_MID, false);
+                this->setChannelLED(chan, i, PWM::PWM_LOW_MID, true);
             }
         }
     }

@@ -305,6 +305,7 @@ void GlobalControl::handleButtonPress(int pad)
         if (this->mode == CALIBRATING_BENDER)
         {
             this->saveCalibrationDataToFlash();
+            display->disableBlink();
             this->mode = DEFAULT;
             logger_log("\nEXIT Bender Calibration");
             resume_sequencer_task();
@@ -314,6 +315,7 @@ void GlobalControl::handleButtonPress(int pad)
             suspend_sequencer_task();
             logger_log("\nENTER Bender Calibration");
             this->mode = CALIBRATING_BENDER;
+            display->enableBlink();
             display->benderCalibration();
             for (int i = 0; i < 4; i++)
             {
