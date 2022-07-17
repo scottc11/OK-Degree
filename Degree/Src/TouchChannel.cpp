@@ -446,13 +446,13 @@ void TouchChannel::setLED(int io_pin, LedState state, bool isPlaybackEvent)
             _leds->digitalWrite(io_pin, !led_state[io_pin]);
             break;
         case BLINK_ON:
-            _leds->blinkLED(io_pin, 2, 2, 100, 0); // relative to ICs configured clock speed
+            _leds->blinkLED(io_pin, 2, 2, 127, 0); // relative to ICs configured clock speed
             break;
         case BLINK_OFF:
             _leds->setOnTime(io_pin, 0);
             break;
         case DIM_LOW:
-            _leds->setPWM(io_pin, 20);
+            _leds->setPWM(io_pin, 10);
             break;
         case DIM_MED:
             _leds->setPWM(io_pin, 127);
