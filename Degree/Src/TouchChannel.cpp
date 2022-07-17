@@ -176,6 +176,8 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
         break;
     case QUANTIZER_LOOP:
         sequence.playbackEnabled = true;
+        drawSequenceToDisplay(false);
+        setSequenceLED(sequence.currStep, PWM::PWM_HIGH, false);
         setLED(CHANNEL_REC_LED, ON, false);
         setActiveDegrees(activeDegrees);
         triggerNote(currDegree, currOctave, NOTE_OFF);
