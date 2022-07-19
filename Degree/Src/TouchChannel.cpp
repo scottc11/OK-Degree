@@ -1140,7 +1140,8 @@ void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
 
 void TouchChannel::enableSequenceRecording()
 {
-    sequence.recordEnabled = true;
+    sequence.enableRecording();
+
     if (playbackMode == MONO)
     {
         setPlaybackMode(MONO_LOOP);
@@ -1158,11 +1159,13 @@ void TouchChannel::enableSequenceRecording()
 */
 void TouchChannel::disableSequenceRecording()
 {
-    sequence.recordEnabled = false;
+    sequence.disableRecording();
     
     // if a touch event was recorded, remain in loop mode
     if (sequence.containsEvents())
     {
+        // make sure to update the display so it shows the new seq length
+        drawSequenceToDisplay(false);
         return;
     }
     else // if no touch event recorded, revert to previous mode

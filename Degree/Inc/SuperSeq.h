@@ -10,6 +10,11 @@
 #define SEQ_EVENT_GATE_BIT 4
 #define SEQ_EVENT_INDEX_BIT_MASK 0b00001111
 
+#define SEQ_LENGTH_BLOCK_1 (MAX_SEQ_LENGTH / 4)                        // 1 bar
+#define SEQ_LENGTH_BLOCK_2 (MAX_SEQ_LENGTH / 2)                        // 2 bars
+#define SEQ_LENGTH_BLOCK_3 ((MAX_SEQ_LENGTH / 2) + SEQ_LENGTH_BLOCK_1) // 3 bars
+#define SEQ_LENGTH_BLOCK_4 (MAX_SEQ_LENGTH)                            // 4 bars
+
 typedef struct SequenceNode
 {
     uint8_t activeDegrees; // byte for holding active/inactive notes for a chord
@@ -42,6 +47,7 @@ public:
     int prevEventPos;        // represents the position of the last event which got triggered (either HIGH or LOW)
     int newEventPos;         // when a new event is created, we store the position in this variable in case we need it for something (ie. sequence overdubing)
 
+    bool adaptiveLength;     // flag determining if the sequence length should increase past its current length
     bool overdub;            // flag gets set to true so that the sequence handler clears/overdubs existing events
     bool recordEnabled;      // when true, sequence will create and new events to the event list
     bool playbackEnabled;    // when true, sequence will playback event list
@@ -75,7 +81,9 @@ public:
     int getLastPosition();
 
     void advance();
-    void advanceStep();
+
+    void enableRecording();
+    void disableRecording();
 
     void quantize();
     void setQuantizeAmount(QUANT value);

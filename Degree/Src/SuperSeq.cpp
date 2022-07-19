@@ -58,14 +58,66 @@ void SuperSeq::advance()
 
     if (currPosition > lengthPPQN - 1)
     {
-        currPosition = 0;
-        currStep = 0;
+        if (recordEnabled && adaptiveLength)
+        {
+            if (currStep >= MAX_SEQ_LENGTH) // disable adaptive length, set seq length to max
+            {
+                adaptiveLength = false;
+                this->setLength(MAX_SEQ_LENGTH);
+                currPosition = 0;
+                currStep = 0;
+            } else {
+                // do nothing, let things keep counting upwards
+            }
+        }
+        else // reset loop
+        {
+            currPosition = 0;
+            currStep = 0;
+        }
     }
 }
 
-void SuperSeq::advanceStep()
-{
-    currPosition = (currPosition - (currPosition % (PPQN - 1))) + (PPQN - 1);
+void SuperSeq::enableRecording() {
+    this->recordEnabled = true;
+    // if no currently recorded events, enable adaptive length
+    if (!this->containsEvents()) {
+        this->reset();
+        this->adaptiveLength = true;
+    } else {
+        this->adaptiveLength = false;
+    }
+}
+
+void SuperSeq::disableRecording() {
+    this->recordEnabled = false;
+    
+    // if events were recorded and adaptive length was enabled, update the seq length
+    if (adaptiveLength)
+    {
+        this->adaptiveLength = false;
+
+        if (this->containsEvents())
+        {
+            // is all this zero indexed?
+            if (this->currStep < SEQ_LENGTH_BLOCK_1)
+            {
+                this->setLength(SEQ_LENGTH_BLOCK_1); // 8 steps
+            }
+            else if (this->currStep >= SEQ_LENGTH_BLOCK_1 && this->currStep < SEQ_LENGTH_BLOCK_2)
+            {
+                this->setLength(SEQ_LENGTH_BLOCK_2);
+            }
+            else if (this->currStep >= SEQ_LENGTH_BLOCK_2 && this->currStep < SEQ_LENGTH_BLOCK_3)
+            {
+                this->setLength(SEQ_LENGTH_BLOCK_3);
+            }
+            else if (this->currStep >= SEQ_LENGTH_BLOCK_3)
+            {
+                this->setLength(SEQ_LENGTH_BLOCK_4);
+            }
+        }
+    }
 }
 
 /**
