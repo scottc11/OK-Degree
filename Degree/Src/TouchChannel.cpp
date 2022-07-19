@@ -976,7 +976,7 @@ void TouchChannel::setActiveOctaves(int octave)
 */
 void TouchChannel::handleSequence(int position)
 {
-    // always display sequence progresion regardless if there are events or not
+    // always display sequence progression regardless if there are events or not
     if (sequence.currStep != sequence.prevStep) // only set led every step
     {
         if (uiMode == UIMode::UI_PLAYBACK)
@@ -1118,22 +1118,25 @@ void TouchChannel::drawSequenceToDisplay(bool blink)
 
 void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
 {    
-    if (currStep % 2 == 0)
+    if (sequence.currStepPosition == 0)
     {
-        // set currStep PWM High
-        setSequenceLED(currStep, PWM::PWM_HIGH, false);
+        if (currStep % 2 == 0)
+        {
+            // set currStep PWM High
+            setSequenceLED(currStep, PWM::PWM_HIGH, false);
 
-        // handle odd sequence lengths.
-        //  The last LED in sequence gets set to a different PWM
-        if (prevStep == length - 1 && length % 2 == 1)
-        {
-            setSequenceLED(prevStep, PWM::PWM_LOW, false);
-        }
-        // regular sequence lengths
-        else
-        {
-            // set prevStep PWM back to Mid
-            setSequenceLED(prevStep, PWM::PWM_LOW_MID, false);
+            // handle odd sequence lengths.
+            //  The last LED in sequence gets set to a different PWM
+            if (prevStep == length - 1 && length % 2 == 1)
+            {
+                setSequenceLED(prevStep, PWM::PWM_LOW, false);
+            }
+            // regular sequence lengths
+            else
+            {
+                // set prevStep PWM back to Mid
+                setSequenceLED(prevStep, PWM::PWM_LOW_MID, false);
+            }
         }
     }
 }
@@ -1165,6 +1168,7 @@ void TouchChannel::disableSequenceRecording()
     if (sequence.containsEvents())
     {
         // make sure to update the display so it shows the new seq length
+        display->clear(channelIndex);
         drawSequenceToDisplay(false);
         return;
     }
