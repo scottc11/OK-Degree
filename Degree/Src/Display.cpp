@@ -130,6 +130,27 @@ void Display::setLED(int index, uint8_t pwm, bool blink)
     ledMatrix.setPWM(index, pwm);
 }
 
+/**
+ * @brief Toggle the current scenes LED on or off
+ * @note not yet tested!
+ * @param index 
+ */
+void Display::toggleLED(int index)
+{
+    if (_currScene) {
+        if (_currScene->led_state_pwm[index] > 0)
+        {
+            ledMatrix.setPWM(index, 0);
+        } else {
+            ledMatrix.setPWM(index, _currScene->led_state_pwm[index]);
+        }
+    }
+}
+
+void Display::toggleChannelLED(int chan, int index) {
+    this->toggleLED(CHAN_DISPLAY_LED_MAP[chan][index]);
+}
+
 void Display::redrawLED(int index) {
     uint8_t pwm = _currScene->led_state_pwm[index];
     ledMatrix.setPWM(index, pwm);

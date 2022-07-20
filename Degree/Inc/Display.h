@@ -104,6 +104,8 @@ public:
     void setGlobalCurrent(uint8_t value);
     void setBlinkStatus(int chan, bool status);
     void setLED(int index, uint8_t pwm, bool blink);
+    void toggleLED(int index);
+    void toggleChannelLED(int chan, int index);
     void redrawLED(int index);
     void setColumn(int column, uint8_t pwm, bool blink);
     void setChannelLED(int chan, int index, uint8_t pwm, bool blink);
