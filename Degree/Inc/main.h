@@ -10,6 +10,9 @@
 #define BOARD_VERSION 42
 
 #define PPQN 96
+#define PPQN_DIV_2 (PPQN / 2)
+#define PPQN_DIV_4 (PPQN / 4)
+#define PPQN_DIV_8 (PPQN / 8)
 
 #define CHANNEL_COUNT 4
 #define ADC_DMA_BUFF_SIZE   9
