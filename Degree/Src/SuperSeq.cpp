@@ -100,19 +100,19 @@ void SuperSeq::disableRecording() {
         if (this->containsEvents())
         {
             // is all this zero indexed?
-            if (this->currStep < SEQ_LENGTH_BLOCK_1)
+            if (this->currStep <= SEQ_LENGTH_BLOCK_1)
             {
                 this->setLength(SEQ_LENGTH_BLOCK_1); // 8 steps
             }
-            else if (this->currStep >= SEQ_LENGTH_BLOCK_1 && this->currStep < SEQ_LENGTH_BLOCK_2)
+            else if (this->currStep > SEQ_LENGTH_BLOCK_1 && this->currStep <= SEQ_LENGTH_BLOCK_2)
             {
                 this->setLength(SEQ_LENGTH_BLOCK_2);
             }
-            else if (this->currStep >= SEQ_LENGTH_BLOCK_2 && this->currStep < SEQ_LENGTH_BLOCK_3)
+            else if (this->currStep > SEQ_LENGTH_BLOCK_2 && this->currStep <= SEQ_LENGTH_BLOCK_3)
             {
                 this->setLength(SEQ_LENGTH_BLOCK_3);
             }
-            else if (this->currStep >= SEQ_LENGTH_BLOCK_3)
+            else if (this->currStep > SEQ_LENGTH_BLOCK_3)
             {
                 this->setLength(SEQ_LENGTH_BLOCK_4);
             }
