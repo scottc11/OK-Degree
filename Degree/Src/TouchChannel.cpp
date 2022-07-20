@@ -1126,10 +1126,13 @@ void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
             setSequenceLED(currStep, PWM::PWM_HIGH, false);
 
             // handle odd sequence lengths.
-            //  The last LED in sequence gets set to a different PWM
-            if (prevStep == length - 1 && length % 2 == 1)
+            if (length % 2 == 1)
             {
-                setSequenceLED(prevStep, PWM::PWM_LOW, false);
+                // The last LED in sequence gets set to a different PWM
+                if (prevStep == length - 1)
+                {
+                    setSequenceLED(prevStep, PWM::PWM_LOW, false);
+                }
             }
             // regular sequence lengths
             else
