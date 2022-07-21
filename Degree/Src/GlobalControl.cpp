@@ -451,9 +451,15 @@ void GlobalControl::handleButtonRelease(int pad)
         }
         else // clear only curr touched channels sequences
         {
-            dispatch_sequencer_event((CHAN)getTouchedChannel(), SEQ::CLEAR_TOUCH, 0);
-            if (!recordEnabled)
-                dispatch_sequencer_event((CHAN)getTouchedChannel(), SEQ::RECORD_DISABLE, 0);
+            for (int i = 0; i < CHANNEL_COUNT; i++)
+            {
+                if (touchPads->padIsTouched(i, currTouched))
+                {
+                    dispatch_sequencer_event((CHAN)i, SEQ::CLEAR_TOUCH, 0);
+                    if (!recordEnabled)
+                        dispatch_sequencer_event((CHAN)i, SEQ::RECORD_DISABLE, 0);
+                }
+            }
             gestureFlag = false;
         }
         break;
