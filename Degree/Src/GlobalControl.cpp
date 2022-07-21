@@ -466,14 +466,19 @@ void GlobalControl::handleButtonRelease(int pad)
 
     case CLEAR_SEQ_BEND:
         if (!gestureFlag) {
+            dispatch_sequencer_event(CHAN::ALL, SEQ::CLEAR_BEND, 0);
+            if (!recordEnabled)
+                dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0); // why do you even have to do this?
+        } else {
             for (int i = 0; i < CHANNEL_COUNT; i++)
             {
-                channels[i]->sequence.clearAllBendEvents();
-                channels[i]->disableSequenceRecording();
+                if (touchPads->padIsTouched(i, currTouched))
+                {
+                    dispatch_sequencer_event((CHAN)i, SEQ::CLEAR_BEND, 0);
+                    if (!recordEnabled)
+                        dispatch_sequencer_event((CHAN)i, SEQ::RECORD_DISABLE, 0);
+                }
             }
-        } else {
-            channels[getTouchedChannel()]->sequence.clearAllBendEvents();
-            channels[getTouchedChannel()]->disableSequenceRecording();
             gestureFlag = false;
         }
         break;
