@@ -294,7 +294,15 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case RESET:
-        dispatch_sequencer_event(CHAN::ALL, SEQ::RESET, 0);
+        if (gestureFlag)
+        {
+            for (int i = 0; i < CHANNEL_COUNT; i++) {
+                if (touchPads->padIsTouched(i, currTouched))
+                    dispatch_sequencer_event(CHAN(i), SEQ::RESET, 0);
+            }
+        } else {
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RESET, 0);
+        }
         break;
 
     case QUANTIZE_SEQ:
