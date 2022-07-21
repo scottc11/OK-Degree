@@ -1064,8 +1064,7 @@ void TouchChannel::resetSequence()
     sequence.reset();
     if (sequence.containsEvents())
     {
-        stepSequenceLED(sequence.currStep, sequence.prevStep, sequence.length);
-        handleSequence(sequence.currPosition);
+        drawSequenceToDisplay(false);
     }
 }
 
