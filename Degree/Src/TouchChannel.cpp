@@ -17,8 +17,13 @@ void TouchChannel::init()
     for (int i = 0; i < 16; i++)
     {
         _leds->ledConfig(i);
+        setLED(i, DIM_MED, false);
         setLED(i, OFF, false); // note: default PWM is 255
     }
+    setLED(CHANNEL_REC_LED, DIM_HIGH, false);
+    setLED(CHANNEL_QUANT_LED, DIM_HIGH, false);
+    setLED(CHANNEL_PB_LED, DIM_HIGH, false);
+    setLED(CHANNEL_RATCHET_LED, DIM_HIGH, false);
 
     bender->adc.attachSamplingProgressCallback(callback(this, &TouchChannel::displayProgressCallback));
     bender->init();
@@ -150,10 +155,13 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
     // start from a clean slate by setting all the LEDs LOW
     for (int i = 0; i < DEGREE_COUNT; i++) {
         setDegreeLed(i, OFF, false);
+        setDegreeLed(i, DIM_MED, false);
         setDegreeLed(i, BLINK_OFF, false);
     }
     setAllOctaveLeds(OFF, false);
+    setAllOctaveLeds(DIM_MED, false);
     setAllOctaveLeds(BLINK_OFF, false);
+
     setLED(CHANNEL_REC_LED, OFF, false);
     setLED(CHANNEL_QUANT_LED, OFF, false);
     sequence.playbackEnabled = false;
