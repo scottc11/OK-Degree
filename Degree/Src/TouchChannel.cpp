@@ -545,8 +545,8 @@ void TouchChannel::setOctave(int octave)
         setActiveDegrees(activeDegrees); // update active degrees thresholds
         break;
     case QUANTIZER_LOOP:
-        // setActiveOctaves(octave);
-        // setActiveDegrees(activeDegrees); // update active degrees thresholds
+        setActiveOctaves(octave);
+        setActiveDegrees(activeDegrees); // update active degrees thresholds
         break;
     }
 
