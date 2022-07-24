@@ -290,7 +290,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
     case FREEZE:
         freezeLED.write(HIGH);
-        dispatch_sequencer_event(CHAN::ALL, SEQ::FREEZE, 1);
+        this->handleFreeze(true);
         break;
 
     case RESET:
@@ -439,7 +439,7 @@ void GlobalControl::handleButtonRelease(int pad)
     {
     case FREEZE:
         freezeLED.write(LOW);
-        dispatch_sequencer_event(CHAN::ALL, SEQ::FREEZE, 0); // 0 means false
+        handleFreeze(false);
         break;
     case RESET:
         break;
@@ -677,6 +677,21 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
 void GlobalControl::resetSequencer(uint8_t pulse)
 {
     dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::CORRECT, 0);
+}
+
+void GlobalControl::handleFreeze(bool freeze) {
+    if (this->gestureFlag)
+    {
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+        {
+            if (touchPads->padIsTouched(i, currTouched))
+                dispatch_sequencer_event(CHAN(i), SEQ::FREEZE, freeze);
+        }
+    }
+    else
+    {
+        dispatch_sequencer_event(CHAN::ALL, SEQ::FREEZE, freeze);
+    }
 }
 
 void GlobalControl::disableVCOCalibration() {
