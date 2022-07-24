@@ -197,11 +197,19 @@ void TouchChannel::toggleMode()
 {
     if (playbackMode == MONO || playbackMode == MONO_LOOP)
     {
-        setPlaybackMode(QUANTIZER);
+        if (sequence.containsBendEvents) {
+            setPlaybackMode(QUANTIZER_LOOP);
+        } else {
+            setPlaybackMode(QUANTIZER);
+        }
     }
     else
     {
-        setPlaybackMode(MONO);
+        if (sequence.containsBendEvents) {
+            setPlaybackMode(MONO_LOOP);
+        } else {
+            setPlaybackMode(MONO);
+        }
     }
 }
 
@@ -297,7 +305,9 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
             case QUANTIZER_LOOP:
                 // every touch detected, take a snapshot of all active degree values and apply them to the sequence
                 setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
-                sequence.createChordEvent(sequence.currPosition, activeDegrees);
+                if (sequence.recordEnabled) {
+                    sequence.createChordEvent(sequence.currPosition, activeDegrees);
+                }
                 break;
             default:
                 break;
