@@ -1080,7 +1080,7 @@ void TouchChannel::handleSequence(int position)
 void TouchChannel::resetSequence()
 {
     sequence.reset();
-    if (sequence.containsEvents())
+    if (sequence.containsEvents() || sequence.recordEnabled)
     {
         drawSequenceToDisplay(false);
     }
