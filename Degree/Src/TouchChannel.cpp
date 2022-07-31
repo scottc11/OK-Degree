@@ -80,7 +80,6 @@ void TouchChannel::setUIMode(UIMode targetMode) {
     switch (targetMode)
     {
     case UIMode::UI_PLAYBACK:
-        updateUI(uiMode);
         setPlaybackMode(playbackMode);
         break;
     case UIMode::UI_PITCH_BEND_RANGE:

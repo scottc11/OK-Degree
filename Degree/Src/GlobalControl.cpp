@@ -388,7 +388,7 @@ void GlobalControl::handleButtonPress(int pad)
 
     case QUANTIZE_AMOUNT:
         actionExitFlag = ACTION_EXIT_STAGE_1;
-        mode = ControlMode::SETTING_SEQUENCE_LENGTH;
+        mode = ControlMode::SETTING_QUANTIZE_AMOUNT;
         for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->setUIMode(TouchChannel::UIMode::UI_QUANTIZE_AMOUNT);

@@ -109,7 +109,7 @@ int main(void)
   xTaskCreate(TASK_logger, "logger", RTOS_STACK_SIZE_MIN, NULL, RTOS_PRIORITY_LOW, NULL);
   xTaskCreate(taskMain, "taskMain", 512, NULL, 1, &main_task_handle);
   xTaskCreate(task_controller, "controller", RTOS_STACK_SIZE_MIN, &glblCtrl, RTOS_PRIORITY_HIGH, NULL);
-  xTaskCreate(task_interrupt_handler, "ISR handler", RTOS_STACK_SIZE_MIN, &glblCtrl, RTOS_PRIORITY_HIGH, NULL);
+  xTaskCreate(task_interrupt_handler, "ISR handler", RTOS_STACK_SIZE_MIN, &glblCtrl, RTOS_PRIORITY_HIGH + 1, NULL);
   xTaskCreate(task_sequence_handler, "sequencer", RTOS_STACK_SIZE_MAX / 4, &glblCtrl, RTOS_PRIORITY_HIGH, NULL);
   xTaskCreate(task_display, "display", RTOS_STACK_SIZE_MIN, &display, RTOS_PRIORITY_LOW, NULL);
 
