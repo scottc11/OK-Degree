@@ -789,6 +789,7 @@ void TouchChannel::benderIdleCallback()
         setLED(CHANNEL_RATCHET_LED, ON, true);
         break;
     case RATCHET_PITCH_BEND:
+        output.setPitchBend(0);
         setLED(CHANNEL_RATCHET_LED, ON, true);
         break;
     }
