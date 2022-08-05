@@ -83,6 +83,7 @@ void SuperSeq::enableRecording() {
     // if no currently recorded events, enable adaptive length
     if (!this->containsEvents()) {
         this->reset();
+        this->setLength(2);
         this->adaptiveLength = true;
     } else {
         this->adaptiveLength = false;
