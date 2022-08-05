@@ -122,6 +122,8 @@ void taskCalibrate(void *params)
             initialPitchIndex = arr_find_closest_float(const_cast<float *>(PITCH_FREQ_ARR), NUM_PITCH_FREQENCIES, currAvgFreq);
             initialized = true;
             logger_log("\n** CALIBRATION BEGIN ** ");
+            logger_log("\Channel: ");
+            logger_log(channel->channelIndex);
             logger_log("\nStarting Frequency: ");
             logger_log(currAvgFreq);
             logger_log("\nStarting DAC Value: ");
@@ -163,7 +165,7 @@ void taskCalibrate(void *params)
             logger_log(calibrationAttemps);
 
             int ledIndex = map_num_in_range<int>(iteration, 0, DAC_1VO_ARR_SIZE, 0, 63);
-            channel->display->setLED(ledIndex, PWM::PWM_HIGH);
+            channel->display->setLED(ledIndex, PWM::PWM_HIGH, false);
 
             // if we are on the final iteration, then some how breakout of all this crap.
             if (iteration == DAC_1VO_ARR_SIZE - 1) {

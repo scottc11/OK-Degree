@@ -5,7 +5,6 @@ using namespace DEGREE;
 void VoltPerOctave::init()
 {
     dac->init();
-    setPitchBendRange(5);
 }
 
 /**
@@ -17,7 +16,8 @@ void VoltPerOctave::setPitchBendRange(int value)
 {
     if (value < 8)
     {
-        pbRangeIndex = 7 - value; // temp hack: inverting
+        // NOTE: you may need to invert this value
+        pbRangeIndex = value;
         maxPitchBend = dacSemitone * PB_RANGE_MAP[pbRangeIndex]; // multiply semitone DAC value by the max desired number of semitones to be bent
     }
 }
@@ -26,10 +26,10 @@ int VoltPerOctave::getPitchBendRange() {
     return pbRangeIndex;
 }
 
-void VoltPerOctave::setPitchBend(uint16_t value)
+void VoltPerOctave::setPitchBend(uint16_t value, bool direction)
 {
     currPitchBend = value;
-    this->updateDAC(currNoteIndex, currPitchBend);
+    this->updateDAC(currNoteIndex, currPitchBend, direction);
 }
 
 /**
@@ -38,7 +38,7 @@ void VoltPerOctave::setPitchBend(uint16_t value)
  * @param min range floor of input
  * @param max range ceiling of input
 */
-uint16_t VoltPerOctave::calculatePitchBend(int input, int min, int max)
+uint16_t VoltPerOctave::calculatePitchBend(uint16_t input, uint16_t min, uint16_t max)
 {
     return map_num_in_range<uint16_t>(input, min, max, minPitchBend, maxPitchBend);
 }
@@ -47,12 +47,25 @@ uint16_t VoltPerOctave::calculatePitchBend(int input, int min, int max)
  * @param index index to be mapped to voltage map. ranging 0..DAC_1VO_ARR_SIZE
  * @param pitchBend DAC value corrosponing to the amount of pitch bend to apply to output. positive or negative
 */
-void VoltPerOctave::updateDAC(int index, uint16_t pitchBend)
+void VoltPerOctave::updateDAC(int index, uint16_t pitchBend, bool direction)
 {
     if (index < DAC_1VO_ARR_SIZE)
     {
         currNoteIndex = index;
-        currOutput = dacVoltageMap[currNoteIndex] + pitchBend;
+        if (!direction)
+        {
+            uint16_t nValue = dacVoltageMap[currNoteIndex] - pitchBend;
+            if (nValue <= dacVoltageMap[currNoteIndex])
+            {
+                currOutput = nValue;
+            }
+        } else {
+            uint16_t pValue = dacVoltageMap[currNoteIndex] + pitchBend;
+            if (pValue >= dacVoltageMap[currNoteIndex])
+            {
+                currOutput = pValue;
+            }
+        }
         dac->write(dacChannel, currOutput);
     }
 }
@@ -82,5 +95,15 @@ void VoltPerOctave::resetVoltageMap()
     for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
     {
         dacVoltageMap[i] = floor + (semitone * i);
+    }
+}
+
+void VoltPerOctave::logVoltageMap() {
+    logger_log("\nVoltage Map\n");
+    for (int i = 0; i < DAC_1VO_ARR_SIZE; i++) {
+        logger_log(dacVoltageMap[i]);
+        if (i != DAC_1VO_ARR_SIZE - 1) {
+            logger_log(", ");
+        }
     }
 }

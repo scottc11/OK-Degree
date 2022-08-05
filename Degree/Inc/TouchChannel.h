@@ -10,6 +10,7 @@
 #include "SuperSeq.h"
 #include "Display.h"
 #include "okSemaphore.h"
+#include "task_sequence_handler.h"
 
 typedef struct QuantOctave
 {
@@ -35,10 +36,11 @@ namespace DEGREE {
     static const int DEGREE_LED_PINS[8] = { 15, 14, 13, 12, 7, 6, 5, 4 }; // led driver pin map for channel LEDs
     static const int DEGREE_LED_RAINBOW[16] = { 15, 14, 13, 12, 7, 6, 5, 4, 3, 2, 1, 0, CHANNEL_PB_LED, CHANNEL_RATCHET_LED, CHANNEL_REC_LED, CHANNEL_QUANT_LED };
     static const int CHAN_TOUCH_PADS[12] = { 7, 6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0 }; // for mapping touch pads to index values
+    static const int QUANTIZATION_LED_INDEX_MAP[QUANT_NUM_OPTIONS] = { 1, 2, 3, 4, 5, 6 };
 
     static const int DAC_OCTAVE_MAP[4] = { 0, 12, 24, 36 };               // for mapping a value between 0..3 to octaves
     static const int DEGREE_INDEX_MAP[8] = { 0, 2, 4, 6, 8, 10, 12, 14 }; // for mapping an index between 0..7 to a scale degree
-
+    
     class TouchChannel {
     public:
         enum Action
@@ -56,12 +58,11 @@ namespace DEGREE {
             PITCH_BEND = 1,
             RATCHET = 2,
             RATCHET_PITCH_BEND = 3,
-            INCREMENT_BENDER_MODE = 4,
-            BEND_MENU = 5
+            INCREMENT_BENDER_MODE = 4
         };
 
         enum UIMode {
-            UI_DEFAULT,
+            UI_PLAYBACK,
             UI_PITCH_BEND_RANGE,
             UI_SEQUENCE_LENGTH,
             UI_QUANTIZE_AMOUNT
@@ -79,6 +80,7 @@ namespace DEGREE {
         {
             OFF,
             ON,
+            TOGGLE,
             BLINK_ON,
             BLINK_OFF,
             DIM_LOW,
@@ -106,8 +108,9 @@ namespace DEGREE {
             degreeSwitches = degrees;
             bender = _bender;
             globalGateOut = global_gate_ptr;
-            uiMode = UIMode::UI_DEFAULT;
-            playbackMode = PlaybackMode::MONO;
+            uiMode = UIMode::UI_PLAYBACK;
+            playbackMode = PlaybackMode::MONO;       // assigned from flash after init
+            currBenderMode = BenderMode::PITCH_BEND; // assigned from flash after init
             currDegree = 0;
             currOctave = 0;
             
@@ -127,9 +130,8 @@ namespace DEGREE {
         DigitalOut gateOut; // gate output
         AnalogHandle adc;   // CV input ADC
         VoltPerOctave output;        
-        
-        TaskHandle_t handleTouchTaskHandle;
-        QueueHandle_t touchEventQueue;
+
+        bool led_state[16];
 
         uint8_t currRatchetRate;      //
         bool gateState;               // state of the gate output
@@ -139,6 +141,7 @@ namespace DEGREE {
 
         int currBenderMode;
         int prevBenderMode;
+        bool benderOverride;  // boolean which is used to disable the bender playback events (for menues)
 
         uint8_t currDegree;
         uint8_t currOctave;
@@ -146,6 +149,7 @@ namespace DEGREE {
         uint8_t prevOctave;
 
         bool freezeChannel;
+        int freezeStep;    // the position of sequence when freeze was enabled
 
         // Quantiser members
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
@@ -159,10 +163,10 @@ namespace DEGREE {
         QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
         SuperSeq sequence;
-        bool tickerFlag;                   // 
 
         void init();
         void poll();
+        void handleClock();
         void setUIMode(UIMode targetMode);
         void setPlaybackMode(PlaybackMode targetMode);
         void toggleMode();
@@ -177,18 +181,17 @@ namespace DEGREE {
         void freeze(bool state);
         void updateDegrees();
 
-        // Alt UI Handlers
-        void handlePitchBendRangeUI();
-        void handleQuantizeAmountUI();
+        // UI Handler
+        void updateUI(UIMode mode);
 
         void setOctave(int octave);
-        void updateOctaveLeds(int octave);
+        void updateOctaveLeds(int octave, bool isPlaybackEvent);
 
-        void setLED(int io_pin, LedState state);
-        void setDegreeLed(int degree, LedState state);
-        void setAllDegreeLeds(LedState state);
-        void setOctaveLed(int octave, LedState state);
-        void setAllOctaveLeds(LedState state);
+        void setLED(int io_pin, LedState state, bool isPlaybackEvent); // if you use a "scene" here, you could remove the boolean
+        void setDegreeLed(int degree, LedState state, bool isPlaybackEvent);
+        void setAllDegreeLeds(LedState state, bool isPlaybackEvent);
+        void setOctaveLed(int octave, LedState state, bool isPlaybackEvent);
+        void setAllOctaveLeds(LedState state, bool isPlaybackEvent);
 
         // Display Methods
         void displayProgressCallback(uint16_t progress);
@@ -203,15 +206,20 @@ namespace DEGREE {
         // Sequencer methods
         void handleSequence(int position);
         void resetSequence();
+        void updateSequenceLength(uint8_t steps);
+        void setSequenceLED(uint8_t step, uint8_t pwm, bool blink);
+        void drawSequenceToDisplay(bool blink);
+        void stepSequenceLED(int currStep, int prevStep, int length);
         void enableSequenceRecording();
         void disableSequenceRecording();
-        void setTickerFlag()   { tickerFlag = true; };
-        void clearTickerFlag() { tickerFlag = false; };
+        void handleQuantAmountLEDs();
 
         // Bender methods
         void handleBend(uint16_t value);
         void handlePitchBend(uint16_t value);
         int setBenderMode(BenderMode targetMode = INCREMENT_BENDER_MODE);
+        void enableBenderOverride();
+        void disableBenderOverride();
         void benderActiveCallback(uint16_t value);
         void benderIdleCallback();
         void benderTriStateCallback(Bender::BendState state);
@@ -224,7 +232,5 @@ namespace DEGREE {
         void initializeCalibration();
         
         void logPeripherals();
-
-        static void taskHandleTouch(void *_this);
     };
 } // end namespace

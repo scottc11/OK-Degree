@@ -2,8 +2,6 @@
 
 void SuperSeq::init()
 {
-    this->setLength(DEFAULT_SEQ_LENGTH);
-    this->setQuantizeAmount(QUANT_8th);
     this->clearAllEvents();
 };
 
@@ -60,14 +58,67 @@ void SuperSeq::advance()
 
     if (currPosition > lengthPPQN - 1)
     {
-        currPosition = 0;
-        currStep = 0;
+        if (recordEnabled && adaptiveLength)
+        {
+            if (currStep >= MAX_SEQ_LENGTH) // disable adaptive length, set seq length to max
+            {
+                adaptiveLength = false;
+                this->setLength(MAX_SEQ_LENGTH);
+                currPosition = 0;
+                currStep = 0;
+            } else {
+                // do nothing, let things keep counting upwards
+            }
+        }
+        else // reset loop
+        {
+            currPosition = 0;
+            currStep = 0;
+        }
     }
 }
 
-void SuperSeq::advanceStep()
-{
-    currPosition = (currPosition - (currPosition % (PPQN - 1))) + (PPQN - 1);
+void SuperSeq::enableRecording() {
+    this->recordEnabled = true;
+    // if no currently recorded events, enable adaptive length
+    if (!this->containsEvents()) {
+        this->reset();
+        this->setLength(2);
+        this->adaptiveLength = true;
+    } else {
+        this->adaptiveLength = false;
+    }
+}
+
+void SuperSeq::disableRecording() {
+    this->recordEnabled = false;
+    
+    // if events were recorded and adaptive length was enabled, update the seq length
+    if (adaptiveLength)
+    {
+        this->adaptiveLength = false;
+
+        if (this->containsEvents())
+        {
+            // is all this zero indexed?
+            if (this->currStep <= SEQ_LENGTH_BLOCK_1)
+            {
+                this->setLength(SEQ_LENGTH_BLOCK_1); // 8 steps
+            }
+            else if (this->currStep > SEQ_LENGTH_BLOCK_1 && this->currStep <= SEQ_LENGTH_BLOCK_2)
+            {
+                this->setLength(SEQ_LENGTH_BLOCK_2);
+            }
+            else if (this->currStep > SEQ_LENGTH_BLOCK_2 && this->currStep <= SEQ_LENGTH_BLOCK_3)
+            {
+                this->setLength(SEQ_LENGTH_BLOCK_3);
+            }
+            else if (this->currStep > SEQ_LENGTH_BLOCK_3)
+            {
+                this->setLength(SEQ_LENGTH_BLOCK_4);
+            }
+        }
+    }
 }
 
 /**
@@ -230,70 +281,19 @@ void SuperSeq::setLength(int steps)
 
 /**
  * @brief set the level new events get quantized too
-*/ 
-void SuperSeq::setQuantizeAmount(QuantizeAmount value)
+*/
+void SuperSeq::setQuantizeAmount(QUANT value)
 {
     quantizeAmount = value;
 }
-
-const int Q_QUARTER_NOTE[2] = {0, 96};
-const int Q_EIGTH_NOTE[3] = {0, 48, 96};
-const int Q_SIXTEENTH_NOTE[4] = {0, 24, 48, 96};
-const int Q_THIRTY_SECOND_NOTE[9] = {0, 12, 24, 36, 48, 60, 72, 84, 96};
-const int Q_SIXTY_FOURTH_NOTE[12] = {0, 6, 12, 18, 24, 30, 36, 72, 78, 84, 90, 96};
-const int Q_ONE_28TH_NOTE[33] = {0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81, 84, 87, 90, 93, 96};
-
-/**
- * @brief snap input position to a quantized grid
-*/
-int SuperSeq::getQuantizedPosition(int pos, QuantizeAmount target)
-{
-    int ppqnPos = pos % PPQN;
-    int stepPosition = pos - ppqnPos;
-    int newPosition;
-    switch (target)
-    {
-    case QUANT_NONE:
-        newPosition = ppqnPos;
-        break;
-    case QUANT_Quarter:
-        newPosition = arr_find_closest_int((int *)Q_QUARTER_NOTE, 2, ppqnPos);
-        break;
-    case QUANT_8th:
-        newPosition = arr_find_closest_int((int *)Q_EIGTH_NOTE, 3, ppqnPos);
-        break;
-    case QUANT_16th:
-        newPosition = arr_find_closest_int((int *)Q_SIXTEENTH_NOTE, 4, ppqnPos);
-        break;
-    case QUANT_32nd:
-        newPosition = arr_find_closest_int((int *)Q_THIRTY_SECOND_NOTE, 9, ppqnPos);
-        break;
-    case QUANT_64th:
-        newPosition = arr_find_closest_int((int *)Q_SIXTY_FOURTH_NOTE, 12, ppqnPos);
-        break;
-    case QUANT_128th:
-        newPosition = arr_find_closest_int((int *)Q_ONE_28TH_NOTE, 33, ppqnPos);
-        break;
-    default:
-        newPosition = ppqnPos;
-        break;
-    }
-    // check if stepPosition + newPosition does not exceed lengthPPQN
-    if (stepPosition + newPosition >= lengthPPQN)
-    {
-        return 0; // start of seq
-    } else {
-        return stepPosition + newPosition;
-    }
-};
 
 /**
  * @brief Quantize the current sequence
  */
 void SuperSeq::quantize()
 {
-    logger_log("\nPRE-QUANTIZATION");
-    logSequenceToConsole();
+    // logger_log("\nPRE-QUANTIZATION");
+    // logSequenceToConsole();
     
     int pos = 0;
     int lastGateHighPos = 0;
@@ -311,7 +311,7 @@ void SuperSeq::quantize()
             // if event is a gate HIGH event
             if (events[pos].getGate())
             {
-                int newPos = getQuantizedPosition(pos, quantizeAmount);
+                int newPos = getQuantizedPosition(pos, lengthPPQN, quantizeAmount);
 
                 if (newPos == pos) // alread perfect, move on.
                 {
@@ -366,15 +366,15 @@ void SuperSeq::quantize()
         }
         pos++;
     }
-    logger_log("\n\nPOST-QUANTIZATION");
-    logSequenceToConsole();
-    logger_log("\n");
+    // logger_log("\n\nPOST-QUANTIZATION");
+    // logSequenceToConsole();
+    // logger_log("\n");
 }
 
 void SuperSeq::quantizationTest()
 {
     setLength(8); // set sequence length to two steps, ie. 96 * 2 PPQN
-    setQuantizeAmount(QuantizeAmount::QUANT_8th);
+    setQuantizeAmount(QUANT::EIGTH);
 
     createTouchEvent(370, 7, true);
     createTouchEvent(387, 7, false);

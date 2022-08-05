@@ -102,11 +102,13 @@ Degree/Src/SuperSeq.cpp \
 Degree/Src/TouchChannel.cpp \
 Degree/Src/GlobalControl.cpp \
 Degree/Src/VoltPerOctave.cpp \
+Degree/Src/Quantization.cpp \
 Degree/Tasks/Src/task_calibration.cpp \
 Degree/Tasks/Src/task_controller.cpp \
 Degree/Tasks/Src/task_display.cpp \
 Degree/Tasks/Src/task_handles.cpp \
 Degree/Tasks/Src/task_interrupt_handler.cpp \
+Degree/Tasks/Src/task_sequence_handler.cpp \
 Degree/Tasks/Src/task_tuner.cpp \
 ok-drivers/drivers/CAP1208/CAP1208.cpp \
 ok-drivers/drivers/DAC8554/DAC8554.cpp \

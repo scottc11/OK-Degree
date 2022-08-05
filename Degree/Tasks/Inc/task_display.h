@@ -6,12 +6,15 @@
 
 extern TaskHandle_t display_task_handle;
 
-enum DISPLAY_ACTION {
-    PULSE_DISPLAY
+enum struct DisplayAction
+{
+    BLINK,
+    DIM,
+    SET_LED
 };
-typedef enum DISPLAY_ACTION DISPLAY_ACTION;
+typedef enum DisplayAction DisplayAction;
 
 void task_display(void *params);
 
-void display_dispatch(DISPLAY_ACTION action, CHAN channel, uint16_t data);
-void display_dispatch_isr(DISPLAY_ACTION action, CHAN channel, uint16_t data);
+void dispatch_display_action(DisplayAction action, CHAN channel, uint16_t data);
+void dispatch_display_action_isr(DisplayAction action, CHAN channel, uint16_t data);

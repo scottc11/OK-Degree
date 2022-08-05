@@ -5,6 +5,7 @@ using namespace DEGREE;
 uint32_t SETTINGS_BUFFER[SETTINGS_BUFFER_SIZE];
 
 void GlobalControl::init() {
+    suspend_sequencer_task();
     this->loadCalibrationDataFromFlash();
 
     display->init();
@@ -49,7 +50,7 @@ void GlobalControl::init() {
     logger_log(touchInterrupt.read());
 
     // Tempo Pot ADC Noise: 1300ish w/ 100nF
-    tempoPot.setFilter(0.01);
+    tempoPot.setFilter(0.1);
     okSemaphore *sem_ptr = tempoPot.initDenoising();
     sem_ptr->take(); // wait
     sem_ptr->give();
@@ -78,10 +79,11 @@ void GlobalControl::init() {
 
     switches->attachCallback(callback(this, &GlobalControl::handleSwitchChange));
     switches->enableInterrupt();
-    switches->io->digitalReadAB(); // not ideal, but you have to clear the interrupt after initialization
+    switches->updateDegreeStates(); // not ideal, but you have to clear the interrupt after initialization
     ioInterrupt.fall(callback(this, &GlobalControl::handleButtonInterrupt));
     buttons->digitalReadAB();
     touchInterrupt.fall(callback(this, &GlobalControl::handleTouchInterrupt));
+    resume_sequencer_task();
 }
 
 void GlobalControl::poll()
@@ -89,14 +91,9 @@ void GlobalControl::poll()
     switch (mode)
     {
     case DEFAULT:
-        pollTempoPot();
-        channels[0]->poll();
-        channels[1]->poll();
-        channels[2]->poll();
-        channels[3]->poll();
+        pollTempoPot(); // TODO: possibly move this into sequence handler on every clock tick
         break;
-    case CALIBRATING_1VO:
-        pollButtons();
+    case VCO_CALIBRATION:
         break;
     case CALIBRATING_BENDER:
         for (int i = 0; i < 4; i++)
@@ -104,7 +101,6 @@ void GlobalControl::poll()
             uint16_t sample = channels[i]->bender->adc.read_u16();
             channels[i]->bender->adc.sampleMinMax(sample);
         }
-        pollButtons();
         break;
     case HARDWARE_TESTING:
         break;
@@ -113,12 +109,61 @@ void GlobalControl::poll()
     }
 }
 
+/**
+ * @brief exit out of current mode
+ */
+void GlobalControl::exitCurrentMode()
+{
+    switch (mode)
+    {
+    case ControlMode::DEFAULT:
+        /* code */
+        break;
+    case ControlMode::VCO_CALIBRATION:
+        actionTimer.stop();
+        actionTimer.detachCallback();
+        display->disableBlink();
+        display->clear();
+        resume_sequencer_task();
+        dispatch_sequencer_event(CHAN::ALL, SEQ::DISPLAY, 0);
+        // enter default mode, check if any sequences are active and running, if so, update the display
+        break;
+    case ControlMode::CALIBRATING_BENDER:
+        /* code */
+        break;
+
+    case ControlMode::SETTING_SEQUENCE_LENGTH:
+        // iterate over each channel and then keep the display LEDs on or off based on sequence containing events
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
+        {
+            if (!channels[chan]->sequence.containsEvents())
+            {
+                display->clear(chan);
+            }
+            channels[chan]->disableBenderOverride();
+            channels[chan]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
+            display->disableBlink();
+        }
+        break;
+
+    case ControlMode::SETTING_QUANTIZE_AMOUNT:
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+        {
+            channels[i]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
+        }
+        break;
+
+    case ControlMode::HARDWARE_TESTING:
+        /* code */
+        break;
+    }
+    // always revert to default mode
+    mode = ControlMode::DEFAULT;
+}
+
 void GlobalControl::handleSwitchChange()
 {
-    channels[0]->updateDegrees();
-    channels[1]->updateDegrees();
-    channels[2]->updateDegrees();
-    channels[3]->updateDegrees();
+    dispatch_sequencer_event(CHAN::ALL, SEQ::HANDLE_DEGREE, 0);
 }
 
 void GlobalControl::handleButtonInterrupt()
@@ -139,7 +184,7 @@ void GlobalControl::handleTouchInterrupt() {
 void GlobalControl::pollTempoPot()
 {
     currTempoPotValue = tempoPot.read_u16();
-    if (currTempoPotValue > prevTempoPotValue + 600 || currTempoPotValue < prevTempoPotValue - 600) {
+    if (currTempoPotValue > prevTempoPotValue + 200 || currTempoPotValue < prevTempoPotValue - 200) {
         handleTempoAdjustment(currTempoPotValue);
         prevTempoPotValue = currTempoPotValue;
     }
@@ -153,7 +198,7 @@ void GlobalControl::handleTempoAdjustment(uint16_t value)
         {
             clock->disableInputCaptureISR();
         }
-        clock->setPulseFrequency(clock->convertADCReadToTicks(1000, BIT_MAX_16, value));
+        clock->setPulseFrequency(clock->convertADCReadToTicks(TEMPO_POT_MIN_ADC, TEMPO_POT_MAX_ADC, value));
     }
     else
     {
@@ -175,26 +220,9 @@ void GlobalControl::pollTouchPads() {
     currTouched = touchPads->touched();
 #endif
 
-    // for (int i = 0; i < CHANNEL_COUNT; i++)
-    // {
-    //     if (touchPads->padIsTouched(i, currTouched))
-    //     {
-    //         display->fill(i, 127);
-    //         // display->setBlinkStatus(i, true);
-    //     }
-    //     else
-    //     {
-    //         display->clear(i);
-    //         // display->setBlinkStatus(i, false);
-    //     }
-    // }
-
-    if (currTouched == 0x00)
-    {
+    if (currTouched == 0x00) {
         gestureFlag = false;
-    }
-    else
-    {
+    } else {
         gestureFlag = true;
     }
 }
@@ -212,7 +240,7 @@ void GlobalControl::pollButtons()
             // if state went HIGH and was LOW before
             if (bitwise_read_bit(currButtonsState, i) && !bitwise_read_bit(prevButtonsState, i))
             {
-                if (mode == Mode::HARDWARE_TESTING)
+                if (mode == ControlMode::HARDWARE_TESTING)
                 {
                     this->handleHardwareTest(currButtonsState);
                 }
@@ -224,7 +252,7 @@ void GlobalControl::pollButtons()
             // if state went LOW and was HIGH before
             if (!bitwise_read_bit(currButtonsState, i) && bitwise_read_bit(prevButtonsState, i))
             {
-                if (mode != Mode::HARDWARE_TESTING)
+                if (mode != ControlMode::HARDWARE_TESTING)
                 {
                     this->handleButtonRelease(prevButtonsState);
                 }
@@ -240,7 +268,13 @@ void GlobalControl::pollButtons()
  * Handle Button Press
 */
 void GlobalControl::handleButtonPress(int pad)
-{    
+{
+    // let any butten press break out of currently running "mode"
+    if (actionExitFlag == ACTION_EXIT_STAGE_1)
+    {
+        actionExitFlag = ACTION_EXIT_STAGE_2;
+        return;
+    }
     switch (pad)
     {
     case CMODE:
@@ -256,50 +290,49 @@ void GlobalControl::handleButtonPress(int pad)
         break;
     case FREEZE:
         freezeLED.write(HIGH);
-        for (int i = 0; i < CHANNEL_COUNT; i++)
-        {
-            channels[i]->freeze(true);
-        }
-        
+        this->handleFreeze(true);
         break;
 
     case RESET:
-        for (int i = 0; i < CHANNEL_COUNT; i++)
+        if (gestureFlag)
         {
-            channels[i]->resetSequence();
+            for (int i = 0; i < CHANNEL_COUNT; i++) {
+                if (touchPads->padIsTouched(i, currTouched))
+                    dispatch_sequencer_event(CHAN(i), SEQ::RESET, 0);
+            }
+        } else {
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RESET, 0);
         }
         break;
 
     case QUANTIZE_SEQ:
-        for (int i = 0; i < CHANNEL_COUNT; i++)
-        {
-            if (channels[i]->sequence.containsTouchEvents)
-            {
-                channels[i]->sequence.quantize();
-            }
-        }
+        dispatch_sequencer_event(CHAN::ALL, SEQ::QUANTIZE, 0);
         break;
 
     case Gestures::CALIBRATE_BENDER:
         if (this->mode == CALIBRATING_BENDER)
         {
             this->saveCalibrationDataToFlash();
-            display->clear();
+            display->disableBlink();
             this->mode = DEFAULT;
+            logger_log("\nEXIT Bender Calibration");
+            resume_sequencer_task();
         }
         else
         {
+            suspend_sequencer_task();
+            logger_log("\nENTER Bender Calibration");
             this->mode = CALIBRATING_BENDER;
+            display->enableBlink();
             display->benderCalibration();
             for (int i = 0; i < 4; i++)
             {
                 channels[i]->bender->adc.resetMinMax();
             }
-            
         }
         break;
 
-    case Gestures::RESET_CALIBRATION_DATA:
+    case Gestures::SETTINGS_RESET:
         if (gestureFlag)
         {
             this->handleChannelGesture(callback(this, &GlobalControl::resetCalibration1VO));
@@ -308,23 +341,24 @@ void GlobalControl::handleButtonPress(int pad)
         }
         break;
 
+    case Gestures::SETTINGS_SAVE:
+        this->saveCalibrationDataToFlash();
+        break;
+
     case Gestures::CALIBRATE_1VO:
-        if (gestureFlag) {
-            for (int i = 0; i < 4; i++)
-            {
-                if (touchPads->padIsTouched(i, currTouched))
-                {
-                    selectedChannel = i;
-                    break;
-                }
-            }
-            gestureFlag = false;
-            this->enableVCOCalibration(channels[selectedChannel]);
-        }
+        actionExitFlag = ACTION_EXIT_STAGE_1; // set exit flag
+        mode = ControlMode::VCO_CALIBRATION;
+        suspend_sequencer_task();
+        display->enableBlink();
+        display->fill(30, true);
+        actionCounter = 0; // reset
+        actionCounterLimit = 15;
+        actionTimer.attachCallback(callback(this, &GlobalControl::pressHold), 100, true);
+        actionTimer.start();
         break;
     
     case Gestures::ENTER_HARDWARE_TEST:
-        mode = Mode::HARDWARE_TESTING;
+        mode = ControlMode::HARDWARE_TESTING;
         break;
 
     case Gestures::LOG_SYSTEM_STATUS:
@@ -353,6 +387,8 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case QUANTIZE_AMOUNT:
+        actionExitFlag = ACTION_EXIT_STAGE_1;
+        mode = ControlMode::SETTING_QUANTIZE_AMOUNT;
         for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->setUIMode(TouchChannel::UIMode::UI_QUANTIZE_AMOUNT);
@@ -360,26 +396,28 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case SEQ_LENGTH:
-        this->display->clear();
+        actionExitFlag = ACTION_EXIT_STAGE_1;
+        mode = ControlMode::SETTING_SEQUENCE_LENGTH;
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_SEQUENCE_LENGTH);
-            channels[chan]->setBenderMode(TouchChannel::BenderMode::BEND_MENU);
+            channels[chan]->enableBenderOverride();
+            display->enableBlink();
+            channels[chan]->drawSequenceToDisplay(true);
         }
         break;
+
     case RECORD:
         if (!recordEnabled)
         {
             recLED.write(1);
-            for (int i = 0; i < CHANNEL_COUNT; i++)
-                channels[i]->enableSequenceRecording();
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
             recordEnabled = true;
         }
         else
         {
             recLED.write(0);
-            for (int i = 0; i < CHANNEL_COUNT; i++)
-                channels[i]->disableSequenceRecording();
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
             recordEnabled = false;
         }
         break;
@@ -391,65 +429,68 @@ void GlobalControl::handleButtonPress(int pad)
 */
 void GlobalControl::handleButtonRelease(int pad)
 {
+    if (actionExitFlag == ACTION_EXIT_STAGE_2)
+    {
+        exitCurrentMode();
+        actionExitFlag = ACTION_EXIT_CLEAR;
+        return;
+    }
     switch (pad)
     {
     case FREEZE:
         freezeLED.write(LOW);
-        for (int i = 0; i < CHANNEL_COUNT; i++)
-        {
-            channels[i]->freeze(false);
-        }
+        handleFreeze(false);
         break;
     case RESET:
         break;
     case PB_RANGE:
         for (int i = 0; i < CHANNEL_COUNT; i++)
         {
-            channels[i]->setUIMode(TouchChannel::UIMode::UI_DEFAULT);
+            channels[i]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
         }
         break;
         
     case CLEAR_SEQ_TOUCH:
         if (!gestureFlag)
         {
-            for (int i = 0; i < CHANNEL_COUNT; i++)
-            {
-                channels[i]->sequence.clearAllTouchEvents();
-                if (!recordEnabled)
-                    channels[i]->disableSequenceRecording();
-            }
+            dispatch_sequencer_event(CHAN::ALL, SEQ::CLEAR_TOUCH, 0);
+            if (!recordEnabled)
+                dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0); // why do you even have to do this?
         }
         else // clear only curr touched channels sequences
         {
-            channels[getTouchedChannel()]->sequence.clearAllTouchEvents();
-            if (!recordEnabled)
-                channels[getTouchedChannel()]->disableSequenceRecording();
+            for (int i = 0; i < CHANNEL_COUNT; i++)
+            {
+                if (touchPads->padIsTouched(i, currTouched))
+                {
+                    dispatch_sequencer_event((CHAN)i, SEQ::CLEAR_TOUCH, 0);
+                    if (!recordEnabled)
+                        dispatch_sequencer_event((CHAN)i, SEQ::RECORD_DISABLE, 0);
+                }
+            }
+            gestureFlag = false;
         }
         break;
 
     case CLEAR_SEQ_BEND:
         if (!gestureFlag) {
+            dispatch_sequencer_event(CHAN::ALL, SEQ::CLEAR_BEND, 0);
+            if (!recordEnabled)
+                dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0); // why do you even have to do this?
+        } else {
             for (int i = 0; i < CHANNEL_COUNT; i++)
             {
-                channels[i]->sequence.clearAllBendEvents();
-                channels[i]->disableSequenceRecording();
+                if (touchPads->padIsTouched(i, currTouched))
+                {
+                    dispatch_sequencer_event((CHAN)i, SEQ::CLEAR_BEND, 0);
+                    if (!recordEnabled)
+                        dispatch_sequencer_event((CHAN)i, SEQ::RECORD_DISABLE, 0);
+                }
             }
-        } else {
-            channels[getTouchedChannel()]->sequence.clearAllBendEvents();
-            channels[getTouchedChannel()]->disableSequenceRecording();
+            gestureFlag = false;
         }
         break;
-    case SEQ_LENGTH: // exit sequence length UI
-        this->display->clear();
-        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
-        {
-            if (channels[chan]->sequence.containsEvents())
-            {
-                display->setSequenceLEDs(chan, channels[chan]->sequence.length, 2, true);
-            }
-            channels[chan]->setBenderMode((TouchChannel::BenderMode)channels[chan]->prevBenderMode);
-            channels[chan]->setUIMode(TouchChannel::UIMode::UI_DEFAULT);
-        }
+    case SEQ_LENGTH:
         break;
     case RECORD:
         break;
@@ -469,26 +510,27 @@ void GlobalControl::loadCalibrationDataFromFlash()
     if (dataIsClean)
     {
         // load default 1VO values
-        logger_log("\nLoading default values");
+        logger_log("\nChannel Settings Source: DEFAULT");
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
             channels[chan]->output.resetVoltageMap();
-            channels[chan]->bender->setMaxBend(DEFAULT_MAX_BEND);
-            channels[chan]->bender->setMinBend(DEFAULT_MIN_BEND);
         }
     }
     else
     { // if it does, load the data from flash
-        logger_log("\nLoading calibration data from flash");
+        logger_log("\nChannel Settings Source: FLASH");
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
-            for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
+            for (int i = SETTINGS_DAC_1VO; i < DAC_1VO_ARR_SIZE; i++)
             {
-                int index = this->getCalibrationDataPosition(i, chan);
-                channels[chan]->output.dacVoltageMap[i] = (uint16_t)SETTINGS_BUFFER[index];
+                channels[chan]->output.dacVoltageMap[i] = (uint16_t)getSettingsBufferValue(i, chan);
             }
-            channels[chan]->bender->setMinBend(SETTINGS_BUFFER[this->getCalibrationDataPosition(BENDER_MIN_CAL_INDEX, chan)]);
-            channels[chan]->bender->setMaxBend(SETTINGS_BUFFER[this->getCalibrationDataPosition(BENDER_MAX_CAL_INDEX, chan)]);
+            channels[chan]->bender->setMinBend(getSettingsBufferValue(SETTINGS_BENDER_MIN, chan));
+            channels[chan]->bender->setMaxBend(getSettingsBufferValue(SETTINGS_BENDER_MAX, chan));
+            channels[chan]->currBenderMode = getSettingsBufferValue(SETTINGS_BENDER_MODE, chan);
+            channels[chan]->output.setPitchBendRange(getSettingsBufferValue(SETTINGS_PITCH_BEND_RANGE, chan));
+            channels[chan]->sequence.setQuantizeAmount(static_cast<QUANT>(getSettingsBufferValue(SETTINGS_QUANTIZE_AMOUNT, chan)));
+            channels[chan]->sequence.setLength(getSettingsBufferValue(SETTINGS_SEQ_LENGTH, chan));
         }
     }
 }
@@ -501,23 +543,25 @@ void GlobalControl::loadCalibrationDataFromFlash()
 */
 void GlobalControl::saveCalibrationDataToFlash()
 {
-    // disable interupts?
-    this->display->fill(PWM::PWM_MID);
+    this->display->fill(PWM::PWM_MID, true);
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
     {
-        for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)   // dac array iterrator
+        for (int i = SETTINGS_DAC_1VO; i < DAC_1VO_ARR_SIZE; i++) // dac array iterrator
         {
-            buffer_position = this->getCalibrationDataPosition(i, chan);
-            SETTINGS_BUFFER[buffer_position] = channels[chan]->output.dacVoltageMap[i]; // copy values into buffer
+            setSettingsBufferValue(i, chan, channels[chan]->output.dacVoltageMap[i]);
         }
         // load max and min Bender calibration data into buffer (two 16bit chars)
-        SETTINGS_BUFFER[this->getCalibrationDataPosition(BENDER_MIN_CAL_INDEX, chan)] = channels[chan]->bender->getMinBend();
-        SETTINGS_BUFFER[this->getCalibrationDataPosition(BENDER_MAX_CAL_INDEX, chan)] = channels[chan]->bender->getMaxBend();
+        setSettingsBufferValue(SETTINGS_BENDER_MIN, chan, channels[chan]->bender->adc.getInputMin());
+        setSettingsBufferValue(SETTINGS_BENDER_MAX, chan, channels[chan]->bender->adc.getInputMax());
+        setSettingsBufferValue(SETTINGS_BENDER_MODE, chan, channels[chan]->currBenderMode);
+        setSettingsBufferValue(SETTINGS_PITCH_BEND_RANGE, chan, channels[chan]->output.pbRangeIndex);
+        setSettingsBufferValue(SETTINGS_QUANTIZE_AMOUNT, chan, (uint16_t)channels[chan]->sequence.quantizeAmount);
+        setSettingsBufferValue(SETTINGS_SEQ_LENGTH, chan, channels[chan]->sequence.length);
     }
     // now load this buffer into flash memory
     Flash flash;
-    flash.erase(FLASH_CONFIG_ADDR);
+    flash.erase(FLASH_CONFIG_ADDR); // should flash.erase be moved into flash.write method?
     flash.write(FLASH_CONFIG_ADDR, SETTINGS_BUFFER, SETTINGS_BUFFER_SIZE);
     // flash the grid of leds on and off for a sec then exit
     this->display->flash(3, 300);
@@ -527,8 +571,22 @@ void GlobalControl::saveCalibrationDataToFlash()
 
 void GlobalControl::deleteCalibrationDataFromFlash()
 {
+    display->setScene(SCENE::SETTINGS);
+    display->resetScene();
+    display->enableBlink();
+    display->fill(127, true);
+
     Flash flash;
     flash.erase(FLASH_CONFIG_ADDR);
+
+    for (int i = 0; i < DISPLAY_COLUMN_COUNT; i++)
+    {
+        int led = DISPLAY_COLUMN_COUNT - 1 - i; // go backwards
+        display->setColumn(led, 30, true);
+        vTaskDelay(50);
+    }
+    display->setScene(SCENE::SEQUENCER);
+    display->redrawScene();
 }
 
 void GlobalControl::resetCalibrationDataToDefault()
@@ -557,22 +615,42 @@ void GlobalControl::resetCalibration1VO(int chan)
  * @param channel_index
  * @return int
  */
-int GlobalControl::getCalibrationDataPosition(int data_index, int channel_index)
+int GlobalControl::calculatePositionInSettingsBuffer(int data_index, int channel_index)
 {
     return (data_index + CALIBRATION_ARR_SIZE * channel_index);
 }
 
 /**
- * Method gets called once every PPQN
+ * @brief Calibration data for all channels is stored in a single buffer, this function returns the value
+ * at the given position of that buffer
+ *
+ * @param data_index
+ * @param channel_index
+ * @return int
+ */
+int GlobalControl::getSettingsBufferValue(int position, int channel)
+{
+    position = calculatePositionInSettingsBuffer(position, channel);
+    return (int)SETTINGS_BUFFER[position];
+}
+
+void GlobalControl::setSettingsBufferValue(int position, int channel, int data)
+{
+    position = calculatePositionInSettingsBuffer(position, channel);
+    SETTINGS_BUFFER[position] = data;
+}
+
+/**
+ * @brief Called within ISR, advances all channels sequence by 1, and handles global clock output
  * 
-*/
+ * @param pulse 
+ */
 void GlobalControl::advanceSequencer(uint8_t pulse)
 {
     // if (pulse % 16 == 0)
     // {
     //     display_dispatch_isr(DISPLAY_ACTION::PULSE_DISPLAY, CHAN::ALL, 0);
     // }
-    
 
     if (pulse == 0) {
         tempoLED.write(HIGH);
@@ -582,11 +660,7 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         tempoGate.write(LOW);
     }
 
-    for (int i = 0; i < CHANNEL_COUNT; i++)
-    {
-        channels[i]->sequence.advance();
-        channels[i]->setTickerFlag();
-    }
+    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::ADVANCE, pulse);
 }
 
 /**
@@ -596,40 +670,57 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
  * pulse count overtakes the external clocks rising edge. To avoid this scenario, you need to halt further execution of the sequence should it reach PPQN - 1 
  * prior to the ext clock rising edge. Thing is, the sequence would first need to know that it is being externally clocked...
  * 
- * TODO: external clock is ignored unless the CLOCK knob is set to its minimum value and tap tempo is reset.
- * 
  * Currently, your clock division is very off. The higher the ext clock signal is, you lose an increasing amount of pulses.
  * Ex. @ 120bpm sequence will reset on pulse 84 (ie. missing 12 PPQNs)
  * Ex. @ 132bpm sequence missing 20 PPQNs
  */
-void GlobalControl::resetSequencer()
+void GlobalControl::resetSequencer(uint8_t pulse)
 {
-    for (int i = 0; i < CHANNEL_COUNT; i++)
+    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::CORRECT, 0);
+}
+
+void GlobalControl::handleFreeze(bool freeze) {
+    if (this->gestureFlag)
     {
-        // try just setting the sequence to 0, set any potential gates low. You may miss a note but 🤷‍♂️
-
-        // if sequence is not on its final PPQN of its step, then trigger all remaining PPQNs in current step until currPPQN == 0
-        if (channels[i]->sequence.currStepPosition != 0) {
-            while (channels[i]->sequence.currStepPosition != 0)
-            {
-                // you can't be calling i2c / spi functions here, meaning you can't execute unexecuted sequence events until you first abstract
-                // the DAC and LED components of an event out into a seperate thread.
-
-                // incrementing the clock will at least keep the sequence in sync with an external clock
-                channels[i]->sequence.advance();
-            }
-            channels[i]->setTickerFlag();
+        for (int i = 0; i < CHANNEL_COUNT; i++)
+        {
+            if (touchPads->padIsTouched(i, currTouched))
+                dispatch_sequencer_event(CHAN(i), SEQ::FREEZE, freeze);
         }
+    }
+    else
+    {
+        dispatch_sequencer_event(CHAN::ALL, SEQ::FREEZE, freeze);
     }
 }
 
-void GlobalControl::enableVCOCalibration(TouchChannel *channel)
-{
-    ctrl_dispatch(CTRL_ACTION::ENTER_1VO_CALIBRATION, channel->channelIndex, 0);
+void GlobalControl::disableVCOCalibration() {
+    this->mode = ControlMode::DEFAULT;
 }
 
-void GlobalControl::disableVCOCalibration() {
-    this->mode = GlobalControl::Mode::DEFAULT;
+/**
+ * @brief auto-reload software timer callback function which steps through the currently selected channels 16 display LEDs
+ * and makes them brighter. Once function increments its counter to 16, enter that channel into VCO calibration
+ */
+void GlobalControl::pressHold() {
+    if (gestureFlag)
+    {
+        int touchedChannel = getTouchedChannel();
+        display->setSpiralLED(touchedChannel, actionCounter, 255, false);
+        actionCounter++;
+        if (actionCounter > actionCounterLimit) {
+            actionTimer.stop();
+            selectedChannel = touchedChannel; // this is kinda meh
+            ctrl_dispatch(CTRL_ACTION::ENTER_1VO_CALIBRATION, touchedChannel, 0);
+        }
+    } else {
+        // reset
+        if (actionCounter != 0)
+        {
+            display->fill(30, true);
+        }
+        actionCounter = 0;
+    }
 }
 
 void GlobalControl::handleChannelGesture(Callback<void(int chan)> callback)
@@ -659,7 +750,6 @@ int GlobalControl::getTouchedChannel() {
             break;
         }
     }
-    gestureFlag = false;
     return channel;
 }
 
@@ -673,6 +763,10 @@ void GlobalControl::log_system_status()
 
     logger_log("\nTouch ISR pin = ");
     logger_log(touchInterrupt.read());
+    for (int i = 0; i < CHANNEL_COUNT; i++) {
+        channels[i]->logPeripherals();
+        channels[i]->output.logVoltageMap();
+    }
 }
 
 void GlobalControl::handleHardwareTest(uint16_t pressedButtons)
@@ -708,7 +802,7 @@ void GlobalControl::handleHardwareTest(uint16_t pressedButtons)
             channels[i]->setGate(false);
         break;
     case HardwareTest::EXIT_HARDWARE_TEST:
-        mode = Mode::DEFAULT;
+        mode = ControlMode::DEFAULT;
         break;
     default:
         break;

@@ -4,21 +4,26 @@ using namespace DEGREE;
 
 void TouchChannel::init()
 {
-    xTaskCreate(TouchChannel::taskHandleTouch, "handleTouch", RTOS_STACK_SIZE_MIN, this, RTOS_PRIORITY_HIGH, &this->handleTouchTaskHandle);
-
+    uiMode = UI_PLAYBACK;
+    
     output.init(); // must init this first (for the dac)
     
     adc.setFilter(0.1);
 
     // initialize LED Driver
     _leds->init();
-    _leds->setBlinkFrequency(SX1509::ClockSpeed::FAST);
+    _leds->setBlinkFrequency(SX1509::ClockSpeed::ULTRA_FAST);
 
     for (int i = 0; i < 16; i++)
     {
         _leds->ledConfig(i);
-        setLED(i, OFF);
+        setLED(i, DIM_MED, false);
+        setLED(i, OFF, false); // note: default PWM is 255
     }
+    setLED(CHANNEL_REC_LED, DIM_HIGH, false);
+    setLED(CHANNEL_QUANT_LED, DIM_HIGH, false);
+    setLED(CHANNEL_PB_LED, DIM_HIGH, false);
+    setLED(CHANNEL_RATCHET_LED, DIM_HIGH, false);
 
     bender->adc.attachSamplingProgressCallback(callback(this, &TouchChannel::displayProgressCallback));
     bender->init();
@@ -37,94 +42,106 @@ void TouchChannel::init()
     touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
     touchPads->enable();
 
-    display->drawSpiral(channelIndex, true, 25);
-
-    setPlaybackMode(MONO);
-    setBenderMode(PITCH_BEND);
+    // you should actually be accessing a global settings buffer 
+    display->drawSpiral(channelIndex, true, PWM::PWM_HIGH, 25);
+    setPlaybackMode(playbackMode); // value of playbackMode gets loaded and assigned from flash
+    setBenderMode((BenderMode)currBenderMode); // value of playbackMode gets loaded and assigned from flash
     logPeripherals();
 }
 
-/** ------------------------------------------------------------------------
- *         POLL    POLL    POLL    POLL    POLL    POLL    POLL    POLL    
- *  ------------------------------------------------------------------------
-*/
-void TouchChannel::poll()
-{
-    switch (uiMode)
+
+/**
+ * @brief gets called once every PPQN automatically by a task
+ *
+ */
+void TouchChannel::handleClock() {
+    if (!freezeChannel)
     {
-    case UI_DEFAULT:
-        if (!freezeChannel)
+        bender->poll();
+
+        if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
         {
-            if (tickerFlag)
-            {
-                bender->poll();
-
-                if (playbackMode == QUANTIZER || playbackMode == QUANTIZER_LOOP)
-                {
-                    handleCVInput();
-                }
-
-                if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP)
-                {
-                    handleSequence(sequence.currPosition);
-                }
-
-                clearTickerFlag();
-            }
+            handleCVInput();
         }
-        break;
-    case UI_PITCH_BEND_RANGE:
-        break;
-    case UI_SEQUENCE_LENGTH:
-        if (tickerFlag)
+
+        if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP)
         {
-            bender->poll();
-            clearTickerFlag();
+            handleSequence(sequence.currPosition);
+        }
+        if (uiMode == UI_QUANTIZE_AMOUNT)
+        {
+            handleQuantAmountLEDs();
         }
     }
-    
 }
 
 void TouchChannel::setUIMode(UIMode targetMode) {
     this->uiMode = targetMode;
     switch (targetMode)
     {
-    case UIMode::UI_DEFAULT:
+    case UIMode::UI_PLAYBACK:
         setPlaybackMode(playbackMode);
         break;
     case UIMode::UI_PITCH_BEND_RANGE:
-        setAllOctaveLeds(LedState::OFF);
-        handlePitchBendRangeUI();
+        updateUI(uiMode);
         break;
     case UI_SEQUENCE_LENGTH:
         break;
     case UI_QUANTIZE_AMOUNT:
-        handleQuantizeAmountUI();
+        updateUI(uiMode);
         break;
     }
 }
 
-/**
- * @brief determine current pitch bend range index and update LEDs accordingly
-*/
-void TouchChannel::handlePitchBendRangeUI()
+void TouchChannel::updateUI(UIMode mode)
 {
-    setAllDegreeLeds(LedState::OFF);
-    for (int i = 0; i < output.getPitchBendRange() + 1; i++)
+    switch (mode)
     {
-        setDegreeLed(i, LedState::ON);
-    }
-}
+    case UIMode::UI_PLAYBACK:
+        setAllOctaveLeds(LedState::BLINK_OFF, false);
+        setAllDegreeLeds(LedState::BLINK_OFF, false);
+        break;
 
-/**
- * @brief what if you flashed the degree leds at a rate relative to their corrosponding value
- * ie. if you want to quantize to an 8th note grid, then you would touch the degree LED that is flashing
- * at a rate of 8th notes (relative to clock)
- */
-void TouchChannel::handleQuantizeAmountUI()
-{
-    setAllOctaveLeds(LedState::OFF);
-    setAllDegreeLeds(LedState::OFF);
+    case UIMode::UI_PITCH_BEND_RANGE:
+        // determine current pitch bend range index and update LEDs accordingly
+        setAllOctaveLeds(LedState::OFF, false);
+        setAllDegreeLeds(LedState::OFF, false);
+        setAllDegreeLeds(LedState::BLINK_ON, false);
+        for (int i = 0; i < output.getPitchBendRange() + 1; i++)
+        {
+            setDegreeLed(i, LedState::ON, false);
+        }
+        break;
+
+    case UIMode::UI_SEQUENCE_LENGTH:
+        break;
+
+    case UIMode::UI_QUANTIZE_AMOUNT:
+        /**
+         * @brief what if you flashed the degree leds at a rate relative to their corrosponding value
+         * ie. if you want to quantize to an 8th note grid, then you would touch the degree LED that is flashing
+         * at a rate of 8th notes (relative to clock)
+         */
+        setAllOctaveLeds(LedState::OFF, false);
+        setAllDegreeLeds(LedState::OFF, false);
+
+        // flash each degree led at a rate relative to a corrosponding quantization value
+        // the active quantization value will be set with a HIGH PWM
+        // the in-active options set to a LOW PWM
+        // OFF / No Quantization will be solid, no blink
+        for (int i = 0; i < QUANT_NUM_OPTIONS; i++)
+        {
+            if (i == quant_value_to_index(sequence.quantizeAmount))
+            {
+                setDegreeLed(QUANTIZATION_LED_INDEX_MAP[i], LedState::DIM_HIGH, false);
+            } else {
+                setDegreeLed(QUANTIZATION_LED_INDEX_MAP[i], LedState::DIM_LOW, false);
+            }
+            setDegreeLed(QUANTIZATION_LED_INDEX_MAP[i], LedState::ON, false);
+        }
+
+        break;
+    }
 }
 
 /**
@@ -136,32 +153,42 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
 
     // start from a clean slate by setting all the LEDs LOW
     for (int i = 0; i < DEGREE_COUNT; i++) {
-        setDegreeLed(i, DIM_MED);
-        setDegreeLed(i, OFF);
+        setDegreeLed(i, OFF, false);
+        setDegreeLed(i, DIM_MED, false);
+        setDegreeLed(i, BLINK_OFF, false);
     }
-    setLED(CHANNEL_REC_LED, OFF);
-    setLED(CHANNEL_QUANT_LED, OFF);
+    setAllOctaveLeds(OFF, false);
+    setAllOctaveLeds(DIM_MED, false);
+    setAllOctaveLeds(BLINK_OFF, false);
+
+    setLED(CHANNEL_REC_LED, OFF, false);
+    setLED(CHANNEL_QUANT_LED, OFF, false);
     sequence.playbackEnabled = false;
 
     switch (playbackMode)
     {
     case MONO:
         triggerNote(currDegree, currOctave, SUSTAIN);
-        updateOctaveLeds(currOctave);
+        updateOctaveLeds(currOctave, false);
         break;
     case MONO_LOOP:
         sequence.playbackEnabled = true;
-        setLED(CHANNEL_REC_LED, ON);
+        drawSequenceToDisplay(false);
+        setSequenceLED(sequence.currStep, PWM::PWM_HIGH, false);
+        setLED(CHANNEL_REC_LED, ON, false);
+        setOctaveLed(currOctave, LedState::ON, false);
         triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case QUANTIZER:
-        setLED(CHANNEL_QUANT_LED, ON);
+        setLED(CHANNEL_QUANT_LED, ON, false);
         setActiveDegrees(activeDegrees);
         triggerNote(currDegree, currOctave, NOTE_OFF);
         break;
     case QUANTIZER_LOOP:
         sequence.playbackEnabled = true;
-        setLED(CHANNEL_REC_LED, ON);
+        drawSequenceToDisplay(false);
+        setSequenceLED(sequence.currStep, PWM::PWM_HIGH, false);
+        setLED(CHANNEL_REC_LED, ON, false);
         setActiveDegrees(activeDegrees);
         triggerNote(currDegree, currOctave, NOTE_OFF);
         break;
@@ -177,11 +204,19 @@ void TouchChannel::toggleMode()
 {
     if (playbackMode == MONO || playbackMode == MONO_LOOP)
     {
-        setPlaybackMode(QUANTIZER);
+        if (sequence.containsBendEvents) {
+            setPlaybackMode(QUANTIZER_LOOP);
+        } else {
+            setPlaybackMode(QUANTIZER);
+        }
     }
     else
     {
-        setPlaybackMode(MONO);
+        if (sequence.containsBendEvents) {
+            setPlaybackMode(MONO_LOOP);
+        } else {
+            setPlaybackMode(MONO);
+        }
     }
 }
 
@@ -194,13 +229,41 @@ void TouchChannel::onTouch(uint8_t pad)
 {
     switch (uiMode)
     {
-    case UIMode::UI_DEFAULT:
+    case UIMode::UI_PLAYBACK:
         handleTouchPlaybackEvent(pad);
+        break;
+    case UIMode::UI_SEQUENCE_LENGTH:
+        break;
+    case UIMode::UI_QUANTIZE_AMOUNT:
+        switch (CHAN_TOUCH_PADS[pad])
+        {
+        case 1:
+            sequence.setQuantizeAmount(QUANT::NONE);
+            break;
+        case 2:
+            sequence.setQuantizeAmount(QUANT::QUARTER);
+            break;
+        case 3:
+            sequence.setQuantizeAmount(QUANT::EIGTH);
+            break;
+        case 4:
+            sequence.setQuantizeAmount(QUANT::SIXTEENTH);
+            break;
+        case 5:
+            sequence.setQuantizeAmount(QUANT::THIRTYSECOND);
+            break;
+        case 6:
+            sequence.setQuantizeAmount(QUANT::SIXTYFOURTH);
+            break;
+        default:
+            break;
+        }
+        updateUI(this->uiMode);
         break;
     case UIMode::UI_PITCH_BEND_RANGE:
         // take incoming pad and update the pitch bend range accordingly.
-        output.setPitchBendRange(pad);
-        handlePitchBendRangeUI();
+        output.setPitchBendRange(CHAN_TOUCH_PADS[pad]); // this applies the inverse of the pad (ie. pad = 7, gets mapped to 0)
+        updateUI(uiMode);
         break;
     }
 }
@@ -209,16 +272,16 @@ void TouchChannel::onRelease(uint8_t pad)
 {
     switch (uiMode)
     {
-    case UIMode::UI_DEFAULT:
+    case UIMode::UI_PLAYBACK:
         handleReleasePlaybackEvent(pad);
+        break;
+    case UIMode::UI_SEQUENCE_LENGTH:
+        break;
+    case UIMode::UI_QUANTIZE_AMOUNT:
         break;
     case UIMode::UI_PITCH_BEND_RANGE:
         break;
     }
-}
-
-void TouchChannel::handleTouchUIEvent(uint8_t pad) {
-
 }
 
 void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
@@ -249,7 +312,9 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
             case QUANTIZER_LOOP:
                 // every touch detected, take a snapshot of all active degree values and apply them to the sequence
                 setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
-                sequence.createChordEvent(sequence.currPosition, activeDegrees);
+                if (sequence.recordEnabled) {
+                    sequence.createChordEvent(sequence.currPosition, activeDegrees);
+                }
                 break;
             default:
                 break;
@@ -314,8 +379,8 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
     switch (action) {
         case NOTE_ON:
             if (playbackMode == MONO || playbackMode == MONO_LOOP) {
-                setDegreeLed(prevDegree, OFF); // set the 'previous' active note led LOW
-                setDegreeLed(degree, ON); // new active note HIGH
+                setDegreeLed(prevDegree, OFF, true); // set the 'previous' active note led LOW
+                setDegreeLed(degree, ON, true); // new active note HIGH
             }
             setGate(HIGH);
             currDegree = degree;
@@ -328,7 +393,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
         case SUSTAIN:
             if (playbackMode == MONO || playbackMode == MONO_LOOP)
             {
-                setDegreeLed(degree, ON);      // new active note HIGH
+                setDegreeLed(degree, ON, true);      // new active note HIGH
             }
             output.updateDAC(dacIndex, 0);
             break;
@@ -345,9 +410,15 @@ void TouchChannel::freeze(bool state)
 {
     freezeChannel = state;
     if (freezeChannel == true) {
-        // log the last sequence led to be illuminated
+        freezeStep = sequence.currStep; // log the last sequence led to be illuminated
+        // maybe blink the degree LEDs?
+        // maybe blink the display LED sequence was frozen at?
     } else {
-        // turn off the last led in sequence before freeze
+        // reset last led in sequence before freeze
+        if (sequence.playbackEnabled && sequence.currStep != freezeStep)
+        {
+            setSequenceLED(freezeStep, PWM::PWM_LOW_MID, false);
+        }
     }
 }
 
@@ -359,6 +430,7 @@ void TouchChannel::updateDegrees()
         triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case MONO_LOOP:
+        triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case QUANTIZER:
         break;
@@ -367,25 +439,37 @@ void TouchChannel::updateDegrees()
     }
 }
 
-void TouchChannel::setLED(int io_pin, LedState state)
+void TouchChannel::setLED(int io_pin, LedState state, bool isPlaybackEvent)
 {
+    if (isPlaybackEvent && uiMode != UI_PLAYBACK) // this will prevent a sequence from setting LEDs while in any other UI mode
+    {
+        if (uiMode == UI_PITCH_BEND_RANGE || uiMode == UI_QUANTIZE_AMOUNT)
+        {
+            return;
+        }
+    }
+    
     switch (state) {
         case OFF:
-            _leds->setOnTime(io_pin, 0);
+            led_state[io_pin] = false;
             _leds->digitalWrite(io_pin, 1);
             break;
         case ON:
-            _leds->setOnTime(io_pin, 0);
+            led_state[io_pin] = true;
             _leds->digitalWrite(io_pin, 0);
             break;
+        case TOGGLE:
+            led_state[io_pin] = !led_state[io_pin];
+            _leds->digitalWrite(io_pin, !led_state[io_pin]);
+            break;
         case BLINK_ON:
-            _leds->blinkLED(io_pin, 1, 1, 127, 0);
+            _leds->blinkLED(io_pin, 2, 2, 127, 0); // relative to ICs configured clock speed
             break;
         case BLINK_OFF:
             _leds->setOnTime(io_pin, 0);
             break;
         case DIM_LOW:
-            _leds->setPWM(io_pin, 40);
+            _leds->setPWM(io_pin, 10);
             break;
         case DIM_MED:
             _leds->setPWM(io_pin, 127);
@@ -398,46 +482,49 @@ void TouchChannel::setLED(int io_pin, LedState state)
     }
 }
 
-void TouchChannel::setDegreeLed(int degree, LedState state) {
-    setLED(DEGREE_LED_PINS[degree], state);
+void TouchChannel::setDegreeLed(int degree, LedState state, bool isPlaybackEvent)
+{
+    setLED(DEGREE_LED_PINS[degree], state, isPlaybackEvent);
 }
 
-void TouchChannel::setOctaveLed(int octave, LedState state) {
-    setLED(OCTAVE_LED_PINS[octave], state);
+void TouchChannel::setOctaveLed(int octave, LedState state, bool isPlaybackEvent)
+{
+    setLED(OCTAVE_LED_PINS[octave], state, isPlaybackEvent);
 }
 
 /**
  * @brief set all degree leds
  */
-void TouchChannel::setAllDegreeLeds(LedState state)
+void TouchChannel::setAllDegreeLeds(LedState state, bool isPlaybackEvent)
 {
     for (int i = 0; i < DEGREE_COUNT; i++)
     {
-        setDegreeLed(i, state);
+        setDegreeLed(i, state, isPlaybackEvent);
     }
 }
 
 /**
  * @brief set all octave leds
  */
-void TouchChannel::setAllOctaveLeds(LedState state) {
+void TouchChannel::setAllOctaveLeds(LedState state, bool isPlaybackEvent)
+{
     for (int i = 0; i < OCTAVE_COUNT; i++)
     {
-        setOctaveLed(i, state);
+        setOctaveLed(i, state, isPlaybackEvent);
     }
 }
 
-void TouchChannel::updateOctaveLeds(int octave)
+void TouchChannel::updateOctaveLeds(int octave, bool isPlaybackEvent)
 {
     for (int i = 0; i < OCTAVE_COUNT; i++)
     {
         if (i == octave)
         {
-            setOctaveLed(i, ON);
+            setOctaveLed(i, ON, isPlaybackEvent);
         }
         else
         {
-            setOctaveLed(i, OFF);
+            setOctaveLed(i, OFF, isPlaybackEvent);
         }
     }
 }
@@ -453,11 +540,11 @@ void TouchChannel::setOctave(int octave)
     switch (playbackMode)
     {
     case MONO:
-        updateOctaveLeds(currOctave);
+        updateOctaveLeds(currOctave, true);
         triggerNote(currDegree, currOctave, NOTE_ON);
         break;
     case MONO_LOOP:
-        updateOctaveLeds(currOctave);
+        updateOctaveLeds(currOctave, true);
         triggerNote(currDegree, currOctave, SUSTAIN);
         break;
     case QUANTIZER:
@@ -465,8 +552,8 @@ void TouchChannel::setOctave(int octave)
         setActiveDegrees(activeDegrees); // update active degrees thresholds
         break;
     case QUANTIZER_LOOP:
-        // setActiveOctaves(octave);
-        // setActiveDegrees(activeDegrees); // update active degrees thresholds
+        setActiveOctaves(octave);
+        setActiveDegrees(activeDegrees); // update active degrees thresholds
         break;
     }
 
@@ -534,6 +621,8 @@ uint8_t TouchChannel::calculateRatchet(uint16_t bend)
         {
             return RATCHET_DIV_16;
         }
+    } else {
+        return 0;
     }
 }
 
@@ -543,15 +632,15 @@ uint8_t TouchChannel::calculateRatchet(uint16_t bend)
 void TouchChannel::handleRatchet(int position, uint16_t value)
 {
     currRatchetRate = calculateRatchet(value);
-    if (position % currRatchetRate == 0)
+    if (currRatchetRate != 0 && position % currRatchetRate == 0)
     {
         setGate(HIGH);
-        setLED(CHANNEL_RATCHET_LED, ON);
+        setLED(CHANNEL_RATCHET_LED, ON, true);
     }
     else
     {
         setGate(LOW);
-        setLED(CHANNEL_RATCHET_LED, OFF);
+        setLED(CHANNEL_RATCHET_LED, OFF, true);
     }
 }
 
@@ -560,6 +649,11 @@ void TouchChannel::handleRatchet(int position, uint16_t value)
  * ------------------ BENDER ------------------
 */
 
+/**
+ * @brief This function handles all bender actions in regards to the 1vo ooutput, bender output, and gate output
+ * 
+ * @param value current bend value
+ */
 void TouchChannel::handleBend(uint16_t value) {
     switch (this->currBenderMode)
     {
@@ -576,8 +670,6 @@ void TouchChannel::handleBend(uint16_t value) {
         handleRatchet(sequence.currStepPosition, value);
         handlePitchBend(value);
         break;
-    case BEND_MENU:
-        break;
     }
 }
 
@@ -585,20 +677,19 @@ void TouchChannel::handlePitchBend(uint16_t value) {
     if (!touchPads->padIsTouched()) // only apply pitch bend when all pads have been released
     {
         uint16_t pitchbend;
-        // Pitch Bend UP
-        if (bender->currState == Bender::BENDING_UP)
+        // Pitch Bend UP (inverted)
+        if (value < bender->getIdleValue())
         {
-            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
-            output.setPitchBend(pitchbend * -1); // NOTE: inverted mapping
+            pitchbend = output.calculatePitchBend(value, bender->getMinBend(), bender->getIdleValue());
+            output.setPitchBend(output.maxPitchBend - pitchbend, true); // NOTE: inverted mapping
         }
         // Pitch Bend DOWN
-        else if (bender->currState == Bender::BENDING_DOWN)
+        else if (value > bender->getIdleValue())
         {
-            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMinBend());
-            output.setPitchBend(pitchbend);
+            pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
+            output.setPitchBend(pitchbend, false); // value needs to be negative
         }
     }
-    
 }
 
 /**
@@ -607,7 +698,7 @@ void TouchChannel::handlePitchBend(uint16_t value) {
 */
 int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
 {
-    if (targetMode != INCREMENT_BENDER_MODE || targetMode != BEND_MENU) {
+    if (targetMode != INCREMENT_BENDER_MODE) {
         prevBenderMode = currBenderMode;
     }
 
@@ -626,28 +717,33 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
     switch (currBenderMode)
     {
     case BEND_OFF:
-        setLED(CHANNEL_RATCHET_LED, OFF);
-        setLED(CHANNEL_PB_LED, OFF);
+        setLED(CHANNEL_RATCHET_LED, OFF, false);
+        setLED(CHANNEL_PB_LED, OFF, false);
         break;
     case PITCH_BEND:
-        setLED(CHANNEL_RATCHET_LED, OFF);
-        setLED(CHANNEL_PB_LED, ON);
+        setLED(CHANNEL_RATCHET_LED, OFF, false);
+        setLED(CHANNEL_PB_LED, ON, false);
         break;
     case RATCHET:
-        setLED(CHANNEL_RATCHET_LED, ON);
-        setLED(CHANNEL_PB_LED, OFF);
+        setLED(CHANNEL_RATCHET_LED, ON, false);
+        setLED(CHANNEL_PB_LED, OFF, false);
         break;
     case RATCHET_PITCH_BEND:
-        setLED(CHANNEL_RATCHET_LED, ON);
-        setLED(CHANNEL_PB_LED, ON);
+        setLED(CHANNEL_RATCHET_LED, ON, false);
+        setLED(CHANNEL_PB_LED, ON, false);
         break;
     case INCREMENT_BENDER_MODE:
         break;
-    case BEND_MENU:
-        display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
-        break;
     }
     return currBenderMode;
+}
+
+void TouchChannel::enableBenderOverride() {
+    this->benderOverride = true;
+}
+
+void TouchChannel::disableBenderOverride() {
+    this->benderOverride = false;
 }
 
 /**
@@ -657,15 +753,18 @@ int TouchChannel::setBenderMode(BenderMode targetMode /*INCREMENT_BENDER_MODE*/)
  */
 void TouchChannel::benderActiveCallback(uint16_t value)
 {
-    bender->updateDAC(value);
-
-    // overdub existing bend events when record enabled
-    // override existng bend events when record disabled (but sequencer still ON)
-    if (sequence.recordEnabled)
+    if (!this->benderOverride)
     {
-        sequence.createBendEvent(sequence.currPosition, value);
+        bender->updateDAC(value);
+
+        // overdub existing bend events when record enabled
+        // override existng bend events when record disabled (but sequencer still ON)
+        if (sequence.recordEnabled)
+        {
+            sequence.createBendEvent(sequence.currPosition, value);
+        }
+        this->handleBend(value);
     }
-    this->handleBend(value);
 }
 
 void TouchChannel::benderIdleCallback()
@@ -689,40 +788,35 @@ void TouchChannel::benderIdleCallback()
         output.setPitchBend(0);
         break;
     case RATCHET:
-        setLED(CHANNEL_RATCHET_LED, ON);
+        setLED(CHANNEL_RATCHET_LED, ON, true);
         break;
     case RATCHET_PITCH_BEND:
-        break;
-    case BEND_MENU:
-        // set var to no longer active?
+        output.setPitchBend(0);
+        setLED(CHANNEL_RATCHET_LED, ON, true);
         break;
     }
 }
 
+/**
+ * @brief Use this callback to handle any menues which want to use the benders for adjstiing the value
+ * 
+ * @param state 
+ */
 void TouchChannel::benderTriStateCallback(Bender::BendState state)
 {
-    switch (this->currBenderMode)
+    switch (this->uiMode)
     {
-    case BEND_OFF:
-        break;
-    case PITCH_BEND:
-        break;
-    case RATCHET:
-        break;
-    case RATCHET_PITCH_BEND:
-        break;
-    case BEND_MENU:
+    case TouchChannel::UIMode::UI_SEQUENCE_LENGTH:
         if (state == Bender::BendState::BENDING_UP)
         {
-            sequence.setLength(sequence.length + 2);
-            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
+            dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length + 2);
         }
         else if (state == Bender::BendState::BENDING_DOWN)
         {
-            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, false);
-            sequence.setLength(sequence.length - 2);
-            display->setSequenceLEDs(this->channelIndex, sequence.length, 2, true);
+            dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length - 2);
         }
+        break;
+    default:
         break;
     }
 }
@@ -794,22 +888,22 @@ void TouchChannel::handleCVInput()
                     // re-DIM previously degree LED
                     if (bitwise_read_bit(activeDegrees, prevDegree))
                     {
-                        setDegreeLed(currDegree, BLINK_OFF);
-                        setDegreeLed(currDegree, DIM_LOW);
+                        setDegreeLed(currDegree, BLINK_OFF, true);
+                        setDegreeLed(currDegree, DIM_LOW, true);
                     }
 
                     // trigger the new degree, and set its LED to blink
                     triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON);
-                    setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK_ON);
+                    setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK_ON, true);
 
                     // re-DIM previous Octave LED
                     if (bitwise_read_bit(currActiveOctaves, prevOctave))
                     {
-                        setOctaveLed(prevOctave, LedState::BLINK_OFF);
-                        setOctaveLed(prevOctave, LedState::DIM_LOW);
+                        setOctaveLed(prevOctave, LedState::BLINK_OFF, true);
+                        setOctaveLed(prevOctave, LedState::DIM_LOW, true);
                     }
                     // BLINK active quantized octave
-                    setOctaveLed(octave, LedState::BLINK_ON);
+                    setOctaveLed(octave, LedState::BLINK_ON, true);
                 }
                 break; // break from loop as soon as we can
             }
@@ -838,12 +932,12 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
         {
             activeDegreeValues[numActiveDegrees].noteIndex = i;
             numActiveDegrees += 1;
-            setDegreeLed(i, DIM_LOW);
-            setDegreeLed(i, ON);
+            setDegreeLed(i, DIM_LOW, false);
+            setDegreeLed(i, ON, false);
         }
         else
         {
-            setDegreeLed(i, OFF);
+            setDegreeLed(i, OFF, false);
         }
     }
 
@@ -855,12 +949,12 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
         {
             activeOctaveValues[numActiveOctaves].octave = i;
             numActiveOctaves += 1;
-            setOctaveLed(i, DIM_LOW);
-            setOctaveLed(i, ON);
+            setOctaveLed(i, DIM_LOW, false);
+            setOctaveLed(i, ON, false);
         }
         else
         {
-            setOctaveLed(i, OFF);
+            setOctaveLed(i, OFF, false);
         }
     }
     prevActiveOctaves = currActiveOctaves;
@@ -902,10 +996,13 @@ void TouchChannel::setActiveOctaves(int octave)
 */
 void TouchChannel::handleSequence(int position)
 {
-    // always disp;ay sequence progresion regardless if there are events or not
-    if (sequence.currStep != sequence.prevStep) // why?
+    // always display sequence progression regardless if there are events or not
+    if (sequence.currStep != sequence.prevStep) // only set led every step
     {
-        display->stepSequenceLED(this->channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
+        if (uiMode == UIMode::UI_PLAYBACK)
+        {
+            stepSequenceLED(sequence.currStep, sequence.prevStep, sequence.length);
+        }
     }
 
     // break out if there are no sequence events
@@ -922,6 +1019,10 @@ void TouchChannel::handleSequence(int position)
     {
         switch (playbackMode)
         {
+        case MONO:
+            break;
+        case QUANTIZER:
+            break;
         case MONO_LOOP:
             if (sequence.getEventStatus(position)) // if event is active
             {
@@ -938,18 +1039,10 @@ void TouchChannel::handleSequence(int position)
                         sequence.prevEventPos = position;                                    // store position into variable
                         triggerNote(sequence.getEventDegree(position), currOctave, NOTE_ON); // trigger note ON
                     }
-                    else
+                    else // set event.gate LOW
                     {
-                        // CLEAN UP: if this 'active' LOW node does not match the last active HIGH node, delete it - it is a remnant of a previously deleted node
-                        if (sequence.getEventDegree(sequence.prevEventPos) != sequence.getEventDegree(position))
-                        {
-                            sequence.clearTouchAtPosition(position);
-                        }
-                        else // set event.gate LOW
-                        {
-                            sequence.prevEventPos = position;                                     // store position into variable
-                            triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
-                        }
+                        sequence.prevEventPos = position;                                     // store position into variable
+                        triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
                     }
                 }
             }
@@ -989,17 +1082,91 @@ void TouchChannel::handleSequence(int position)
 void TouchChannel::resetSequence()
 {
     sequence.reset();
-    if (sequence.containsEvents())
+    if (sequence.containsEvents() || sequence.recordEnabled)
     {
-        display->stepSequenceLED(channelIndex, sequence.currStep, sequence.prevStep, sequence.length);
-        handleSequence(sequence.currPosition);
+        drawSequenceToDisplay(false);
+    }
+}
+
+/**
+ * @brief set the sequence length and update UI
+ *
+ * @param length
+ */
+void TouchChannel::updateSequenceLength(uint8_t steps)
+{
+    sequence.setLength(steps);
+    drawSequenceToDisplay(true);
+}
+
+/**
+ * @brief given a sequence step, 
+ * 
+ * @param step 
+ */
+void TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm, bool blink)
+{
+    uint8_t ledIndex = step / 2; // 32 step seq displayed with 16 LEDs
+    display->setChannelLED(channelIndex, ledIndex, pwm, blink); // it is possible ledIndex needs to be subracted by 1 🤔
+}
+
+/**
+ * @brief illuminates the number of LEDs equal to sequence length divided by 2
+ */
+void TouchChannel::drawSequenceToDisplay(bool blink)
+{
+    for (int i = 0; i < MAX_SEQ_LENGTH; i += 2)
+    {
+        if (i < sequence.length)
+        {
+            if (i == sequence.currStep && sequence.playbackEnabled && uiMode == UIMode::UI_PLAYBACK)
+            {
+                setSequenceLED(i, PWM::PWM_HIGH, blink);
+            }
+            else
+            {
+                setSequenceLED(i, PWM::PWM_LOW_MID, blink);
+            }
+        }
+        else
+        {
+            setSequenceLED(i, PWM::PWM_OFF, blink);
+        }
+    }
+}
+
+void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
+{    
+    if (sequence.currStepPosition == 0)
+    {
+        if (currStep % 2 == 0)
+        {
+            // set currStep PWM High
+            setSequenceLED(currStep, PWM::PWM_HIGH, false);
+
+            // handle odd sequence lengths.
+            if (length % 2 == 1)
+            {
+                // The last LED in sequence gets set to a different PWM
+                if (prevStep == length - 1)
+                {
+                    setSequenceLED(prevStep, PWM::PWM_LOW, false);
+                }
+            }
+            // regular sequence lengths
+            else
+            {
+                // set prevStep PWM back to Mid
+                setSequenceLED(prevStep, PWM::PWM_LOW_MID, false);
+            }
+        }
     }
 }
 
 void TouchChannel::enableSequenceRecording()
 {
-    sequence.recordEnabled = true;
-    display->setSequenceLEDs(channelIndex, sequence.length, 2, true);
+    sequence.enableRecording();
+
     if (playbackMode == MONO)
     {
         setPlaybackMode(MONO_LOOP);
@@ -1017,16 +1184,18 @@ void TouchChannel::enableSequenceRecording()
 */
 void TouchChannel::disableSequenceRecording()
 {
-    sequence.recordEnabled = false;
+    sequence.disableRecording();
     
     // if a touch event was recorded, remain in loop mode
     if (sequence.containsEvents())
     {
+        // make sure to update the display so it shows the new seq length
+        display->clear(channelIndex);
+        drawSequenceToDisplay(false);
         return;
     }
     else // if no touch event recorded, revert to previous mode
-    { 
-        display->setSequenceLEDs(channelIndex, sequence.length, 2, false);
+    {
         if (playbackMode == MONO_LOOP)
         {
             setPlaybackMode(MONO);
@@ -1035,60 +1204,31 @@ void TouchChannel::disableSequenceRecording()
         {
             setPlaybackMode(QUANTIZER);
         }
+        display->clear(channelIndex);
     }
 }
 
 void TouchChannel::initializeCalibration() {
     output.resetVoltageMap(); // You should reset prior to tuning
     output.resetDAC();
-    display->clear();
-    display->drawSpiral(channelIndex, true, 0);
-    display->flash(3, 200);
+    display->flash(3, 100);
+    display->drawSpiral(channelIndex, false, PWM::PWM_OFF, 50);
     display->clear();
 }
 
 /**
- * @brief dedicated high priority task for each touch channel which listens for touch events getting added to a queue by
- * each channels touch interrupt pins
- *
- * @param touch_chan_ptr TouchChannel pointer
- */
-void TouchChannel::taskHandleTouch(void *touch_chan_ptr) {
-    TouchChannel *_this = (TouchChannel*)touch_chan_ptr;
-    _this->touchEventQueue = xQueueCreate(12, sizeof(uint8_t));
-    uint8_t eventData;
-    while (1)
-    {
-        xQueueReceive(_this->touchEventQueue, &eventData, portMAX_DELAY);
-        _this->touchPads->handleTouch(); // this will trigger either onTouch() or onRelease()
-    }
-}
-
-/**
- * @brief send a notification to the handle touch task queue
+ * @brief ISR from touch IC to send a notification sequencer queue
  */
 void TouchChannel::handleTouchInterrupt() {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    uint8_t nil = 88; // this does not matter but it doesn't work otherwise
-    xQueueSendFromISR(this->touchEventQueue, &nil, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-
-void taskHandleLEDs(void *params) {
-    while (1)
-    {
-        // handle incoming events from a queue
-        // update LEDs depending on the channels UI mode
-    }
+    dispatch_sequencer_event_ISR((CHAN)channelIndex, SEQ::HANDLE_TOUCH, 0);
 }
 
 void TouchChannel::displayProgressCallback(uint16_t progress)
 {
     // map the incoming progress to a value between 0..16
     uint8_t displayProgress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, 15);
-    this->display->setChannelLED(this->channelIndex, displayProgress, PWM::PWM_MID_HIGH);
-    this->setLED(DEGREE_LED_RAINBOW[displayProgress], LedState::ON);
+    this->display->setChannelLED(this->channelIndex, displayProgress, PWM::PWM_MID_HIGH, false);
+    this->setLED(DEGREE_LED_RAINBOW[displayProgress], LedState::ON, false);
     uint16_t dacProgress = map_num_in_range<uint16_t>(progress, 0, ADC_SAMPLE_COUNTER_LIMIT, 0, BIT_MAX_16);
     bender->dac->write(bender->dacChan, dacProgress);
     if (displayProgress == 15)
@@ -1109,8 +1249,59 @@ void TouchChannel::logPeripherals() {
     logger_log("\nMPR121 Int Pin: ");
     logger_log(touchPads->readInterruptPin());
 
+    logger_log("\nBender Mode: ");
+    logger_log(currBenderMode);
     logger_log("\nBender ADC Value: ");
     logger_log(bender->adc.read_u16());
     bender->adc.log_noise_threshold_to_console("Bender");
+    logger_log("\nBender Min Bend: ");
+    logger_log(bender->adc.getInputMin());
+    logger_log("\nBender Max Bend: ");
+    logger_log(bender->adc.getInputMax());
+
+    logger_log("\nPitch Bend Range (index): ");
+    logger_log(output.getPitchBendRange());
+
+    logger_log("\nSequence Length: ");
+    logger_log(sequence.length);
+
+    logger_log("\nSequence Quantization: ");
+    logger_log((int)sequence.quantizeAmount);
     logger_log("\n");
+}
+
+/**
+ * @brief based on the current ppqn position, flash the corrosponding LED
+ * 
+ * @param position 
+ */
+void TouchChannel::handleQuantAmountLEDs()
+{
+    if (sequence.currStepPosition == 0)
+    {
+        setDegreeLed(2, LedState::OFF, false);
+    }
+    else
+    {
+        if (sequence.currStepPosition % (quant_value_to_int(QUANT::EIGTH) - 1) == 0)
+        {
+            setDegreeLed(3, LedState::OFF, false);
+        }
+        else if (sequence.currStepPosition % (quant_value_to_int(QUANT::SIXTEENTH) - 1) == 0)
+        {
+            setDegreeLed(4, LedState::OFF, false);
+        }
+        else if (sequence.currStepPosition % (quant_value_to_int(QUANT::THIRTYSECOND) - 1) == 0)
+        {
+            setDegreeLed(2, LedState::ON, false);
+            setDegreeLed(3, LedState::ON, false);
+            setDegreeLed(4, LedState::ON, false);
+            setDegreeLed(5, LedState::OFF, false);
+        }
+        else if (sequence.currStepPosition % (quant_value_to_int(QUANT::SIXTYFOURTH) - 1) == 0)
+        {
+            setDegreeLed(5, LedState::ON, false);
+            setDegreeLed(6, LedState::TOGGLE, false);
+        }
+    }
 }

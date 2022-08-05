@@ -1,5 +1,7 @@
 #include "Display.h"
 
+Mutex Display::_mutex;
+
 void Display::init()
 {
     ledMatrix.init();
@@ -11,60 +13,93 @@ void Display::init()
 */ 
 void Display::clear()
 {
+    _mutex.lock();
     for (int i = 0; i < DISPLAY_LED_COUNT; i++)
     {
-        this->setLED(i, PWM::PWM_OFF);
+        this->setLED(i, PWM::PWM_OFF, false);
     }
+    _mutex.unlock();
 }
 
 void Display::clear(int chan)
 {
+    _mutex.lock();
     for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
     {
-        this->setChannelLED(chan, i, PWM::PWM_OFF);
+        this->setChannelLED(chan, i, PWM::PWM_OFF, false);
     }
+    _mutex.unlock();
 }
 
-void Display::fill(uint8_t pwm)
+void Display::fill(uint8_t pwm, bool blink)
 {
+    _mutex.lock();
     for (int i = 0; i < DISPLAY_LED_COUNT; i++)
     {
-        this->setLED(i, pwm);
+        this->setLED(i, pwm, blink);
     }
+    _mutex.unlock();
 }
 
-void Display::fill(int chan, uint8_t pwm)
+void Display::fill(int chan, uint8_t pwm, bool blink)
 {
+    _mutex.lock();
     for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
     {
-        this->setChannelLED(chan, i, pwm);
+        this->setChannelLED(chan, i, pwm, blink);
     }
+    _mutex.unlock();
 }
+
+void Display::enableBlink() { _currScene->blink = true; }
+void Display::disableBlink() { _currScene->blink = false; }
 
 void Display::blinkScene()
 {
-    for (int channel = 0; channel < 4; channel++)
+    if (_currScene->blink)
     {
-        if (bitwise_read_bit(channel_blink_status, channel))
+        for (int channel = 0; channel < 4; channel++)
         {
-            for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
+            if (bitwise_read_bit(channel_blink_status, channel))
             {
-                uint8_t led_index = CHAN_DISPLAY_LED_MAP[channel][i];
-                ledMatrix.setPWM(led_index, _blinkState ? _state[led_index] : 0);
+                for (int i = 0; i < DISPLAY_CHANNEL_LED_COUNT; i++)
+                {
+                    uint8_t led_index = CHAN_DISPLAY_LED_MAP[channel][i];
+                    if (_currScene->led_state_blink[led_index])
+                    {
+                        ledMatrix.setPWM(led_index, _blinkState ? _currScene->led_state_pwm[led_index] : 0);
+                    }
+                }
             }
         }
+
+        _blinkState = !_blinkState;
     }
     
-    _blinkState = !_blinkState;
 }
 
-void Display::saveScene(int scene)
+void Display::setScene(SCENE scene)
 {
-    
+    _currScene = _scenes[static_cast<int>(scene)];
 }
 
-void Display::restoreScene(int scene) {
+/**
+ * @brief Iterate over entire scene and redraw the associated LED data
+ * 
+ * @param scene 
+ */
+void Display::redrawScene()
+{
+    for (int i = 0; i < DISPLAY_LED_COUNT; i++)
+    {
+        redrawLED(i);
+    }
+}
 
+void Display::resetScene()
+{
+    this->disableBlink();
+    this->clear();    
 }
 
 /**
@@ -85,9 +120,39 @@ void Display::setBlinkStatus(int chan, bool status)
     channel_blink_status = bitwise_write_bit(channel_blink_status, chan, status);
 }
 
-void Display::setLED(int index, uint8_t pwm)
+void Display::setLED(int index, uint8_t pwm, bool blink)
 {
-    _state[index] = pwm;
+    if (_currScene)
+    {
+        _currScene->led_state_pwm[index] = pwm;
+        _currScene->led_state_blink[index] = blink;
+    }
+    ledMatrix.setPWM(index, pwm);
+}
+
+/**
+ * @brief Toggle the current scenes LED on or off
+ * @note not yet tested!
+ * @param index 
+ */
+void Display::toggleLED(int index)
+{
+    if (_currScene) {
+        if (_currScene->led_state_pwm[index] > 0)
+        {
+            ledMatrix.setPWM(index, 0);
+        } else {
+            ledMatrix.setPWM(index, _currScene->led_state_pwm[index]);
+        }
+    }
+}
+
+void Display::toggleChannelLED(int chan, int index) {
+    this->toggleLED(CHAN_DISPLAY_LED_MAP[chan][index]);
+}
+
+void Display::redrawLED(int index) {
+    uint8_t pwm = _currScene->led_state_pwm[index];
     ledMatrix.setPWM(index, pwm);
 }
 
@@ -97,12 +162,12 @@ void Display::setLED(int index, uint8_t pwm)
  * @param state on or off
  * @param pwm brightness
  */
-void Display::setColumn(int column, uint8_t pwm)
+void Display::setColumn(int column, uint8_t pwm, bool blink)
 {
-    this->setLED(column, pwm);
-    this->setLED(column + 16, pwm);
-    this->setLED(column + 32, pwm);
-    this->setLED(column + 48, pwm);
+    this->setLED(column, pwm, blink);
+    this->setLED(column + 16, pwm, blink);
+    this->setLED(column + 32, pwm, blink);
+    this->setLED(column + 48, pwm, blink);
 }
 
 /**
@@ -112,49 +177,9 @@ void Display::setColumn(int column, uint8_t pwm)
  * @param index value between 0..15. 0 is top left of the grid, 15 is bottom right of the grid
  * @param on on or off
  */
-void Display::setChannelLED(int chan, int index, uint8_t pwm)
+void Display::setChannelLED(int chan, int index, uint8_t pwm, bool blink)
 {
-    this->setLED(CHAN_DISPLAY_LED_MAP[chan][index], pwm);
-}
-
-/**
- * @brief illuminates the number of LEDs equal to sequence length divided by 2
-*/
-void Display::setSequenceLEDs(int chan, int length, int diviser, bool on)
-{
-    // illuminate each channels sequence length
-    for (int i = 0; i < length / diviser; i++)
-    {
-        this->setChannelLED(chan, i, on ? PWM::PWM_LOW_MID : 0);
-    }
-
-    if (length % 2 == 1)
-    {
-        int oddLedIndex = (length / diviser);
-        this->setChannelLED(chan, oddLedIndex, on ? PWM::PWM_LOW : 0);
-    }
-}
-
-void Display::stepSequenceLED(int chan, int currStep, int prevStep, int length)
-{
-    if (currStep % 2 == 0)
-    {
-        // set currStep PWM High
-        this->setChannelLED(chan, currStep / 2, PWM::PWM_HIGH);
-
-        // handle odd sequence lengths.
-        //  The last LED in sequence gets set to a different PWM
-        if (prevStep == length - 1 && length % 2 == 1)
-        {
-            this->setChannelLED(chan, prevStep / 2, PWM::PWM_LOW);
-        }
-        // regular sequence lengths
-        else
-        {
-            // set prevStep PWM back to Mid
-            this->setChannelLED(chan, prevStep / 2, PWM::PWM_LOW_MID);
-        }
-    }
+    this->setLED(CHAN_DISPLAY_LED_MAP[chan][index], pwm, blink);
 }
 
 /**
@@ -169,13 +194,13 @@ void Display::benderCalibration()
     {
         for (int i = 0; i < 16; i++)
         {
-            if (i >= 0 && i < 4)
+            if (i >= 1 && i < 3)
             {
-                this->setChannelLED(chan, i, PWM::PWM_LOW_MID);
+                this->setChannelLED(chan, i, PWM::PWM_LOW_MID, true);
             }
-            else if (i > 11)
+            else if (i >= 13 && i < 15)
             {
-                this->setChannelLED(chan, i, PWM::PWM_LOW_MID);
+                this->setChannelLED(chan, i, PWM::PWM_LOW_MID, true);
             }
         }
     }
@@ -191,9 +216,21 @@ void Display::drawSquare(int chan, TickType_t speed)
 {
     for (int i = 0; i < DISPLAY_SQUARE_LENGTH; i++)
     {
-        this->setChannelLED(chan, DISPLAY_SQUARE_LED_MAP[i], PWM::PWM_HIGH);
+        this->setChannelLED(chan, DISPLAY_SQUARE_LED_MAP[i], PWM::PWM_HIGH, false);
         vTaskDelay(speed);
     }
+}
+
+/**
+ * @brief given an index between 0..15, set the LED relative spiral LED
+ * 
+ * @param chan 
+ * @param index 
+ * @param pwm 
+ */
+void Display::setSpiralLED(int chan, int index, uint8_t pwm, bool blink)
+{
+    this->setChannelLED(chan, DISPLAY_SPIRAL_LED_MAP[index], pwm, blink);
 }
 
 /**
@@ -203,13 +240,13 @@ void Display::drawSquare(int chan, TickType_t speed)
  * @param direction true = clockwise, false = counter clockwise
  * @param speed how fast
  */
-void Display::drawSpiral(int chan, bool direction, TickType_t speed)
+void Display::drawSpiral(int chan, bool direction, uint8_t pwm, TickType_t speed)
 {
     int index;
     for (int i = 0; i < DISPLAY_SPIRAL_LENGTH; i++)
     {
         index = direction ? i : (DISPLAY_SPIRAL_LENGTH - 1) - i;
-        this->setChannelLED(chan, DISPLAY_SPIRAL_LED_MAP[index], PWM::PWM_HIGH);
+        this->setSpiralLED(chan, i, pwm, false);
         vTaskDelay(speed);
     }
 }
@@ -230,3 +267,16 @@ void Display::flash(int flashes, TickType_t ticks)
         vTaskDelay(ticks);
     }
 }
+
+// void func(int type, int chan, uint8_t pwm, bool blink)
+// {
+//     switch (type)
+//     {
+//     case /* constant-expression */:
+//         /* code */
+//         break;
+    
+//     default:
+//         break;
+//     }
+// }

@@ -55,6 +55,8 @@ public:
         dac = dac_ptr;
         dacChan = _dacChan;
         outputInverted = inverted;
+        setMaxBend(DEFAULT_MAX_BEND);
+        setMinBend(DEFAULT_MIN_BEND);
     };
 
     void init();

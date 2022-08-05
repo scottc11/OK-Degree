@@ -4,9 +4,11 @@
 #include "okSemaphore.h"
 #include "task_calibration.h"
 #include "task_display.h"
+#include "task_sequence_handler.h"
 #include "Degrees.h"
 #include "TouchChannel.h"
 #include "Callback.h"
+#include "SoftwareTimer.h"
 #include "Flash.h"
 #include "MCP23017.h"
 #include "CAP1208.h"
@@ -14,17 +16,24 @@
 #include "Display.h"
 #include "AnalogHandle.h"
 
-namespace DEGREE {
+#define ACTION_EXIT_CLEAR   0
+#define ACTION_EXIT_STAGE_1 1
+#define ACTION_EXIT_STAGE_2 2
 
+namespace DEGREE {
+    class TouchChannel; // forward declaration
+    
     class GlobalControl
     {
     public:
         
-        enum Mode
+        enum ControlMode
         {
             DEFAULT,
-            CALIBRATING_1VO,
+            VCO_CALIBRATION,
             CALIBRATING_BENDER,
+            SETTING_SEQUENCE_LENGTH,
+            SETTING_QUANTIZE_AMOUNT,
             HARDWARE_TESTING
         };
 
@@ -51,7 +60,7 @@ namespace DEGREE {
             display = display_ptr;
         };
 
-        Mode mode;
+        ControlMode mode;
         SuperClock *clock;
         TouchChannel *channels[CHANNEL_COUNT];
         CAP1208 *touchPads;
@@ -66,9 +75,16 @@ namespace DEGREE {
         DigitalOut tempoLED;
         DigitalOut tempoGate;
 
+        SoftwareTimer actionTimer;   // triggers a callback for handling timed gestures
+        int actionCounter;           // this value gets incremented by timer when a pad is touched, and resets to 0 when released
+        int actionCounterLimit;      // 
+        int actionExitFlag;          // Used to exit current mode and dismiss button presses and releases. Pressing any tactile button will exit the current mode
+
         int selectedChannel;
 
-        bool recordEnabled;      // global recording flag
+        bool recordEnabled;          // global recording flag
+        bool settingSequenceLength;  //
+
         bool sampleVCO;          // global flag for calibration routine
         bool hardwareTesting;    // hardware testing mode
 
@@ -87,9 +103,12 @@ namespace DEGREE {
         void pollButtons();
         void pollTouchPads();
         void pollTempoPot();
+        void exitCurrentMode();
 
         void advanceSequencer(uint8_t pulse);
-        void resetSequencer();
+        void resetSequencer(uint8_t pulse);
+
+        void handleFreeze(bool freeze);
 
         void handleTempoAdjustment(uint16_t value);
 
@@ -103,15 +122,17 @@ namespace DEGREE {
         void handleButtonInterrupt();
         void handleTouchInterrupt();
 
-        void enableVCOCalibration(TouchChannel *channel);
         void disableVCOCalibration();
+        void pressHold();
 
         void loadCalibrationDataFromFlash();
         void saveCalibrationDataToFlash();
         void deleteCalibrationDataFromFlash();
         void resetCalibrationDataToDefault();
         void resetCalibration1VO(int chan);
-        int getCalibrationDataPosition(int data_index, int channel_index);
+        int calculatePositionInSettingsBuffer(int data_index, int channel_index);
+        int getSettingsBufferValue(int position, int channel);
+        void setSettingsBufferValue(int position, int channel, int data);
 
         void log_system_status();
 
@@ -160,7 +181,8 @@ namespace DEGREE {
         {
             QUANTIZE_AMOUNT = SHIFT | PB_RANGE,
             CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
-            RESET_CALIBRATION_DATA = SHIFT | FREEZE, // SHIFT + FREEZE
+            SETTINGS_RESET = SHIFT | FREEZE, // SHIFT + FREEZE
+            SETTINGS_SAVE = SHIFT | RECORD,
             CALIBRATE_1VO = SHIFT | CMODE,
             CLEAR_SEQ_ALL = CLEAR_SEQ_BEND | CLEAR_SEQ_TOUCH,
             ENTER_HARDWARE_TEST = SHIFT | SEQ_LENGTH | QUANTIZE_SEQ | CMODE,

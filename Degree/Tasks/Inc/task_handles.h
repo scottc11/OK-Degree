@@ -3,7 +3,7 @@
 #include "main.h"
 #include "BitwiseMethods.h"
 
-#define TUNING_TOLERANCE 0.1f // tolerable frequency tuning difference
+#define TUNING_TOLERANCE 0.5f // tolerable frequency tuning difference
 
 extern TaskHandle_t main_task_handle;
 extern TaskHandle_t thStartCalibration;
@@ -23,7 +23,9 @@ enum CTRL_ACTION
     EXIT_BENDER_CALIBRATION = 2,
     ENTER_VCO_TUNING = 3,
     EXIT_VCO_TUNING = 4,
-    ADC_SAMPLING_PROGRESS = 5
+    ADC_SAMPLING_PROGRESS = 5,
+    CONFIG_SAVE,
+    CONFIG_RESET
 };
 typedef enum CTRL_ACTION CTRL_ACTION;
 
