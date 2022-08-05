@@ -621,6 +621,8 @@ uint8_t TouchChannel::calculateRatchet(uint16_t bend)
         {
             return RATCHET_DIV_16;
         }
+    } else {
+        return 0;
     }
 }
 
@@ -630,7 +632,7 @@ uint8_t TouchChannel::calculateRatchet(uint16_t bend)
 void TouchChannel::handleRatchet(int position, uint16_t value)
 {
     currRatchetRate = calculateRatchet(value);
-    if (position % currRatchetRate == 0)
+    if (currRatchetRate != 0 && position % currRatchetRate == 0)
     {
         setGate(HIGH);
         setLED(CHANNEL_RATCHET_LED, ON, true);
