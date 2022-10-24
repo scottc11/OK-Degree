@@ -14,6 +14,7 @@ void task_sequence_handler(void *params)
     sequencer_task_handle = xTaskGetCurrentTaskHandle();
     sequencer_queue = xQueueCreate(96, sizeof(uint32_t));
     uint32_t event = 0x0;
+    bool recordArmed = false;
     while (1)
     {
         // queue == [advance, advance, advance, clear, advance, freeze, advance, advance ]
@@ -25,6 +26,11 @@ void task_sequence_handler(void *params)
         switch (action)
         {
         case SEQ::ADVANCE:
+            if (recordArmed) {
+                if (data % 24 == 0) { // data in this case is the current pulse
+                    ctrl->recLED.toggle();
+                }
+            }
             if (channel == CHAN::ALL)
             {
                 for (int i = 0; i < CHANNEL_COUNT; i++)
@@ -92,12 +98,31 @@ void task_sequence_handler(void *params)
             }
             break;
 
+        case SEQ::BAR_RESET:
+            if (recordArmed) {
+                for (int i = 0; i < CHANNEL_COUNT; i++)
+                {
+                    if (ctrl->channels[i]->sequence.recordArmed)
+                    {
+                        ctrl->channels[i]->enableSequenceRecording();
+                    }
+                }
+                recordArmed = false;
+            }
+            break;
+
+        // you are going to want to "wait" for the next bar to start
+        // you will probably do this by setting a flag in this block (when record gets enabled)
+        // then you will listen for this flag in the main ADVANCE block. Once the bar rolls over, then you
+        // enable recording
         case SEQ::RECORD_ENABLE:
+            recordArmed = true;
             for (int i = 0; i < CHANNEL_COUNT; i++)
-                ctrl->channels[i]->enableSequenceRecording();
+                ctrl->channels[i]->sequence.armRecording();
             break;
 
         case SEQ::RECORD_DISABLE:
+            recordArmed = false;
             for (int i = 0; i < CHANNEL_COUNT; i++)
                 ctrl->channels[i]->disableSequenceRecording();
             break;

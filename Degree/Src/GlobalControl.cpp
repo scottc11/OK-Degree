@@ -70,6 +70,7 @@ void GlobalControl::init() {
     // initialize tempo
     clock->init();
     clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
+    clock->attachBarResetCallback(callback(this, &GlobalControl::handleBarReset));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
     clock->disableInputCaptureISR(); // pollTempoPot() will re-enable should pot be in teh right position
     currTempoPotValue = tempoPot.read_u16();
@@ -647,16 +648,15 @@ void GlobalControl::setSettingsBufferValue(int position, int channel, int data)
  */
 void GlobalControl::advanceSequencer(uint8_t pulse)
 {
-    // if (pulse % 16 == 0)
-    // {
-    //     display_dispatch_isr(DISPLAY_ACTION::PULSE_DISPLAY, CHAN::ALL, 0);
-    // }
-
     if (pulse == 0) {
         tempoLED.write(HIGH);
         tempoGate.write(HIGH);
+        if (clock->step == 0) {
+            freezeLED.write(HIGH);
+        }
     } else if (pulse == 4) {
         tempoLED.write(LOW);
+        freezeLED.write(LOW);
         tempoGate.write(LOW);
     }
 
@@ -677,6 +677,15 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
 void GlobalControl::resetSequencer(uint8_t pulse)
 {
     dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::CORRECT, 0);
+}
+
+/**
+ * @brief function that triggers at the begining of every bar
+ * 
+ */
+void GlobalControl::handleBarReset()
+{
+    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::BAR_RESET, 0);
 }
 
 void GlobalControl::handleFreeze(bool freeze) {

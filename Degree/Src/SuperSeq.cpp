@@ -79,15 +79,20 @@ void SuperSeq::advance()
 }
 
 void SuperSeq::enableRecording() {
+    this->recordArmed = false;
     this->recordEnabled = true;
     // if no currently recorded events, enable adaptive length
     if (!this->containsEvents()) {
         this->reset();
-        this->setLength(2);
+        this->setLength(2); // set this to the max
         this->adaptiveLength = true;
     } else {
         this->adaptiveLength = false;
     }
+}
+
+void SuperSeq::armRecording() {
+    this->recordArmed = true;
 }
 
 void SuperSeq::disableRecording() {

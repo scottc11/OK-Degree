@@ -11,6 +11,7 @@ enum class SEQ
     ADVANCE,
     FREEZE,
     RESET,
+    BAR_RESET,
     CLEAR_TOUCH,
     CLEAR_BEND,
     RECORD_ENABLE,

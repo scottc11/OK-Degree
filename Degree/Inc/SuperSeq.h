@@ -49,6 +49,7 @@ public:
 
     bool adaptiveLength;     // flag determining if the sequence length should increase past its current length
     bool overdub;            // flag gets set to true so that the sequence handler clears/overdubs existing events
+    bool recordArmed;        // when true, sequence armed to record once a bar has overflowed
     bool recordEnabled;      // when true, sequence will create and new events to the event list
     bool playbackEnabled;    // when true, sequence will playback event list
     bool bendEnabled;        // flag used for overriding current recorded bend with active bend    
@@ -82,6 +83,7 @@ public:
 
     void advance();
 
+    void armRecording();
     void enableRecording();
     void disableRecording();
 
