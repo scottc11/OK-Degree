@@ -201,6 +201,12 @@ void SuperClock::handleOverflowCallback()
             // external input will reset pulse to 0 and resume TIM4 in input capture callback
         } else {
             pulse = 0;
+            if (step < timeSignature - 1) {
+                step++;
+            } else {
+                step = 0;
+                if (barResetCallback) barResetCallback();
+            }
         }
     }
 }
@@ -218,6 +224,10 @@ void SuperClock::attachPPQNCallback(Callback<void(uint8_t pulse)> func)
 void SuperClock::attachResetCallback(Callback<void(uint8_t pulse)> func)
 {
     resetCallback = func;
+}
+
+void SuperClock::attachBarResetCallback(Callback<void()> func) {
+    barResetCallback = func;
 }
 
 void SuperClock::RouteOverflowCallback(TIM_HandleTypeDef *htim)
