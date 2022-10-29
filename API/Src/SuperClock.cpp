@@ -19,6 +19,14 @@ void SuperClock::start()
     error_handler(status);
 }
 
+void SuperClock::reset()
+{
+    __HAL_TIM_SetCounter(&htim2, 0); // not certain this has to happen, just assuming
+    __HAL_TIM_SetCounter(&htim4, 0);
+    this->pulse = 0;
+    this->step = 0;
+}
+
 /**
  * @brief initialize TIM2 as a slave to TIM1
  * @param prescaler setting to 1 should be best

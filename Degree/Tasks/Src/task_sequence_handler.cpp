@@ -63,6 +63,7 @@ void task_sequence_handler(void *params)
             break;
 
         case SEQ::RESET:
+            ctrl->clock->reset();
             if (channel == CHAN::ALL)
             {
                 for (int i = 0; i < CHANNEL_COUNT; i++)
@@ -108,13 +109,10 @@ void task_sequence_handler(void *params)
                     }
                 }
                 recordArmed = false;
+                ctrl->recLED.write(1);
             }
             break;
 
-        // you are going to want to "wait" for the next bar to start
-        // you will probably do this by setting a flag in this block (when record gets enabled)
-        // then you will listen for this flag in the main ADVANCE block. Once the bar rolls over, then you
-        // enable recording
         case SEQ::RECORD_ENABLE:
             recordArmed = true;
             for (int i = 0; i < CHANNEL_COUNT; i++)

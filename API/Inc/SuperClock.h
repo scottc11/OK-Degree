@@ -57,7 +57,9 @@ public:
     void init();
     void initTIM2(uint16_t prescaler, uint32_t period);
     void initTIM4(uint16_t prescaler, uint16_t period);
+    
     void start();
+    void reset();
 
     void setPulseFrequency(uint32_t ticks);
     uint16_t convertADCReadToTicks(uint16_t min, uint16_t max, uint16_t value);
