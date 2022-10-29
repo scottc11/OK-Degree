@@ -14,7 +14,9 @@ void task_sequence_handler(void *params)
     sequencer_task_handle = xTaskGetCurrentTaskHandle();
     sequencer_queue = xQueueCreate(96, sizeof(uint32_t));
     uint32_t event = 0x0;
-    bool recordArmed = false;
+    bool recordArm = false;    // flag used to enable recording once X number of steps have passed
+    bool recordDisarm = false; // flag used to disable recording once X number of steps have passed
+
     while (1)
     {
         // queue == [advance, advance, advance, clear, advance, freeze, advance, advance ]
@@ -26,7 +28,7 @@ void task_sequence_handler(void *params)
         switch (action)
         {
         case SEQ::ADVANCE:
-            if (recordArmed) {
+            if (recordArm || recordDisarm) {
                 if (data % 24 == 0) { // data in this case is the current pulse
                     ctrl->recLED.toggle();
                 }
@@ -100,31 +102,37 @@ void task_sequence_handler(void *params)
             break;
 
         case SEQ::BAR_RESET:
-            if (recordArmed) {
-                for (int i = 0; i < CHANNEL_COUNT; i++)
-                {
-                    if (ctrl->channels[i]->sequence.recordArmed)
-                    {
-                        ctrl->channels[i]->enableSequenceRecording();
-                    }
-                }
-                recordArmed = false;
-                ctrl->recLED.write(1);
+            if (recordArm) {
+                recordArm = false;
+                dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
+            } else if (recordDisarm) {
+                recordDisarm = false;
+                dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
             }
             break;
 
         case SEQ::RECORD_ENABLE:
-            recordArmed = true;
+            ctrl->recLED.write(1);
             for (int i = 0; i < CHANNEL_COUNT; i++)
-                ctrl->channels[i]->sequence.armRecording();
+                ctrl->channels[i]->enableSequenceRecording();
             break;
 
         case SEQ::RECORD_DISABLE:
-            recordArmed = false;
+            ctrl->recLED.write(0);
             for (int i = 0; i < CHANNEL_COUNT; i++)
                 ctrl->channels[i]->disableSequenceRecording();
             break;
             
+        case SEQ::RECORD_ARM:
+            recordArm = true;
+            recordDisarm = false;
+            break;
+
+        case SEQ::RECORD_DISARM:
+            recordArm = false;
+            recordDisarm = true;
+            break;
+
         case SEQ::SET_LENGTH:
             ctrl->channels[channel]->updateSequenceLength(data);
             break;

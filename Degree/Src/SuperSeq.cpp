@@ -79,50 +79,21 @@ void SuperSeq::advance()
 }
 
 void SuperSeq::enableRecording() {
-    this->recordArmed = false;
     this->recordEnabled = true;
     // if no currently recorded events, enable adaptive length
     if (!this->containsEvents()) {
         this->reset();
-        this->setLength(2); // set this to the max
         this->adaptiveLength = true;
     } else {
         this->adaptiveLength = false;
     }
 }
 
-void SuperSeq::armRecording() {
-    this->recordArmed = true;
-}
-
 void SuperSeq::disableRecording() {
     this->recordEnabled = false;
-    
-    // if events were recorded and adaptive length was enabled, update the seq length
-    if (adaptiveLength)
-    {
-        this->adaptiveLength = false;
 
-        if (this->containsEvents())
-        {
-            // is all this zero indexed?
-            if (this->currStep <= SEQ_LENGTH_BLOCK_1)
-            {
-                this->setLength(SEQ_LENGTH_BLOCK_1); // 8 steps
-            }
-            else if (this->currStep > SEQ_LENGTH_BLOCK_1 && this->currStep <= SEQ_LENGTH_BLOCK_2)
-            {
-                this->setLength(SEQ_LENGTH_BLOCK_2);
-            }
-            else if (this->currStep > SEQ_LENGTH_BLOCK_2 && this->currStep <= SEQ_LENGTH_BLOCK_3)
-            {
-                this->setLength(SEQ_LENGTH_BLOCK_3);
-            }
-            else if (this->currStep > SEQ_LENGTH_BLOCK_3)
-            {
-                this->setLength(SEQ_LENGTH_BLOCK_4);
-            }
-        }
+    if (this->containsEvents() && adaptiveLength) {
+        this->setLength(this->currStep);
     }
 }
 
