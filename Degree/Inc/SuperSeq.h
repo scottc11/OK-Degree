@@ -10,10 +10,8 @@
 #define SEQ_EVENT_GATE_BIT 4
 #define SEQ_EVENT_INDEX_BIT_MASK 0b00001111
 
-#define SEQ_LENGTH_BLOCK_1 (MAX_SEQ_LENGTH / 4)                        // 1 bar
-#define SEQ_LENGTH_BLOCK_2 (MAX_SEQ_LENGTH / 2)                        // 2 bars
-#define SEQ_LENGTH_BLOCK_3 ((MAX_SEQ_LENGTH / 2) + SEQ_LENGTH_BLOCK_1) // 3 bars
-#define SEQ_LENGTH_BLOCK_4 (MAX_SEQ_LENGTH)                            // 4 bars
+#define SEQ_PROGRESS_MAX 16 // "15"
+#define SEQ_PROGRESS_MIN 1 // "0"
 
 typedef struct SequenceNode
 {
@@ -46,6 +44,9 @@ public:
     int prevPosition;
     int prevEventPos;        // represents the position of the last event which got triggered (either HIGH or LOW)
     int newEventPos;         // when a new event is created, we store the position in this variable in case we need it for something (ie. sequence overdubing)
+
+    int progressDiviser;      // lengthPPQN / 16 (num LEDs used)
+    int progressCounter;      // current 
 
     bool adaptiveLength;     // flag determining if the sequence length should increase past its current length
     bool overdub;            // flag gets set to true so that the sequence handler clears/overdubs existing events

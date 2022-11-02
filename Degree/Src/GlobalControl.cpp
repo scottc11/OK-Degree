@@ -464,7 +464,7 @@ void GlobalControl::handleButtonRelease(int pad)
                 if (touchPads->padIsTouched(i, currTouched))
                 {
                     dispatch_sequencer_event((CHAN)i, SEQ::CLEAR_TOUCH, 0);
-                    if (recordEnabled)
+                    if (!recordEnabled) // this chunk is a shortcut for clearing the display
                         dispatch_sequencer_event((CHAN)i, SEQ::RECORD_DISABLE, 0);
                 }
             }
