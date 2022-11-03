@@ -37,12 +37,12 @@ void task_sequence_handler(void *params)
             {
                 for (int i = 0; i < CHANNEL_COUNT; i++)
                 {
-                    ctrl->channels[i]->sequence.advance();
                     ctrl->channels[i]->handleClock();
+                    ctrl->channels[i]->sequence.advance();
                 }
             } else {
-                ctrl->channels[channel]->sequence.advance();
                 ctrl->channels[channel]->handleClock();
+                ctrl->channels[channel]->sequence.advance();
             }
             break;
 
