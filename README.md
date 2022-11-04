@@ -1,56 +1,29 @@
-# TODO:
-- How do I print to the console through an ST-Link?
-    - RX/TX connector from St-Link need to be wired to the TX/RX pins of the MCU
-    - you probably need StMicroelectronics STLink Virtual COM Port driver installed somewhere (dev/tty folder or file)
-
-- why is my intellisense not detecting errors prior to building?
-    google "gcc arm problem matcher vscode"
-
-## FreeRTOS Configuration
-Could all this not be done just using a timer? Or is that what an RTOS essential is?
-```
- * Task 1:
- * - executes at a frequency of 1 quarter note
- * - updates tempo / timer to match external clock
- * 
- * Task 2:
- * - executes at a frequency of PPQN
- * - advances the sequencer
- * - handles any interface changes (ie. touch, bend, UI buttons)
- * - updates LEDs
- * - updates DACs
- * 
- * Task 3:
- * - executes at a frequency of PPQN * 8? 🤷‍♂️
- * - reads and filters ADCs
- * 
- * Task 4:
- * - low priority for printf()
- * 
- * State Struct:
- * - is shared globally between tasks
- * - holds a series of "flags" for which to tell each task which code it should execute
- * 
- * Software Timers:
-    - this is what MBED must have used to create timed events. 
-    - if the RTOS is clocked by the sequencer clock, this could be very usefull
- * 
-```
-
 ## Toolchain
 
-#### Install OpenOCD for ST-Link Debugging
+### Install OpenOCD for ST-Link Debugging
+ref: [GDB and OpenOCD](https://openocd.org/doc-release/html/GDB-and-OpenOCD.html#GDB-and-OpenOCD)
 ```
 brew install openocd
 ```
+### Install [ARM Embedded Toolchain](https://developer.arm.com/downloads/-/gnu-rm)
 
-#### Install ARM Embedded Toolchain
+This toolchain contains the C compiler, GDB, etc.
+
+The commands below tap a repository which holds the latest version of the toolchain and then installs it into `/opt/hombrew/bin`. You need to specify this path in VSCode `c_cpp_properties.json`.
+
 ```
-# not sure about the brew tap, but it works.
-brew tap PX4/homebrew-px4
+brew tap ArmMbed/homebrew-formulae
 brew update
-brew install gcc-arm-none-eabi
+brew install arm-none-eabi-gcc
 arm-none-eabi-gcc --version
+```
+
+### GDB
+GDB is apart of the gcc-arm-none-eabi toolchain. It can be accessed via `arm-none-eabi-gdb`
+
+### Install dfu-util for firmware upload over USB
+```
+brew install dfu-util
 ```
 
 #### Pull submodules
