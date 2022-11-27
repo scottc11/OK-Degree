@@ -133,7 +133,9 @@ namespace DEGREE {
 
         bool led_state[16];
 
-        uint8_t currRatchetRate;      //
+        uint8_t currRatchetRate;
+        uint8_t prevRatchetRate;
+
         bool gateState;               // state of the gate output
 
         UIMode uiMode;

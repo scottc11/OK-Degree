@@ -628,9 +628,12 @@ uint8_t TouchChannel::calculateRatchet(uint16_t bend)
 
 /**
  * @brief based on the current position of the sequencer clock, toggle gate on / off
+ * @param position sequence position
+ * @param value amount of bend
 */
 void TouchChannel::handleRatchet(int position, uint16_t value)
 {
+    prevRatchetRate = currRatchetRate;
     currRatchetRate = calculateRatchet(value);
     if (currRatchetRate != 0 && position % currRatchetRate == 0)
     {
@@ -639,8 +642,11 @@ void TouchChannel::handleRatchet(int position, uint16_t value)
     }
     else
     {
-        setGate(LOW);
-        setLED(CHANNEL_RATCHET_LED, OFF, true);
+        if (prevRatchetRate != 0)
+        {
+            setGate(LOW);
+            setLED(CHANNEL_RATCHET_LED, OFF, true);
+        }
     }
 }
 
@@ -1063,9 +1069,12 @@ void TouchChannel::handleSequence(int position)
         }
     }
 
-    // Handle Bend Events
+    // Handle Bend Events (only if the bender is currently idle / inactive)
     if (sequence.containsBendEvents)
     {
+        // somewhere in here, if bend events exists and ratcheting is enabled, then
+        // an idle bend value is going to set the gate LOW (each PPQN). What needs to happen,
+        // is if bend idle && sequence bend is == idle, then don't trigger the gate
         if (bender->isIdle())
         {
             this->handleBend(sequence.getBend(position));
