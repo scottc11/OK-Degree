@@ -173,8 +173,6 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
         break;
     case MONO_LOOP:
         sequence.playbackEnabled = true;
-        drawSequenceToDisplay(false);
-        setSequenceLED(sequence.currStep, PWM::PWM_HIGH, false);
         setLED(CHANNEL_REC_LED, ON, false);
         setOctaveLed(currOctave, LedState::ON, false);
         triggerNote(currDegree, currOctave, SUSTAIN);
@@ -186,8 +184,6 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
         break;
     case QUANTIZER_LOOP:
         sequence.playbackEnabled = true;
-        drawSequenceToDisplay(false);
-        setSequenceLED(sequence.currStep, PWM::PWM_HIGH, false);
         setLED(CHANNEL_REC_LED, ON, false);
         setActiveDegrees(activeDegrees);
         triggerNote(currDegree, currOctave, NOTE_OFF);
@@ -996,12 +992,11 @@ void TouchChannel::setActiveOctaves(int octave)
 */
 void TouchChannel::handleSequence(int position)
 {
-    // always display sequence progression regardless if there are events or not
-    if (sequence.currStep != sequence.prevStep) // only set led every step
-    {
+    // don't show progress when recording a fresh sequence. Only if there is an existing sequence
+    if (!sequence.recordEnabled || sequence.overwriteExistingEvents) {
         if (uiMode == UIMode::UI_PLAYBACK)
         {
-            stepSequenceLED(sequence.currStep, sequence.prevStep, sequence.length);
+            stepSequenceLED();
         }
     }
 
@@ -1084,7 +1079,7 @@ void TouchChannel::resetSequence()
     sequence.reset();
     if (sequence.containsEvents() || sequence.recordEnabled)
     {
-        drawSequenceToDisplay(false);
+        // drawSequenceToDisplay(false);
     }
 }
 
@@ -1099,15 +1094,18 @@ void TouchChannel::updateSequenceLength(uint8_t steps)
     drawSequenceToDisplay(true);
 }
 
+static const int DISPLAY_PATTERN_LED_MAP[16] = { 1, 11, 12, 7, 8, 15, 5, 14, 4, 3, 9, 2, 10, 0, 6, 13 };
+static const int SEQ_LED_PROGRESS_PWM_MAP[16] = {1, 7, 15, 25, 33, 40, 47, 54, 60, 70, 78, 84, 90, 100, 111, 127};
+
 /**
- * @brief given a sequence step, 
- * 
- * @param step 
+ * @brief map a given step in the sequence to an display LED
+ *
+ * @param step
  */
-void TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm, bool blink)
+void
+TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm, bool blink)
 {
-    uint8_t ledIndex = step / 2; // 32 step seq displayed with 16 LEDs
-    display->setChannelLED(channelIndex, ledIndex, pwm, blink); // it is possible ledIndex needs to be subracted by 1 🤔
+    display->setChannelLED(channelIndex, DISPLAY_PATTERN_LED_MAP[step], pwm, blink);
 }
 
 /**
@@ -1115,57 +1113,40 @@ void TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm, bool blink)
  */
 void TouchChannel::drawSequenceToDisplay(bool blink)
 {
-    for (int i = 0; i < MAX_SEQ_LENGTH; i += 2)
+    int counter = 0;
+    while (counter < sequence.progress)
     {
-        if (i < sequence.length)
-        {
-            if (i == sequence.currStep && sequence.playbackEnabled && uiMode == UIMode::UI_PLAYBACK)
-            {
-                setSequenceLED(i, PWM::PWM_HIGH, blink);
-            }
-            else
-            {
-                setSequenceLED(i, PWM::PWM_LOW_MID, blink);
-            }
-        }
-        else
-        {
-            setSequenceLED(i, PWM::PWM_OFF, blink);
-        }
+        display->setChannelLED(channelIndex, DISPLAY_SPIRAL_LED_MAP[counter], SEQ_LED_PROGRESS_PWM_MAP[counter], blink);
+        counter++;
     }
 }
 
-void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
-{    
-    if (sequence.currStepPosition == 0)
-    {
-        if (currStep % 2 == 0)
-        {
-            // set currStep PWM High
-            setSequenceLED(currStep, PWM::PWM_HIGH, false);
+// this is going to have to take a ppqn instead of a step
+void TouchChannel::stepSequenceLED()
+{
+    if (sequence.currPosition == 0) {
+        display->clear(channelIndex);
+    }
+    
+    // TODO: maybe flash for every step?
 
-            // handle odd sequence lengths.
-            if (length % 2 == 1)
-            {
-                // The last LED in sequence gets set to a different PWM
-                if (prevStep == length - 1)
-                {
-                    setSequenceLED(prevStep, PWM::PWM_LOW, false);
-                }
-            }
-            // regular sequence lengths
-            else
-            {
-                // set prevStep PWM back to Mid
-                setSequenceLED(prevStep, PWM::PWM_LOW_MID, false);
-            }
-        }
+    if (sequence.currPosition % sequence.progressDiviser == 0) { // check if this ppqn should advance the LEDs
+        sequence.setProgress();
+        display->setChannelLED(channelIndex, DISPLAY_SPIRAL_LED_MAP[sequence.progress], SEQ_LED_PROGRESS_PWM_MAP[sequence.progress], sequence.recordEnabled);
     }
 }
 
 void TouchChannel::enableSequenceRecording()
 {
     sequence.enableRecording();
+    display->enableBlink();
+    
+    // if no sequence exists, light all 16 seq leds and flash them
+    if (!sequence.containsEvents()) {
+        display->fill(this->channelIndex, 20, true);
+    } else {
+        drawSequenceToDisplay(sequence.recordEnabled);
+    }
 
     if (playbackMode == MONO)
     {
@@ -1185,12 +1166,10 @@ void TouchChannel::enableSequenceRecording()
 void TouchChannel::disableSequenceRecording()
 {
     sequence.disableRecording();
-    
+    display->disableBlink();
     // if a touch event was recorded, remain in loop mode
     if (sequence.containsEvents())
     {
-        // make sure to update the display so it shows the new seq length
-        display->clear(channelIndex);
         drawSequenceToDisplay(false);
         return;
     }

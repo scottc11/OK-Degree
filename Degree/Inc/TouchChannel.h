@@ -209,7 +209,7 @@ namespace DEGREE {
         void updateSequenceLength(uint8_t steps);
         void setSequenceLED(uint8_t step, uint8_t pwm, bool blink);
         void drawSequenceToDisplay(bool blink);
-        void stepSequenceLED(int currStep, int prevStep, int length);
+        void stepSequenceLED();
         void enableSequenceRecording();
         void disableSequenceRecording();
         void handleQuantAmountLEDs();

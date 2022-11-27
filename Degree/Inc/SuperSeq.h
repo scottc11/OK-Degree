@@ -10,8 +10,8 @@
 #define SEQ_EVENT_GATE_BIT 4
 #define SEQ_EVENT_INDEX_BIT_MASK 0b00001111
 
-#define SEQ_PROGRESS_MAX 16 // "15"
-#define SEQ_PROGRESS_MIN 1 // "0"
+#define SEQ_PROGRESS_MAX 15 // "15"
+#define SEQ_PROGRESS_MIN 0 // "0"
 
 typedef struct SequenceNode
 {
@@ -47,9 +47,11 @@ public:
 
     int progressDiviser;      // lengthPPQN / 16 (num LEDs used)
     int progressCounter;      // current 
+    int progress;
 
     bool adaptiveLength;     // flag determining if the sequence length should increase past its current length
     bool overdub;            // flag gets set to true so that the sequence handler clears/overdubs existing events
+    bool overwriteExistingEvents;
     bool recordEnabled;      // when true, sequence will create and new events to the event list
     bool playbackEnabled;    // when true, sequence will playback event list
     bool bendEnabled;        // flag used for overriding current recorded bend with active bend    
@@ -76,6 +78,8 @@ public:
     void setLength(int steps);
     int getLength();
     int getLengthPPQN();
+
+    void setProgress();
 
     int getNextPosition(int position);
     int getPrevPosition(int position);

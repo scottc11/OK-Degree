@@ -86,14 +86,15 @@ void SuperSeq::enableRecording() {
         this->setLength(2);
         this->adaptiveLength = true;
     } else {
-        this->adaptiveLength = false;
+        this->overwriteExistingEvents = true;
     }
 }
 
 void SuperSeq::disableRecording() {
     this->recordEnabled = false;
-
+    this->overwriteExistingEvents = false;
     if (this->containsEvents() && adaptiveLength) {
+        this->adaptiveLength = false;
         this->setLength(this->currStep);
     }
 }
@@ -256,6 +257,10 @@ void SuperSeq::setLength(int steps)
         progressDiviser = lengthPPQN / SEQ_PROGRESS_MAX;
     }
 };
+
+void SuperSeq::setProgress() {
+    this->progress = this->currPosition / this->progressDiviser;
+}
 
 /**
  * @brief set the level new events get quantized too
