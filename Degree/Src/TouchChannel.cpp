@@ -858,64 +858,64 @@ void TouchChannel::setActiveDegreeLimit(int value)
 void TouchChannel::handleCVInput()
 {
     // NOTE: CV voltage input is inverted, so everything needs to be flipped to make more sense
-    uint16_t currCVInputValue = CV_MAX - adc.read_u16();
+    uint16_t cvInput = CV_MAX - adc.read_u16();
 
     // We only want trigger events in quantizer mode, so if the gate gets set HIGH, make sure to set it back to low the very next tick
     if (gateState == HIGH)
         setGate(LOW);
 
-    if (currCVInputValue >= prevCVInputValue + CV_QUANTIZER_DEBOUNCE || currCVInputValue <= prevCVInputValue - CV_QUANTIZER_DEBOUNCE)
+    int refinedValue = 0; // we want a number between 0 and CV_OCTAVE for mapping to degrees. The octave is added afterwords via CV_OCTAVES
+    int octave = 0;
+
+    // determin which octave the CV value will get mapped to
+    for (int i = 0; i < numActiveOctaves; i++)
     {
-        int refinedValue = 0; // we want a number between 0 and CV_OCTAVE for mapping to degrees. The octave is added afterwords via CV_OCTAVES
-        int octave = 0;
-
-        // determin which octave the CV value will get mapped to
-        for (int i = 0; i < numActiveOctaves; i++)
+        if (cvInput < activeOctaveValues[i].threshold)
         {
-            if (currCVInputValue < activeOctaveValues[i].threshold)
-            {
-                octave = activeOctaveValues[i].octave;
-                refinedValue = i == 0 ? currCVInputValue : currCVInputValue - activeOctaveValues[i - 1].threshold; // remap adc value to a number between 0 and octaveThreshold
-                break;
-            }
-        }
-
-        // latch incoming ADC value to DAC value
-        for (int i = 0; i < numActiveDegrees; i++)
-        {
-            // if the calculated value is less than threshold
-            if (refinedValue < activeDegreeValues[i].threshold)
-            {
-                // prevent duplicate triggering of that same degree / octave
-                if (currDegree != activeDegreeValues[i].noteIndex || currOctave != octave) // NOTE: currOctave used to be prevOctave 🤷‍♂️
-                {
-                    triggerNote(currDegree, prevOctave, NOTE_OFF);  // set previous triggered degree 
-
-                    // re-DIM previously degree LED
-                    if (bitwise_read_bit(activeDegrees, prevDegree))
-                    {
-                        setDegreeLed(currDegree, BLINK_OFF, true);
-                        setDegreeLed(currDegree, DIM_LOW, true);
-                    }
-
-                    // trigger the new degree, and set its LED to blink
-                    triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON);
-                    setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK_ON, true);
-
-                    // re-DIM previous Octave LED
-                    if (bitwise_read_bit(currActiveOctaves, prevOctave))
-                    {
-                        setOctaveLed(prevOctave, LedState::BLINK_OFF, true);
-                        setOctaveLed(prevOctave, LedState::DIM_LOW, true);
-                    }
-                    // BLINK active quantized octave
-                    setOctaveLed(octave, LedState::BLINK_ON, true);
-                }
-                break; // break from loop as soon as we can
-            }
+            octave = activeOctaveValues[i].octave;
+            refinedValue = i == 0 ? cvInput : cvInput - activeOctaveValues[i - 1].threshold; // remap adc value to a number between 0 and octaveThreshold
+            
+            break;
         }
     }
-    prevCVInputValue = currCVInputValue;
+
+    // BEFORE THIS BLOCK:
+    // check if the newly mapped note and octave values are different then before
+
+    // latch incoming ADC value to DAC value
+    for (int i = 0; i < numActiveDegrees; i++)
+    {
+        // if the calculated value is less than threshold
+        if (refinedValue < activeDegreeValues[i].threshold)
+        {
+            // prevent duplicate triggering of that same degree / octave
+            if (currDegree != activeDegreeValues[i].noteIndex || currOctave != octave) // NOTE: currOctave used to be prevOctave 🤷‍♂️
+            {
+                triggerNote(currDegree, prevOctave, NOTE_OFF); // set previous triggered degree
+
+                // re-DIM previously degree LED
+                if (bitwise_read_bit(activeDegrees, prevDegree))
+                {
+                    setDegreeLed(currDegree, BLINK_OFF, true);
+                    setDegreeLed(currDegree, DIM_LOW, true);
+                }
+
+                // trigger the new degree, and set its LED to blink
+                triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON);
+                setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK_ON, true);
+
+                // re-DIM previous Octave LED
+                if (bitwise_read_bit(currActiveOctaves, prevOctave))
+                {
+                    setOctaveLed(prevOctave, LedState::BLINK_OFF, true);
+                    setOctaveLed(prevOctave, LedState::DIM_LOW, true);
+                }
+                // BLINK active quantized octave
+                setOctaveLed(octave, LedState::BLINK_ON, true);
+            }
+            break; // break from loop as soon as we can
+        }
+    }
 }
 
 /**

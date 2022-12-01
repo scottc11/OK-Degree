@@ -129,7 +129,7 @@ namespace DEGREE {
         DigitalOut *globalGateOut; // global gate output
         DigitalOut gateOut; // gate output
         AnalogHandle adc;   // CV input ADC
-        VoltPerOctave output;        
+        VoltPerOctave output;
 
         bool led_state[16];
 
@@ -160,7 +160,6 @@ namespace DEGREE {
         int numActiveDegrees;              // number of degrees which are active (to quantize voltage input)
         int numActiveOctaves;              // number of active octaves for mapping CV to
         int activeDegreeLimit;             // the max number of degrees allowed to be enabled at one time.
-        uint16_t prevCVInputValue;         // the previously handled CV input value 
         QuantDegree activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
         QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
