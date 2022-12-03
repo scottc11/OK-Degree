@@ -185,7 +185,6 @@ namespace DEGREE {
         // UI Handler
         void updateUI(UIMode mode);
 
-        void setOctave(int octave);
         void updateOctaveLeds(int octave, bool isPlaybackEvent);
 
         void setLED(int io_pin, LedState state, bool isPlaybackEvent); // if you use a "scene" here, you could remove the boolean

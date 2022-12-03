@@ -9,6 +9,7 @@
 #define SEQ_EVENT_STATUS_BIT 5
 #define SEQ_EVENT_GATE_BIT 4
 #define SEQ_EVENT_INDEX_BIT_MASK 0b00001111
+#define SEQ_EVENT_OCTAVE_BIT_MASK 0b11000000
 
 #define SEQ_LENGTH_BLOCK_1 (MAX_SEQ_LENGTH / 4)                        // 1 bar
 #define SEQ_LENGTH_BLOCK_2 (MAX_SEQ_LENGTH / 2)                        // 2 bars
@@ -18,11 +19,12 @@
 typedef struct SequenceNode
 {
     uint8_t activeDegrees; // byte for holding active/inactive notes for a chord
-    uint8_t data;          // bits 0..3: Degree Index || bit 4: Gate || bit 5: status
+    uint8_t data;          // bits 0..3: Degree Index || bit 4: Gate || bit 5: status || bits 6,7: octave
     uint16_t bend;         // raw ADC value from pitch bend
     bool getStatus() { return bitwise_read_bit(data, SEQ_EVENT_STATUS_BIT); }
     uint8_t getDegree() { return data & SEQ_EVENT_INDEX_BIT_MASK; }
     bool getGate() { return bitwise_read_bit(data, SEQ_EVENT_GATE_BIT); }
+    uint8_t getOctave() { return (data & SEQ_EVENT_OCTAVE_BIT_MASK) >> 6; }
 } SequenceNode;
 
 class SuperSeq {
@@ -68,7 +70,7 @@ public:
     void copyPaste(int prevPosition, int newPosition);
     void cutPaste(int prevPosition, int newPosition);
 
-    void createTouchEvent(int position, int degree, bool gate);
+    void createTouchEvent(int position, uint8_t degree, uint8_t octave, bool gate);
     void createBendEvent(int position, uint16_t bend);
     void createChordEvent(int position, uint8_t notes);
     
@@ -85,13 +87,19 @@ public:
     void enableRecording();
     void disableRecording();
 
+    void enablePlayback();
+    void disablePlayback();
+
+    void enableOverdub();
+    void disableOverdub();
+
     void quantize();
     void setQuantizeAmount(QUANT value);
 
-    uint8_t constructEventData(uint8_t degree, bool gate, bool status);
-    void setEventData(int position, uint8_t degree, bool gate, bool status);
+    void setEventData(int position, uint8_t degree, uint8_t octave, bool gate, bool status);
 
     uint8_t getEventDegree(int position);
+    uint8_t getEventOctave(int position);
     uint8_t getActiveDegrees(int position);
     bool getEventGate(int position);
     bool getEventStatus(int position);
@@ -101,13 +109,10 @@ public:
     void setEventStatus(int position, bool status);
 
     uint8_t setIndexBits(uint8_t degree, uint8_t byte);
-    uint8_t readDegreeBits(uint8_t byte);
     uint8_t setGateBits(bool state, uint8_t byte);
-    uint8_t readGateBits(uint8_t byte);
     uint8_t setStatusBits(bool status, uint8_t byte);
-    uint8_t readStatusBits(uint8_t byte);
+    uint8_t setOctaveBits(uint8_t octave, uint8_t byte);
 
-    void quantizationTest();
     void logSequenceToConsole();
 
 private:

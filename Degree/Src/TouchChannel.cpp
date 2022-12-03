@@ -297,12 +297,12 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
                 // create a new event
                 if (sequence.recordEnabled)
                 {
-                    sequence.overdub = true;
-                    sequence.createTouchEvent(sequence.currPosition, pad, HIGH);
+                    sequence.enableOverdub();
+                    sequence.createTouchEvent(sequence.currPosition, pad, currOctave, HIGH);
                 }
                 // when record is disabled, this block will freeze the sequence and output the curr touched degree until touch is released
                 else {
-                    sequence.playbackEnabled = false;
+                    sequence.disablePlayback();
                 }
                 triggerNote(pad, currOctave, NOTE_ON);
                 break;
@@ -323,7 +323,32 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
     else // handle octave pads
     {
         pad = CHAN_TOUCH_PADS[pad]; // remap
-        setOctave(pad);
+        switch (playbackMode)
+        {
+        case MONO:
+            triggerNote(currDegree, pad, NOTE_ON);
+            break;
+        case MONO_LOOP:
+            if (sequence.recordEnabled)
+            {
+                sequence.enableOverdub();
+                sequence.createTouchEvent(sequence.currPosition, currDegree, pad, HIGH);
+            }
+            else
+            {
+                sequence.disablePlayback();
+            }
+            triggerNote(currDegree, pad, NOTE_ON);
+            break;
+        case QUANTIZER:
+            setActiveOctaves(pad);
+            setActiveDegrees(activeDegrees); // update active degrees thresholds
+            break;
+        case QUANTIZER_LOOP:
+            setActiveOctaves(pad);
+            setActiveDegrees(activeDegrees); // update active degrees thresholds
+            break;
+        }
     }
 }
 
@@ -340,12 +365,12 @@ void TouchChannel::handleReleasePlaybackEvent(uint8_t pad)
         case MONO_LOOP:
             if (sequence.recordEnabled)
             {
-                sequence.createTouchEvent(sequence.currPosition, pad, LOW);
-                sequence.overdub = false;
+                sequence.createTouchEvent(sequence.currPosition, pad, currOctave, LOW);
+                sequence.disableOverdub();
             }
             else
             {
-                sequence.playbackEnabled = true;
+                sequence.enablePlayback();
             }
             triggerNote(pad, currOctave, NOTE_OFF);
             break;
@@ -359,7 +384,32 @@ void TouchChannel::handleReleasePlaybackEvent(uint8_t pad)
     }
     else
     {
-        setGate(LOW);
+        pad = CHAN_TOUCH_PADS[pad];
+        switch (playbackMode)
+        {
+        case MONO:
+            triggerNote(currDegree, pad, NOTE_OFF);
+            break;
+        case MONO_LOOP:
+            
+            if (sequence.recordEnabled)
+            {
+                sequence.createTouchEvent(sequence.currPosition, currDegree, pad, LOW);
+                sequence.disableOverdub(); // important this goes second
+            }
+            else
+            {
+                sequence.enablePlayback();
+            }
+            triggerNote(currDegree, pad, NOTE_OFF);
+            break;
+        case QUANTIZER:
+            break;
+        case QUANTIZER_LOOP:
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -378,13 +428,19 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
 
     switch (action) {
         case NOTE_ON:
-            if (playbackMode == MONO || playbackMode == MONO_LOOP) {
-                setDegreeLed(prevDegree, OFF, true); // set the 'previous' active note led LOW
-                setDegreeLed(degree, ON, true); // new active note HIGH
-            }
             setGate(HIGH);
             currDegree = degree;
             currOctave = octave;
+            if (playbackMode == MONO || playbackMode == MONO_LOOP)
+            {
+                setDegreeLed(prevDegree, OFF, true); // set the 'previous' active note led LOW
+                setDegreeLed(currDegree, ON, true);  // new active note HIGH
+                if (currOctave != prevOctave)
+                {
+                    setOctaveLed(prevOctave, OFF, true);
+                    setOctaveLed(currOctave, ON, true);
+                }
+            }
             output.updateDAC(dacIndex, 0);
             break;
         case NOTE_OFF:
@@ -527,37 +583,6 @@ void TouchChannel::updateOctaveLeds(int octave, bool isPlaybackEvent)
             setOctaveLed(i, OFF, isPlaybackEvent);
         }
     }
-}
-
-/**
- * take a number between 0 - 3 and apply to currOctave
-**/
-void TouchChannel::setOctave(int octave)
-{
-    prevOctave = currOctave;
-    currOctave = octave;
-
-    switch (playbackMode)
-    {
-    case MONO:
-        updateOctaveLeds(currOctave, true);
-        triggerNote(currDegree, currOctave, NOTE_ON);
-        break;
-    case MONO_LOOP:
-        updateOctaveLeds(currOctave, true);
-        triggerNote(currDegree, currOctave, SUSTAIN);
-        break;
-    case QUANTIZER:
-        setActiveOctaves(octave);
-        setActiveDegrees(activeDegrees); // update active degrees thresholds
-        break;
-    case QUANTIZER_LOOP:
-        setActiveOctaves(octave);
-        setActiveDegrees(activeDegrees); // update active degrees thresholds
-        break;
-    }
-
-    prevOctave = currOctave;
 }
 
 /**
@@ -1040,16 +1065,8 @@ void TouchChannel::handleSequence(int position)
                 }
                 else // Handle Sequence Events
                 {
-                    if (sequence.getEventGate(position) == HIGH)
-                    {
-                        sequence.prevEventPos = position;                                    // store position into variable
-                        triggerNote(sequence.getEventDegree(position), currOctave, NOTE_ON); // trigger note ON
-                    }
-                    else // set event.gate LOW
-                    {
-                        sequence.prevEventPos = position;                                     // store position into variable
-                        triggerNote(sequence.getEventDegree(position), currOctave, NOTE_OFF); // trigger note OFF
-                    }
+                    sequence.prevEventPos = position; // store position into variable
+                    triggerNote(sequence.getEventDegree(position), sequence.getEventOctave(position), sequence.getEventGate(position) ? NOTE_ON : NOTE_OFF);
                 }
             }
             break;
