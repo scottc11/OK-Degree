@@ -463,7 +463,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
                     setOctaveLed(currOctave, ON, true);
                 }
             }
-            output.updateDAC(dacIndex, 0);
+            output.setPitch(dacIndex);
             break;
         case NOTE_OFF:
             setGate(LOW);
@@ -473,7 +473,7 @@ void TouchChannel::triggerNote(int degree, int octave, Action action)
             {
                 setDegreeLed(degree, ON, true);      // new active note HIGH
             }
-            output.updateDAC(dacIndex, 0);
+            output.setPitch(dacIndex);
             break;
         case PREV_NOTE:
             /* code */
@@ -1111,9 +1111,6 @@ void TouchChannel::handleSequence(int position)
     // Handle Bend Events (only if the bender is currently idle / inactive)
     if (sequence.containsBendEvents)
     {
-        // somewhere in here, if bend events exists and ratcheting is enabled, then
-        // an idle bend value is going to set the gate LOW (each PPQN). What needs to happen,
-        // is if bend idle && sequence bend is == idle, then don't trigger the gate
         if (bender->isIdle())
         {
             this->handleBend(sequence.getBend(position));
