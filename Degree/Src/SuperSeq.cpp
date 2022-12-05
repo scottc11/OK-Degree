@@ -99,6 +99,26 @@ void SuperSeq::disableRecording() {
     }
 }
 
+void SuperSeq::enablePlayback()
+{
+    playbackEnabled = true;
+}
+
+void SuperSeq::disablePlayback()
+{
+    playbackEnabled = false;
+}
+
+void SuperSeq::enableOverdub()
+{
+    overdub = true;
+}
+
+void SuperSeq::disableOverdub()
+{
+    overdub = false;
+}
+
 /**
  * @brief reset the sequence
 */ 
@@ -202,7 +222,7 @@ void SuperSeq::cutPaste(int prevPosition, int newPosition)
 /**
  * @brief Create new event at position
 */
-void SuperSeq::createTouchEvent(int position, int degree, bool gate)
+void SuperSeq::createTouchEvent(int position, uint8_t degree, uint8_t octave, bool gate)
 {
     if (!containsTouchEvents)
         containsTouchEvents = true;
@@ -214,12 +234,12 @@ void SuperSeq::createTouchEvent(int position, int degree, bool gate)
         {
             // move that events associated gate LOW event one pulse before new events position
             // there is a potential bug if by chance the prev position returns an index associated with an active HIGH event
-            setEventData(this->getPrevPosition(position), events[prevEventPos].getDegree(), false, true);
+            setEventData(this->getPrevPosition(position), events[prevEventPos].getDegree(), events[prevEventPos].getOctave(), false, true);
         }
     }
     
     newEventPos = position;
-    setEventData(newEventPos, degree, gate, true);
+    setEventData(newEventPos, degree, octave, gate, true);
 };
 
 /**
@@ -236,12 +256,13 @@ void SuperSeq::createBendEvent(int position, uint16_t bend)
     events[position].bend = bend;
 }
 
-void SuperSeq::createChordEvent(int position, uint8_t degrees)
+void SuperSeq::createChordEvent(int position, uint8_t degrees, uint8_t octaves)
 {
     if (!containsTouchEvents)
         containsTouchEvents = true;
 
     events[position].activeDegrees = degrees;
+    events[position].data = octaves;
     setEventStatus(position, true);
 };
 
@@ -354,27 +375,6 @@ void SuperSeq::quantize()
     // logger_log("\n");
 }
 
-void SuperSeq::quantizationTest()
-{
-    setLength(8); // set sequence length to two steps, ie. 96 * 2 PPQN
-    setQuantizeAmount(QUANT::EIGTH);
-
-    createTouchEvent(370, 7, true);
-    createTouchEvent(387, 7, false);
-    createTouchEvent(388, 6, true);
-    createTouchEvent(389, 6, false);
-    createTouchEvent(400, 6, false);
-    createTouchEvent(401, 5, true);
-    createTouchEvent(413, 4, true);
-    createTouchEvent(426, 3, true);
-    createTouchEvent(439, 2, true);
-    createTouchEvent(451, 2, false);
-    createTouchEvent(452, 1, true);
-    createTouchEvent(466, 0, true);
-
-    quantize();
-}
-
 void SuperSeq::logSequenceToConsole() {
     logger_log("\nlengthPPQN: ");
     logger_log(lengthPPQN);
@@ -397,23 +397,14 @@ void SuperSeq::logSequenceToConsole() {
 }
 
 /**
- * @brief contruct an 8-bit value which holds the degree index, gate state, and status of a sequence event.
+ * @brief contruct an 8-bit value which holds the degree index, octave, gate state, and status of a sequence event.
  *
- * @param degree the degree index
+ * @param degree the degree index (0..7)
+ * @param octave the octave (0..3)
  * @param gate the state of the gate output (high or low)
  * @param status the status of the event
- * @return uint8_t
  */
-uint8_t SuperSeq::constructEventData(uint8_t degree, bool gate, bool status)
-{
-    uint8_t data = 0x00;
-    data = setIndexBits(degree, data);
-    data = setGateBits(gate, data);
-    data = setStatusBits(status, data);
-    return data;
-}
-
-void SuperSeq::setEventData(int position, uint8_t degree, bool gate, bool status)
+void SuperSeq::setEventData(int position, uint8_t degree, uint8_t octave, bool gate, bool status)
 {
     if (gate == LOW) // avoid overwriting any active HIGH event with a active LOW event
     {
@@ -422,12 +413,22 @@ void SuperSeq::setEventData(int position, uint8_t degree, bool gate, bool status
             return;
         }
     }
-    events[position].data = constructEventData(degree, gate, status);
+    uint8_t data = 0b00000000;
+    data = setIndexBits(degree, data);
+    data = setGateBits(gate, data);
+    data = setStatusBits(status, data);
+    data = setOctaveBits(octave, data);
+    events[position].data = data;
 }
 
 uint8_t SuperSeq::getEventDegree(int position)
 {
-    return readDegreeBits(events[position].data);
+    return events[position].getDegree();
+}
+
+uint8_t SuperSeq::getEventOctave(int position)
+{
+    return events[position].getOctave();
 }
 
 uint8_t SuperSeq::getActiveDegrees(int position)
@@ -435,14 +436,19 @@ uint8_t SuperSeq::getActiveDegrees(int position)
     return events[position].activeDegrees;
 }
 
+uint8_t SuperSeq::getActiveOctaves(int position)
+{
+    return events[position].getActiveOctaves();
+}
+
 bool SuperSeq::getEventGate(int position)
 {
-    return readGateBits(events[position].data);
+    return events[position].getGate();
 }
 
 bool SuperSeq::getEventStatus(int position)
 {
-    return readStatusBits(events[position].data);
+    return events[position].getStatus();
 }
 
 void SuperSeq::setEventStatus(int position, bool status)
@@ -469,19 +475,9 @@ uint8_t SuperSeq::setIndexBits(uint8_t degree, uint8_t byte)
     return byte | degree;
 }
 
-uint8_t SuperSeq::readDegreeBits(uint8_t byte)
-{
-    return byte & SEQ_EVENT_INDEX_BIT_MASK;
-}
-
 uint8_t SuperSeq::setGateBits(bool state, uint8_t byte)
 {
     return state ? bitwise_set_bit(byte, SEQ_EVENT_GATE_BIT) : bitwise_clear_bit(byte, SEQ_EVENT_GATE_BIT);
-}
-
-uint8_t SuperSeq::readGateBits(uint8_t byte)
-{
-    return bitwise_read_bit(byte, SEQ_EVENT_GATE_BIT);
 }
 
 uint8_t SuperSeq::setStatusBits(bool status, uint8_t byte)
@@ -489,7 +485,13 @@ uint8_t SuperSeq::setStatusBits(bool status, uint8_t byte)
     return status ? bitwise_set_bit(byte, SEQ_EVENT_STATUS_BIT) : bitwise_clear_bit(byte, SEQ_EVENT_STATUS_BIT);
 }
 
-uint8_t SuperSeq::readStatusBits(uint8_t byte)
+uint8_t SuperSeq::setOctaveBits(uint8_t octave, uint8_t byte)
 {
-    return bitwise_read_bit(byte, SEQ_EVENT_STATUS_BIT);
+    octave = octave << 6;     // shift octave value from bits 0 and 1 to bits 7 and 8
+    byte = byte & 0b00111111; // clear bits 7 and 8
+    return byte | octave;     // set bits 7 and 8:
+}
+
+uint8_t SuperSeq::setActiveOctaveBits(uint8_t octaves) {
+    return octaves;
 }

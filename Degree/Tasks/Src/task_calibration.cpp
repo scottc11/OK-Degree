@@ -22,7 +22,6 @@ void taskObtainSignalFrequency(void *params)
     
     // thStartCalibration = xTaskGetCurrentTaskHandle();
 
-    uint16_t sample;
     float vcoFrequency = 0;          // the calculated frequency sample
     int frequencySampleCounter = 0;  // index for storing new frequency sample into freqSamples array
     float avgFrequencySum = 0;       // the sum of all new frequency samples (for calculating a running average afterwards)
@@ -47,7 +46,6 @@ void taskObtainSignalFrequency(void *params)
     while (1)
     {
         xSemaphoreTake(sem_obtain_freq, portMAX_DELAY);
-        xQueueReceive(channel->adc.queue.handle, &sample, portMAX_DELAY);
         
         uint16_t curr_adc_sample = channel->adc.read_u16(); // obtain the sample from DMA buffer
         

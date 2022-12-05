@@ -133,6 +133,10 @@ void task_sequence_handler(void *params)
             recordDisarm = true;
             break;
 
+        case SEQ::TOGGLE_MODE:
+            ctrl->channels[channel]->toggleMode();
+            break;
+
         case SEQ::SET_LENGTH:
             ctrl->channels[channel]->updateSequenceLength(data);
             break;

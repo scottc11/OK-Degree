@@ -18,6 +18,7 @@ enum class SEQ
     RECORD_DISABLE,
     RECORD_ARM,
     RECORD_DISARM,
+    TOGGLE_MODE,
     SET_LENGTH,
     QUANTIZE,
     CORRECT,

@@ -20,7 +20,6 @@ public:
 
     int index;
 
-    okQueue<uint16_t, 1> queue;
     okSemaphore denoisingSemaphore;
     okSemaphore sampleSemaphore;
     uint16_t idleNoiseThreshold;               // how much noise an idle input signal contains
