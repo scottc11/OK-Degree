@@ -282,7 +282,7 @@ void GlobalControl::handleButtonPress(int pad)
         {
             if (touchPads->padIsTouched(i, currTouched))
             {
-                channels[i]->toggleMode();
+                dispatch_sequencer_event(CHAN(i), SEQ::TOGGLE_MODE, 0);
             }
         }
         break;

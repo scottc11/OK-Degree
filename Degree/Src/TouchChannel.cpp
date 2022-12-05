@@ -164,6 +164,7 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
     setLED(CHANNEL_REC_LED, OFF, false);
     setLED(CHANNEL_QUANT_LED, OFF, false);
     sequence.playbackEnabled = false;
+    display->clear(channelIndex);
 
     switch (playbackMode)
     {
@@ -197,11 +198,18 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
 
 /**
  * TOGGLE MODE
- * 
- * still needs to be written to handle 3-stage toggle switch.
-**/
+ * @note if bend events were recorded, but no touch events, then we actually want to 
+ * remain in sequencer playback, but toggle to the other loop mode
+ **/
 void TouchChannel::toggleMode()
 {
+    // when exiting either of these modes, delete touch sequence
+    if (playbackMode == MONO_LOOP || playbackMode == QUANTIZER_LOOP) {
+        if (sequence.containsTouchEvents) {
+            sequence.clearAllTouchEvents();
+        }
+    }
+
     if (playbackMode == MONO || playbackMode == MONO_LOOP)
     {
         if (sequence.containsBendEvents) {

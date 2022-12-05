@@ -15,6 +15,7 @@ enum class SEQ
     CLEAR_BEND,
     RECORD_ENABLE,
     RECORD_DISABLE,
+    TOGGLE_MODE,
     SET_LENGTH,
     QUANTIZE,
     CORRECT,
