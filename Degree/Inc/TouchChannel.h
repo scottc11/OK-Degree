@@ -115,7 +115,7 @@ namespace DEGREE {
             currOctave = 0;
             
             activeDegrees = 0xFF;
-            currActiveOctaves = 0xF;
+            activeOctaves = 0xF;
             numActiveDegrees = DEGREE_COUNT;
             numActiveOctaves = OCTAVE_COUNT;
         };
@@ -155,8 +155,7 @@ namespace DEGREE {
 
         // Quantiser members
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
-        uint8_t currActiveOctaves;         // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
-        uint8_t prevActiveOctaves;         // 4-bits to represent the previous octaves external CV will get mapped to (active = 1, inactive= 0)
+        uint8_t activeOctaves;         // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
         int numActiveDegrees;              // number of degrees which are active (to quantize voltage input)
         int numActiveOctaves;              // number of active octaves for mapping CV to
         int activeDegreeLimit;             // the max number of degrees allowed to be enabled at one time.

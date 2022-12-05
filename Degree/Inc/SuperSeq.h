@@ -25,6 +25,7 @@ typedef struct SequenceNode
     uint8_t getDegree() { return data & SEQ_EVENT_INDEX_BIT_MASK; }
     bool getGate() { return bitwise_read_bit(data, SEQ_EVENT_GATE_BIT); }
     uint8_t getOctave() { return (data & SEQ_EVENT_OCTAVE_BIT_MASK) >> 6; }
+    uint8_t getActiveOctaves() { return data; }
 } SequenceNode;
 
 class SuperSeq {
@@ -72,7 +73,7 @@ public:
 
     void createTouchEvent(int position, uint8_t degree, uint8_t octave, bool gate);
     void createBendEvent(int position, uint16_t bend);
-    void createChordEvent(int position, uint8_t notes);
+    void createChordEvent(int position, uint8_t degrees, uint8_t octaves);
     
     void setLength(int steps);
     int getLength();
@@ -101,6 +102,7 @@ public:
     uint8_t getEventDegree(int position);
     uint8_t getEventOctave(int position);
     uint8_t getActiveDegrees(int position);
+    uint8_t getActiveOctaves(int position);
     bool getEventGate(int position);
     bool getEventStatus(int position);
     bool eventsAreAssociated(int pos1, int pos2);
@@ -112,6 +114,7 @@ public:
     uint8_t setGateBits(bool state, uint8_t byte);
     uint8_t setStatusBits(bool status, uint8_t byte);
     uint8_t setOctaveBits(uint8_t octave, uint8_t byte);
+    uint8_t setActiveOctaveBits(uint8_t octaves);
 
     void logSequenceToConsole();
 

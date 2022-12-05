@@ -313,7 +313,10 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
                 // every touch detected, take a snapshot of all active degree values and apply them to the sequence
                 setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
                 if (sequence.recordEnabled) {
-                    sequence.createChordEvent(sequence.currPosition, activeDegrees);
+                    sequence.enableOverdub();
+                    sequence.createChordEvent(sequence.currPosition, activeDegrees, activeOctaves);
+                } else {
+                    sequence.disablePlayback();
                 }
                 break;
             default:
@@ -347,6 +350,13 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
         case QUANTIZER_LOOP:
             setActiveOctaves(pad);
             setActiveDegrees(activeDegrees); // update active degrees thresholds
+            if (sequence.recordEnabled)
+            {
+                sequence.enableOverdub();
+                sequence.createChordEvent(sequence.currPosition, activeDegrees, activeOctaves);
+            } else {
+                sequence.disablePlayback();
+            }
             break;
         }
     }
@@ -377,6 +387,8 @@ void TouchChannel::handleReleasePlaybackEvent(uint8_t pad)
         case QUANTIZER:
             break;
         case QUANTIZER_LOOP:
+            sequence.disableOverdub();
+            sequence.enablePlayback();
             break;
         default:
             break;
@@ -406,6 +418,8 @@ void TouchChannel::handleReleasePlaybackEvent(uint8_t pad)
         case QUANTIZER:
             break;
         case QUANTIZER_LOOP:
+            sequence.disableOverdub();
+            sequence.enablePlayback();
             break;
         default:
             break;
@@ -870,7 +884,7 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
 void TouchChannel::initQuantizer()
 {
     activeDegrees = 0xFF;
-    currActiveOctaves = 0xF;
+    activeOctaves = 0xF;
     numActiveDegrees = DEGREE_COUNT;
     numActiveOctaves = OCTAVE_COUNT;
 }
@@ -930,7 +944,7 @@ void TouchChannel::handleCVInput()
                 setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK_ON, true);
 
                 // re-DIM previous Octave LED
-                if (bitwise_read_bit(currActiveOctaves, prevOctave))
+                if (bitwise_read_bit(activeOctaves, prevOctave))
                 {
                     setOctaveLed(prevOctave, LedState::BLINK_OFF, true);
                     setOctaveLed(prevOctave, LedState::DIM_LOW, true);
@@ -976,7 +990,7 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
     numActiveOctaves = 0;
     for (int i = 0; i < OCTAVE_COUNT; i++)
     {
-        if (bitwise_read_bit(currActiveOctaves, i))
+        if (bitwise_read_bit(activeOctaves, i))
         {
             activeOctaveValues[numActiveOctaves].octave = i;
             numActiveOctaves += 1;
@@ -988,7 +1002,6 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
             setOctaveLed(i, OFF, false);
         }
     }
-    prevActiveOctaves = currActiveOctaves;
 
     int octaveThreshold = CV_MAX / numActiveOctaves;        // divide max ADC value by num octaves
     int min_threshold = octaveThreshold / numActiveDegrees; // then numActiveDegrees
@@ -1007,13 +1020,13 @@ void TouchChannel::setActiveDegrees(uint8_t degrees)
 }
 
 /**
- * @brief take the newly touched octave, and either add it or remove it from the currActiveOctaves list
+ * @brief take the newly touched octave, and either add it or remove it from the activeOctaves list
 */
 void TouchChannel::setActiveOctaves(int octave)
 {
-    if (bitwise_flip_bit(currActiveOctaves, octave) != 0) // one octave must always remain active.
+    if (bitwise_flip_bit(activeOctaves, octave) != 0) // one octave must always remain active.
     {
-        currActiveOctaves = bitwise_flip_bit(currActiveOctaves, octave);
+        activeOctaves = bitwise_flip_bit(activeOctaves, octave);
     }
 }
 
@@ -1079,6 +1092,7 @@ void TouchChannel::handleSequence(int position)
                 }
                 else
                 {
+                    activeOctaves = sequence.getActiveOctaves(position);
                     setActiveDegrees(sequence.getActiveDegrees(position));
                 }
             }

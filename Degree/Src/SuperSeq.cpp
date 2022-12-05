@@ -278,12 +278,13 @@ void SuperSeq::createBendEvent(int position, uint16_t bend)
     events[position].bend = bend;
 }
 
-void SuperSeq::createChordEvent(int position, uint8_t degrees)
+void SuperSeq::createChordEvent(int position, uint8_t degrees, uint8_t octaves)
 {
     if (!containsTouchEvents)
         containsTouchEvents = true;
 
     events[position].activeDegrees = degrees;
+    events[position].data = octaves;
     setEventStatus(position, true);
 };
 
@@ -452,6 +453,11 @@ uint8_t SuperSeq::getActiveDegrees(int position)
     return events[position].activeDegrees;
 }
 
+uint8_t SuperSeq::getActiveOctaves(int position)
+{
+    return events[position].getActiveOctaves();
+}
+
 bool SuperSeq::getEventGate(int position)
 {
     return events[position].getGate();
@@ -501,4 +507,8 @@ uint8_t SuperSeq::setOctaveBits(uint8_t octave, uint8_t byte)
     octave = octave << 6;     // shift octave value from bits 0 and 1 to bits 7 and 8
     byte = byte & 0b00111111; // clear bits 7 and 8
     return byte | octave;     // set bits 7 and 8:
+}
+
+uint8_t SuperSeq::setActiveOctaveBits(uint8_t octaves) {
+    return octaves;
 }
