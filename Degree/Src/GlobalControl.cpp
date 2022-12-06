@@ -69,6 +69,7 @@ void GlobalControl::init() {
 
     // initialize tempo
     clock->init();
+    clock->attachStepCallback(callback(this, &GlobalControl::handleStepCallback));
     clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
     clock->attachBarResetCallback(callback(this, &GlobalControl::handleBarReset));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
@@ -676,6 +677,16 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
 void GlobalControl::resetSequencer(uint8_t pulse)
 {
     dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::CORRECT, 0);
+}
+
+/**
+ * @brief triggers in ISR everytime clock progresses by one step
+ * 
+ * @param step 
+ */
+void GlobalControl::handleStepCallback(uint16_t step)
+{
+    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::QUARTER_NOTE_OVERFLOW, 0);
 }
 
 /**

@@ -16,6 +16,7 @@ void task_sequence_handler(void *params)
     uint32_t event = 0x0;
     bool recordArm = false;    // flag used to enable recording once X number of steps have passed
     bool recordDisarm = false; // flag used to disable recording once X number of steps have passed
+    bool resetArmed = false;
 
     while (1)
     {
@@ -64,10 +65,15 @@ void task_sequence_handler(void *params)
             }
             break;
 
+        case SEQ::RESET_ARM:
+            resetArmed = true;
+            break;
+
         // time this so that it triggers:
         //  if pressed 12 PPQN before beat 1, wait to reset once beat 1 happens
         //  if < 12 ppqn after beat 1, reset immediately
         case SEQ::RESET:
+            resetArmed = false; // nyi
             ctrl->clock->reset();
             if (channel == CHAN::ALL)
             {
@@ -113,6 +119,12 @@ void task_sequence_handler(void *params)
             } else if (recordDisarm) {
                 recordDisarm = false;
                 dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
+            }
+            break;
+        
+        case SEQ::QUARTER_NOTE_OVERFLOW:
+            if (resetArmed) {
+                dispatch_sequencer_event(CHAN::ALL, SEQ::RESET, 0);
             }
             break;
 

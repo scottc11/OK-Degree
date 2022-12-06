@@ -39,6 +39,7 @@ public:
     Callback<void()> barResetCallback;       // executes when clock.step exceeds the set time signature (ie. one bar)
     Callback<void()> input_capture_callback; // this callback gets executed on the rising edge of an external input signal
     Callback<void(uint8_t pulse)> ppqnCallback; // this callback gets executed at a rate equal to input capture / PPQN. It passes the current tick values as arguments
+    Callback<void(uint16_t step)> stepCallback; // executes every step
     Callback<void(uint8_t pulse)> resetCallback;
     Callback<void()> overflowCallback;       // callback executes when a full step completes
 
@@ -69,6 +70,9 @@ public:
     // Callback Setters
     void attachInputCaptureCallback(Callback<void()> func);
     void attachPPQNCallback(Callback<void(uint8_t pulse)> func);
+    void attachStepCallback(Callback<void(uint16_t step)> func) {
+        stepCallback = func;
+    }
     void attachResetCallback(Callback<void(uint8_t pulse)> func);
     void attachBarResetCallback(Callback<void()> func);
 

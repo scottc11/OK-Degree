@@ -195,10 +195,10 @@ void SuperClock::handleOverflowCallback()
         ppqnCallback(pulse); // when clock inits, this ensures the 0ith pulse will get handled
 
     // by checking this first, you have the chance to reset any sequences prior to executing their 0ith pulse
-    // if (pulse == 0) {
-    //     if (resetCallback)
-    //         resetCallback();
-    // }
+    if (pulse == 0) {
+        if (stepCallback)
+            stepCallback(step);
+    }
 
     if (pulse < PPQN - 1) {
         pulse++;
