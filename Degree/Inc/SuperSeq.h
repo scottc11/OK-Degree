@@ -2,6 +2,7 @@
 
 #include "main.h"
 #include "Bender.h"
+#include "Callback.h"
 #include "ArrayMethods.h"
 #include "Quantization.h"
 
@@ -37,6 +38,7 @@ public:
 
     Bender *bender;       // you need the instance of a bender for determing its idle value when clearing / initializing bender events
     QUANT quantizeAmount;
+    Callback<void()> recordOverflowCallback;
 
     int length;              // how many steps the sequence contains
     int lengthPPQN;          // how many PPQN the sequence contains
@@ -122,6 +124,10 @@ public:
     uint8_t setActiveOctaveBits(uint8_t octaves);
 
     void logSequenceToConsole();
+
+    void attachRecordOverflowCallback(Callback<void()> func) {
+        recordOverflowCallback = func;
+    }
 
 private:
     SequenceNode events[MAX_SEQ_LENGTH_PPQN];

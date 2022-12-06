@@ -64,6 +64,9 @@ void task_sequence_handler(void *params)
             }
             break;
 
+        // time this so that it triggers:
+        //  if pressed 12 PPQN before beat 1, wait to reset once beat 1 happens
+        //  if < 12 ppqn after beat 1, reset immediately
         case SEQ::RESET:
             ctrl->clock->reset();
             if (channel == CHAN::ALL)
@@ -81,9 +84,11 @@ void task_sequence_handler(void *params)
                 for (int i = 0; i < CHANNEL_COUNT; i++)
                 {
                     ctrl->channels[i]->sequence.clearAllTouchEvents();
+                    ctrl->channels[i]->setGate(0);
                 }
             } else {
                 ctrl->channels[channel]->sequence.clearAllTouchEvents();
+                ctrl->channels[channel]->setGate(0);
             }
             break;
 
@@ -131,6 +136,11 @@ void task_sequence_handler(void *params)
         case SEQ::RECORD_DISARM:
             recordArm = false;
             recordDisarm = true;
+            break;
+
+        case SEQ::RECORD_OVERFLOW:
+            if (ctrl->channels[channel]->sequence.containsEvents())
+                ctrl->channels[channel]->drawSequenceToDisplay(true);
             break;
 
         case SEQ::TOGGLE_MODE:

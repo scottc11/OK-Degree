@@ -34,6 +34,7 @@ void TouchChannel::init()
     bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
 
     sequence.init(); // really important sequencer initializes after the bender gets initialized
+    sequence.attachRecordOverflowCallback(callback(this, &TouchChannel::handleRecordOverflow));
 
     // initialize channel touch pads
     touchPads->init();
@@ -1114,6 +1115,11 @@ void TouchChannel::handleSequence(int position)
     }
 }
 
+void TouchChannel::handleRecordOverflow()
+{
+    dispatch_sequencer_event(CHAN(channelIndex), SEQ::RECORD_OVERFLOW, 0);
+}
+
 /**
  * @brief reset the sequence
  * @todo you should probably get the currently queued event, see if it has been triggered yet, and disable it if it has been triggered
@@ -1159,7 +1165,7 @@ TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm, bool blink)
 void TouchChannel::drawSequenceToDisplay(bool blink)
 {
     int counter = 0;
-    while (counter < sequence.progress)
+    while (counter <= sequence.progress)
     {
         display->setChannelLED(channelIndex, DISPLAY_SPIRAL_LED_MAP[counter], SEQ_LED_PROGRESS_PWM_MAP[counter], blink);
         counter++;
@@ -1177,21 +1183,17 @@ void TouchChannel::stepSequenceLED()
 
     if (sequence.currPosition % sequence.progressDiviser == 0) { // check if this ppqn should advance the LEDs
         sequence.setProgress();
-        display->setChannelLED(channelIndex, DISPLAY_SPIRAL_LED_MAP[sequence.progress], SEQ_LED_PROGRESS_PWM_MAP[sequence.progress], sequence.recordEnabled);
+        display->setChannelLED(
+            channelIndex,
+            DISPLAY_SPIRAL_LED_MAP[sequence.progress],
+            SEQ_LED_PROGRESS_PWM_MAP[sequence.progress],
+            sequence.recordEnabled);
     }
 }
 
 void TouchChannel::enableSequenceRecording()
 {
     sequence.enableRecording();
-    display->enableBlink();
-    
-    // if no sequence exists, light all 16 seq leds and flash them
-    if (!sequence.containsEvents()) {
-        display->fill(this->channelIndex, 20, true);
-    } else {
-        drawSequenceToDisplay(sequence.recordEnabled);
-    }
 
     if (playbackMode == MONO)
     {
@@ -1200,6 +1202,18 @@ void TouchChannel::enableSequenceRecording()
     else if (playbackMode == QUANTIZER)
     {
         setPlaybackMode(QUANTIZER_LOOP);
+    }
+
+    display->enableBlink();
+
+    // if no sequence exists, light all 16 seq leds and flash them
+    if (!sequence.containsEvents())
+    {
+        display->fill(this->channelIndex, 20, true);
+    }
+    else
+    {
+        drawSequenceToDisplay(sequence.recordEnabled);
     }
 }
 

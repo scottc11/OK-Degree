@@ -204,6 +204,7 @@ namespace DEGREE {
 
         // Sequencer methods
         void handleSequence(int position);
+        void handleRecordOverflow();
         void resetSequence();
         void updateSequenceLength(uint8_t steps);
         void setSequenceLED(uint8_t step, uint8_t pwm, bool blink);

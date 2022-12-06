@@ -60,12 +60,16 @@ void SuperSeq::advance()
     {
         if (recordEnabled && adaptiveLength)
         {
-            if (currStep >= MAX_SEQ_LENGTH) // disable adaptive length, set seq length to max
+            // disable adaptive length, set seq length to max, and enable overdub
+            if (currStep >= MAX_SEQ_LENGTH)
             {
                 adaptiveLength = false;
                 this->setLength(MAX_SEQ_LENGTH);
                 currPosition = 0;
                 currStep = 0;
+                overwriteExistingEvents = true; // enable overdub
+                if (recordOverflowCallback)
+                    recordOverflowCallback();
             } else {
                 // do nothing, let things keep counting upwards
             }
