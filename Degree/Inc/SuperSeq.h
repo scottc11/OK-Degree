@@ -11,6 +11,7 @@
 #define SEQ_EVENT_GATE_BIT 4
 #define SEQ_EVENT_INDEX_BIT_MASK 0b00001111
 #define SEQ_EVENT_OCTAVE_BIT_MASK 0b11000000
+#define SEQ_EVENT_ACTIVE_OCTAVES_BIT_MASK 0b00001111
 
 #define SEQ_PROGRESS_MAX 15 // "15"
 #define SEQ_PROGRESS_MIN 0 // "0"
@@ -25,6 +26,7 @@ typedef struct SequenceNode
     bool getGate() { return bitwise_read_bit(data, SEQ_EVENT_GATE_BIT); }
     uint8_t getOctave() { return (data & SEQ_EVENT_OCTAVE_BIT_MASK) >> 6; }
     uint8_t getActiveOctaves() { return data; }
+    // void setActiveOctaves(uint8_t octaves) { data = data}
 } SequenceNode;
 
 class SuperSeq {
@@ -63,6 +65,9 @@ public:
     bool containsTouchEvents;// flag indicating if a sequence has any touch events
     bool containsBendEvents; // flag indicating if a sequence has any bend events
 
+    static bool recordArmed;    // when true, recording will be enabled the next time bar overflows
+    static bool recordDisarmed; // when true, recording will be disabled the next time bar overflows
+
     void init();
     void reset();
     void resetStep();
@@ -81,9 +86,6 @@ public:
     void createChordEvent(int position, uint8_t degrees, uint8_t octaves);
     
     void setLength(int steps);
-    int getLength();
-    int getLengthPPQN();
-
     void setProgress();
 
     int getNextPosition(int position);

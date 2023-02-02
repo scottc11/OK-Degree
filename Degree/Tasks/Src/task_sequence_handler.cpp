@@ -14,8 +14,6 @@ void task_sequence_handler(void *params)
     sequencer_task_handle = xTaskGetCurrentTaskHandle();
     sequencer_queue = xQueueCreate(96, sizeof(uint32_t));
     uint32_t event = 0x0;
-    bool recordArm = false;    // flag used to enable recording once X number of steps have passed
-    bool recordDisarm = false; // flag used to disable recording once X number of steps have passed
     bool resetArmed = false;
 
     while (1)
@@ -29,7 +27,7 @@ void task_sequence_handler(void *params)
         switch (action)
         {
         case SEQ::ADVANCE:
-            if (recordArm || recordDisarm) {
+            if (SuperSeq::recordArmed || SuperSeq::recordDisarmed) {
                 if (data % 24 == 0) { // data in this case is the current pulse
                     ctrl->recLED.toggle();
                 }
@@ -113,11 +111,11 @@ void task_sequence_handler(void *params)
             break;
 
         case SEQ::BAR_RESET:
-            if (recordArm) {
-                recordArm = false;
+            if (SuperSeq::recordArmed) {
+                SuperSeq::recordArmed = false;
                 dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
-            } else if (recordDisarm) {
-                recordDisarm = false;
+            } else if (SuperSeq::recordDisarmed) {
+                SuperSeq::recordDisarmed = false;
                 dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
             }
             break;
@@ -141,13 +139,13 @@ void task_sequence_handler(void *params)
             break;
             
         case SEQ::RECORD_ARM:
-            recordArm = true;
-            recordDisarm = false;
+            SuperSeq::recordDisarmed = false;
+            SuperSeq::recordArmed = true;
             break;
 
         case SEQ::RECORD_DISARM:
-            recordArm = false;
-            recordDisarm = true;
+            SuperSeq::recordArmed = false;
+            SuperSeq::recordDisarmed = true;
             break;
 
         case SEQ::RECORD_OVERFLOW:

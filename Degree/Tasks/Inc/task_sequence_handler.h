@@ -3,6 +3,7 @@
 #include "main.h"
 #include "logger.h"
 #include "GlobalControl.h"
+#include "SuperSeq.h"
 
 using namespace DEGREE;
 

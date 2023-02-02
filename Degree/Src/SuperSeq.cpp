@@ -1,5 +1,8 @@
 #include "SuperSeq.h"
 
+bool SuperSeq::recordArmed = false;
+bool SuperSeq::recordDisarmed = false;
+
 void SuperSeq::init()
 {
     this->clearAllEvents();
@@ -265,8 +268,9 @@ void SuperSeq::createChordEvent(int position, uint8_t degrees, uint8_t octaves)
     if (!containsTouchEvents)
         containsTouchEvents = true;
 
+    newEventPos = position;
     events[position].activeDegrees = degrees;
-    events[position].data = octaves;
+    events[position].data = octaves; // this
     setEventStatus(position, true);
 };
 

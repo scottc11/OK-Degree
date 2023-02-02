@@ -68,6 +68,7 @@
         "forward_list": "cpp",
         "list": "cpp",
         "condition_variable": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "ranges": "cpp"
     }
 }

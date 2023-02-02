@@ -297,6 +297,7 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
         switch (playbackMode) {
             case MONO:
                 triggerNote(pad, currOctave, NOTE_ON);
+                handlePreRecordEvents();
                 break;
             case MONO_LOOP:
                 // create a new event
@@ -313,6 +314,7 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
                 break;
             case QUANTIZER:
                 setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
+                handlePreRecordEvents(); // bug is here
                 break;
             case QUANTIZER_LOOP:
                 // every touch detected, take a snapshot of all active degree values and apply them to the sequence
@@ -335,6 +337,7 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
         {
         case MONO:
             triggerNote(currDegree, pad, NOTE_ON);
+            handlePreRecordEvents();
             break;
         case MONO_LOOP:
             if (sequence.recordEnabled)
@@ -351,6 +354,7 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
         case QUANTIZER:
             setActiveOctaves(pad);
             setActiveDegrees(activeDegrees); // update active degrees thresholds
+            handlePreRecordEvents();
             break;
         case QUANTIZER_LOOP:
             setActiveOctaves(pad);
@@ -1090,7 +1094,7 @@ void TouchChannel::handleSequence(int position)
         case QUANTIZER_LOOP:
             if (sequence.getEventStatus(position))
             {
-                if (sequence.overdub)
+                if (sequence.overdub && position != sequence.newEventPos)
                 {
                     sequence.clearTouchAtPosition(position);
                 }
@@ -1204,12 +1208,12 @@ void TouchChannel::enableSequenceRecording()
         setPlaybackMode(QUANTIZER_LOOP);
     }
 
-    display->enableBlink();
+    // display->enableBlink();
 
     // if no sequence exists, light all 16 seq leds and flash them
     if (!sequence.containsEvents())
     {
-        display->fill(this->channelIndex, 20, true);
+        display->fill(this->channelIndex, 20, false);
     }
     else
     {
@@ -1244,6 +1248,33 @@ void TouchChannel::disableSequenceRecording()
         }
         display->clear(channelIndex);
     }
+}
+
+/**
+ * @brief When armed for recording, sudo record touch events leading up to recordEnable and
+ * place them at position 0 of a sequence
+ * ie. the last touch during the last 16th note prior to recording being enabled
+ * 
+ * @param pad 
+ */
+void TouchChannel::handlePreRecordEvents()
+{
+    if (SuperSeq::recordArmed && !sequence.containsEvents()) {
+        if (clock->step == clock->stepsPerBar - 1) {
+            if (clock->pulse > PPQN - PPQN_16th) {
+                switch (playbackMode)
+                {
+                case MONO:
+                    sequence.createTouchEvent(0, currDegree, currOctave, HIGH);
+                    break;
+                case QUANTIZER:
+                    sequence.createChordEvent(0, activeDegrees, activeOctaves);
+                    break;
+                }
+            }
+        }
+    }
+    sequence.containsTouchEvents = false;
 }
 
 void TouchChannel::initializeCalibration() {

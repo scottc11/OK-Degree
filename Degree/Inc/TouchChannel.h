@@ -8,6 +8,7 @@
 #include "Bender.h"
 #include "VoltPerOctave.h"
 #include "SuperSeq.h"
+#include "SuperClock.h"
 #include "Display.h"
 #include "okSemaphore.h"
 #include "task_sequence_handler.h"
@@ -90,6 +91,7 @@ namespace DEGREE {
 
         TouchChannel(
             int _index,
+            SuperClock *clock_ptr,
             Display *display_ptr,
             MPR121 *touchPads_ptr,
             SX1509 *leds,
@@ -102,6 +104,7 @@ namespace DEGREE {
             DigitalOut *global_gate_ptr) : gateOut(gatePin, 0), adc(adc_pin), output(dac, dac_chan, &adc), sequence(_bender)
         {
             channelIndex = _index;
+            clock = clock_ptr;
             display = display_ptr;
             touchPads = touchPads_ptr;
             _leds = leds;
@@ -121,6 +124,7 @@ namespace DEGREE {
         };
 
         int channelIndex;          // an index value used for accessing the odd array
+        SuperClock *clock;
         Display *display;
         MPR121 *touchPads;
         SX1509 *_leds;
@@ -213,6 +217,7 @@ namespace DEGREE {
         void enableSequenceRecording();
         void disableSequenceRecording();
         void handleQuantAmountLEDs();
+        void handlePreRecordEvents();
 
         // Bender methods
         void handleBend(uint16_t value);

@@ -10,7 +10,8 @@
 #define PPQN 96
 #endif
 
-#define PPQN_ERROR (PPQN - (PPQN / 6))
+#define PPQN_8th (PPQN / 2)
+#define PPQN_16th (PPQN / 4)
 
 #ifndef EXT_CLOCK_INPUT
 #define EXT_CLOCK_INPUT PA_3
@@ -29,10 +30,10 @@ class SuperClock {
 public:
 
     int pulse;              // the current PPQN
-    uint8_t step;           // current step. Will never exceed value of timeSignature
+    uint8_t step;           // current step. Will never exceed value of stepsPerBar
     uint16_t ticksPerStep;  // how many TIM2 ticks per one step / quarter note
     uint16_t ticksPerPulse; // how many TIM2 ticks for one PPQN
-    uint8_t timeSignature;  // value represents the number of quarter notes per bar (ie. 3/4, 4/4, 5/4, 6/4, 7/4)
+    uint8_t stepsPerBar;    // value represents the number of quarter notes per bar (ie. 3/4, 4/4, 5/4, 6/4, 7/4)
     bool externalInputMode;
 
     Callback<void()> tickCallback;           // this callback gets executed at a frequency equal to tim1_freq
@@ -52,7 +53,7 @@ public:
         instance = this;
         ticksPerStep = 11129;
         ticksPerPulse = ticksPerStep / PPQN;
-        timeSignature = 4;
+        stepsPerBar = 4;
     };
 
     void init();
