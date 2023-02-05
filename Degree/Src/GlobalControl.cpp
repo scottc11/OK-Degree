@@ -656,8 +656,11 @@ void GlobalControl::advanceSequencer(uint8_t pulse)
         }
     } else if (pulse == 4) {
         tempoLED.write(LOW);
-        freezeLED.write(LOW);
         tempoGate.write(LOW);
+        if (freezeBtn == false)
+        {
+            freezeLED.write(LOW);
+        }
     }
 
     dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::ADVANCE, pulse);
@@ -699,6 +702,8 @@ void GlobalControl::handleBarReset()
 }
 
 void GlobalControl::handleFreeze(bool freeze) {
+    // set freeze variable here, and check in clock callback if freeze is true/false
+    freezeBtn = freeze;
     if (this->gestureFlag)
     {
         for (int i = 0; i < CHANNEL_COUNT; i++)

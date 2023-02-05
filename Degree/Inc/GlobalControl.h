@@ -94,6 +94,7 @@ namespace DEGREE {
         uint16_t currTempoPotValue;
         uint16_t prevTempoPotValue;
 
+        bool freezeBtn;         // state of the freeze button
         bool gestureFlag;
         uint8_t currTouched;
         uint8_t prevTouched;
