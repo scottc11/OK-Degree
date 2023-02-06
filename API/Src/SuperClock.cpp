@@ -27,6 +27,16 @@ void SuperClock::reset()
     this->step = 0;
 }
 
+void SuperClock::setStepsPerBar(int steps) {
+    if (steps < 3) {
+        return;
+    } else if (steps > 7) {
+        return;
+    } else {
+        stepsPerBar = steps;
+    }
+}
+
 /**
  * @brief initialize TIM2 as a slave to TIM1
  * @param prescaler setting to 1 should be best

@@ -44,6 +44,8 @@ public:
 
     int length;              // how many steps the sequence contains
     int lengthPPQN;          // how many PPQN the sequence contains
+    int maxLength;           // the maximum allowable steps in a sequence
+    
     int currStepPosition;    // the number of PPQN that have passed since the last step was advanced
     int currStep;            // current sequence step
     int prevStep;            // the previous step executed in the sequence
@@ -86,6 +88,7 @@ public:
     void createChordEvent(int position, uint8_t degrees, uint8_t octaves);
     
     void setLength(int steps);
+    void setMaxLength(int stepsPerBar);
     void setProgress();
 
     int getNextPosition(int position);
@@ -94,7 +97,7 @@ public:
 
     void advance();
 
-    void enableRecording();
+    void enableRecording(int stepsPerBar);
     void disableRecording();
 
     void enablePlayback();

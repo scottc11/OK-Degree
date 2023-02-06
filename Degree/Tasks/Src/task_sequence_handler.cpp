@@ -161,6 +161,16 @@ void task_sequence_handler(void *params)
             ctrl->channels[channel]->updateSequenceLength(data);
             break;
 
+        case SEQ::INCREMENT_TIME_SIG:
+            ctrl->clock->setStepsPerBar(ctrl->clock->stepsPerBar + 1);
+            ctrl->drawTimeSignatureToDisplay();
+            break;
+
+        case SEQ::DECREMENT_TIME_SIG:
+            ctrl->clock->setStepsPerBar(ctrl->clock->stepsPerBar - 1);
+            ctrl->drawTimeSignatureToDisplay();
+            break;
+
         case SEQ::QUANTIZE:
             if (channel == CHAN::ALL)
             {

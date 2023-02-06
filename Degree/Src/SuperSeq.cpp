@@ -64,10 +64,10 @@ void SuperSeq::advance()
         if (recordEnabled && adaptiveLength)
         {
             // disable adaptive length, set seq length to max, and enable overdub
-            if (currStep >= MAX_SEQ_LENGTH)
+            if (currStep >= maxLength)
             {
                 adaptiveLength = false;
-                this->setLength(MAX_SEQ_LENGTH);
+                this->setLength(maxLength);
                 currPosition = 0;
                 currStep = 0;
                 overwriteExistingEvents = true; // enable overdub
@@ -85,12 +85,13 @@ void SuperSeq::advance()
     }
 }
 
-void SuperSeq::enableRecording() {
+void SuperSeq::enableRecording(int stepsPerBar /*time signature*/) {
     this->recordEnabled = true;
     // if no currently recorded events, enable adaptive length
     if (!this->containsEvents()) {
         this->reset();
         this->setLength(2);
+        this->setMaxLength(stepsPerBar);
         this->adaptiveLength = true;
     } else {
         this->overwriteExistingEvents = true;
@@ -286,6 +287,14 @@ void SuperSeq::setLength(int steps)
         progressDiviser = lengthPPQN / SEQ_PROGRESS_MAX;
     }
 };
+
+void SuperSeq::setMaxLength(int stepsPerBar) {
+    maxLength = (MAX_SEQ_LENGTH / stepsPerBar) * stepsPerBar;
+    if (maxLength > MAX_SEQ_LENGTH)
+    {
+        maxLength = MAX_SEQ_LENGTH;
+    }
+}
 
 void SuperSeq::setProgress() {
     this->progress = this->currPosition / this->progressDiviser;

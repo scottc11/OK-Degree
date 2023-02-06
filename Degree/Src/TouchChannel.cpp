@@ -863,11 +863,11 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
     case TouchChannel::UIMode::UI_SEQUENCE_LENGTH:
         if (state == Bender::BendState::BENDING_UP)
         {
-            dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length + 2);
+            dispatch_sequencer_event((CHAN)channelIndex, SEQ::INCREMENT_TIME_SIG, 0);
         }
         else if (state == Bender::BendState::BENDING_DOWN)
         {
-            dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length - 2);
+            dispatch_sequencer_event((CHAN)channelIndex, SEQ::DECREMENT_TIME_SIG, 0);
         }
         break;
     default:
@@ -1197,7 +1197,7 @@ void TouchChannel::stepSequenceLED()
 
 void TouchChannel::enableSequenceRecording()
 {
-    sequence.enableRecording();
+    sequence.enableRecording(clock->stepsPerBar);
 
     if (playbackMode == MONO)
     {

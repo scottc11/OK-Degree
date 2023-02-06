@@ -402,10 +402,16 @@ void GlobalControl::handleButtonPress(int pad)
         mode = ControlMode::SETTING_SEQUENCE_LENGTH;
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
+            // deactivate any downstream channel interactions with the display,
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_SEQUENCE_LENGTH);
+            
+            // take control of all the benders
             channels[chan]->enableBenderOverride();
-            display->enableBlink();
-            channels[chan]->drawSequenceToDisplay(true);
+            
+            // draw the current clock time signature to the display
+            drawTimeSignatureToDisplay();
+
+            // bender tristate callback will send commands to the rtos
         }
         break;
 
@@ -691,6 +697,20 @@ void GlobalControl::handleStepCallback(uint16_t step)
 {
     dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::QUARTER_NOTE_OVERFLOW, 0);
 }
+
+/**
+ * @brief draw the current clock time signature to the display
+ *
+ */
+void GlobalControl::drawTimeSignatureToDisplay()
+{
+    display->clear();
+    for (int i = 0; i < clock->stepsPerBar; i++)
+    {
+        display->setLED(i, 127, false);
+    }
+}
+
 
 /**
  * @brief function that triggers at the begining of every bar
