@@ -734,13 +734,13 @@ void TouchChannel::handlePitchBend(uint16_t value) {
         if (value < bender->getIdleValue())
         {
             pitchbend = output.calculatePitchBend(value, bender->getMinBend(), bender->getIdleValue());
-            output.setPitchBend(output.maxPitchBend - pitchbend, true); // NOTE: inverted mapping
+            output.setPitchBend(output.maxPitchBend - pitchbend - BENDER_NOISE_THRESHOLD, true); // NOTE: inverted mapping
         }
         // Pitch Bend DOWN
         else if (value > bender->getIdleValue())
         {
             pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
-            output.setPitchBend(pitchbend, false); // value needs to be negative
+            output.setPitchBend(pitchbend - BENDER_NOISE_THRESHOLD, false); // value needs to be negative
         }
     }
 }
