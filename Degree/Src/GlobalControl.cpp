@@ -497,6 +497,32 @@ void GlobalControl::handleButtonRelease(int pad)
     }
 }
 
+bool validateFirmwareVersionMatch() {
+    char *string = FIRMWARE_VERSION;
+    int string_len = strlen(string);
+    
+    if (string_len > FIRMWARE_VERSION_SIZE) {
+        string_len = FIRMWARE_VERSION_SIZE;
+    }
+    
+    // if any of the values in the buffer don't match the respective values in the firmware string array
+    // then there is no version match, and the config settings need to be reset / cleared / not used
+    bool versionMatch;
+    for (int i = 0; i < string_len; i++)
+    {
+        if (SETTINGS_BUFFER[i] == (uint32_t)string[i])
+        {
+            versionMatch = true;
+        }
+        else
+        {
+            versionMatch = false;
+            break;
+        }
+    }
+    return versionMatch;
+}
+
 /**
  * NOTE: Careful with the creation of this buffer, as it is quite large and may push the memory past its limits
 */ 
@@ -505,9 +531,12 @@ void GlobalControl::loadCalibrationDataFromFlash()
     Flash flash;
     flash.read(FLASH_CONFIG_ADDR, (uint32_t *)SETTINGS_BUFFER, SETTINGS_BUFFER_SIZE);
 
-    bool dataIsClean = flash.validate(SETTINGS_BUFFER, 4);
+    bool configDataEmpty = flash.validate(SETTINGS_BUFFER, 4);
+    
+    bool isVersionMatch = validateFirmwareVersionMatch();
 
-    if (dataIsClean)
+    // if no config data or firmware version mismatch, load default configuration
+    if (configDataEmpty || !isVersionMatch)
     {
         // load default 1VO values
         logger_log("\nChannel Settings Source: DEFAULT");
@@ -516,12 +545,12 @@ void GlobalControl::loadCalibrationDataFromFlash()
             channels[chan]->output.resetVoltageMap();
         }
     }
-    else
-    { // if it does, load the data from flash
+    else // load the data from flash
+    {
         logger_log("\nChannel Settings Source: FLASH");
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
-            for (int i = SETTINGS_DAC_1VO; i < DAC_1VO_ARR_SIZE; i++)
+            for (int i = SETTINGS_DAC_1VO; i < DAC_1VO_ARR_SIZE + SETTINGS_DAC_1VO; i++)
             {
                 channels[chan]->output.dacVoltageMap[i] = (uint16_t)getSettingsBufferValue(i, chan);
             }
@@ -547,7 +576,17 @@ void GlobalControl::saveCalibrationDataToFlash()
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
     {
-        for (int i = SETTINGS_DAC_1VO; i < DAC_1VO_ARR_SIZE; i++) // dac array iterrator
+        // copy firmware version into buffer
+        char *string = FIRMWARE_VERSION;
+        int string_len = strlen(string);
+
+        for (int i = 0; i < string_len; i++)
+        {
+            SETTINGS_BUFFER[i] = (uint32_t)string[i];
+        }
+        
+
+        for (int i = SETTINGS_DAC_1VO; i < DAC_1VO_ARR_SIZE + SETTINGS_DAC_1VO; i++) // dac array iterrator
         {
             setSettingsBufferValue(i, chan, channels[chan]->output.dacVoltageMap[i]);
         }
