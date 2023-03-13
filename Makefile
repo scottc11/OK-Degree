@@ -12,7 +12,7 @@
 ######################################
 TARGET = ok-dev-board
 
-FLASH_SIZE = $$((512 * 1024)) # 512 kB
+FLASH_SIZE = $$((256 * 1024)) # 256 kB (Sector 6 and 7 used for config data)
 RAM_SIZE = $$((128 * 1024)) # 128 kB
 
 ######################################
