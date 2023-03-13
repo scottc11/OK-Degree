@@ -37,6 +37,7 @@ public:
         setQuantizeAmount(QUANT::EIGTH);
     };
 
+    SequenceNode events[MAX_SEQ_LENGTH_PPQN];
     Bender *bender;       // you need the instance of a bender for determing its idle value when clearing / initializing bender events
     QUANT quantizeAmount;
 
@@ -99,6 +100,11 @@ public:
 
     void setEventData(int position, uint8_t degree, uint8_t octave, bool gate, bool status);
 
+    uint32_t encodeEventData(int position);
+    void decodeEventData(int position, uint32_t data);
+    void storeSequenceConfigData(uint32_t *arr);
+    void loadSequenceConfigData(uint32_t *arr);
+
     uint8_t getEventDegree(int position);
     uint8_t getEventOctave(int position);
     uint8_t getActiveDegrees(int position);
@@ -117,7 +123,4 @@ public:
     uint8_t setActiveOctaveBits(uint8_t octaves);
 
     void logSequenceToConsole();
-
-private:
-    SequenceNode events[MAX_SEQ_LENGTH_PPQN];
 };

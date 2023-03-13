@@ -83,6 +83,16 @@ HAL_StatusTypeDef Flash::erase(uint32_t address)
     return status;
 }
 
+/**
+ * @brief Write to flash memory
+ * @note flash memory can only be written to by changing its value from a 1 to a 0.
+ * Once a bit in the flash memory is set to 0, it cannot be changed back to 1 without erasing the entire sector.
+ *
+ * @param address flash memory address you wish to write to
+ * @param data pointer to an array containing the data you want to store in flash
+ * @param size size of data array
+ * @return HAL_StatusTypeDef
+ */
 HAL_StatusTypeDef Flash::write(uint32_t address, uint32_t *data, int size)
 {
     HAL_StatusTypeDef status;
@@ -111,7 +121,7 @@ HAL_StatusTypeDef Flash::write(uint32_t address, uint32_t *data, int size)
             flashError = HAL_FLASH_GetError();
         } else {
             size--;
-            address += 4;
+            address += 4; // 1 "word" == 4 bytes
             data++;
         }
     }
@@ -124,7 +134,7 @@ HAL_StatusTypeDef Flash::write(uint32_t address, uint32_t *data, int size)
 }
 
 /**
- * @brief Read data starting at defined address
+ * @brief Read data starting at defined address and load it into a buffer
  * 
  * @param address Address to begin reading from
  * @param rxBuffer The buffer to read data into. Must be of type uint32_t
@@ -139,6 +149,17 @@ void Flash::read(uint32_t address, uint32_t *rxBuffer, int size)
         rxBuffer++;
         size--;
     }
+}
+
+/**
+ * @brief read a single 32-bit word at a specific memory address and return it
+ * 
+ * @param address 
+ * @return uint32_t 
+ */
+uint32_t Flash::read_word(void *address)
+{
+    return *(uint32_t *)address;
 }
 
 /**

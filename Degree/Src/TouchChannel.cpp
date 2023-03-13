@@ -33,8 +33,6 @@ void TouchChannel::init()
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
     bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
 
-    sequence.init(); // really important sequencer initializes after the bender gets initialized
-
     // initialize channel touch pads
     touchPads->init();
     touchPads->attachInterruptCallback(callback(this, &TouchChannel::handleTouchInterrupt));
@@ -42,10 +40,15 @@ void TouchChannel::init()
     touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
     touchPads->enable();
 
-    // you should actually be accessing a global settings buffer 
     display->drawSpiral(channelIndex, true, PWM::PWM_HIGH, 25);
+
+    // flash settings sensitive below
+    if (!sequence.containsEvents()) // don't init if sequence was loaded from flash
+    {
+        sequence.init(); // really important sequencer initializes after the bender gets initialized
+    }    
     setPlaybackMode(playbackMode); // value of playbackMode gets loaded and assigned from flash
-    setBenderMode((BenderMode)currBenderMode); // value of playbackMode gets loaded and assigned from flash
+    setBenderMode((BenderMode)currBenderMode);
     logPeripherals();
 }
 
