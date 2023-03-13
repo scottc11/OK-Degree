@@ -556,10 +556,6 @@ void GlobalControl::loadCalibrationDataFromFlash()
             }
             channels[chan]->bender->setMinBend(getSettingsBufferValue(SETTINGS_BENDER_MIN, chan));
             channels[chan]->bender->setMaxBend(getSettingsBufferValue(SETTINGS_BENDER_MAX, chan));
-            channels[chan]->currBenderMode = getSettingsBufferValue(SETTINGS_BENDER_MODE, chan);
-            channels[chan]->output.setPitchBendRange(getSettingsBufferValue(SETTINGS_PITCH_BEND_RANGE, chan));
-            channels[chan]->sequence.setQuantizeAmount(static_cast<QUANT>(getSettingsBufferValue(SETTINGS_QUANTIZE_AMOUNT, chan)));
-            channels[chan]->sequence.setLength(getSettingsBufferValue(SETTINGS_SEQ_LENGTH, chan));
         }
 
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
@@ -567,8 +563,9 @@ void GlobalControl::loadCalibrationDataFromFlash()
             uint32_t address_offset = FLASH_CHANNEL_BLOCK_SIZE * chan;
             
             // load channel config
-            uint32_t temp = flash.read_word((void *)(FLASH_CHANNEL_CONFIG_ADDR + address_offset));
-            channels[chan]->playbackMode = (TouchChannel::PlaybackMode)temp;
+            uint32_t channel_config[8];
+            flash.read(FLASH_CHANNEL_CONFIG_ADDR + address_offset, channel_config, 8);
+            channels[chan]->loadConfigData(channel_config);
 
             // load sequence data
             uint32_t sequence_config[4];
@@ -611,19 +608,18 @@ void GlobalControl::saveCalibrationDataToFlash()
         {
             SETTINGS_BUFFER[i] = (uint32_t)string[i];
         }
-        
 
+        //------------------------------------------------------------
+        
         for (int i = SETTINGS_DAC_1VO; i < DAC_1VO_ARR_SIZE + SETTINGS_DAC_1VO; i++) // dac array iterrator
         {
             setSettingsBufferValue(i, chan, channels[chan]->output.dacVoltageMap[i]);
         }
         // load max and min Bender calibration data into buffer (two 16bit chars)
-        setSettingsBufferValue(SETTINGS_BENDER_MIN, chan, channels[chan]->bender->adc.getInputMin());
-        setSettingsBufferValue(SETTINGS_BENDER_MAX, chan, channels[chan]->bender->adc.getInputMax());
-        setSettingsBufferValue(SETTINGS_BENDER_MODE, chan, channels[chan]->currBenderMode);
-        setSettingsBufferValue(SETTINGS_PITCH_BEND_RANGE, chan, channels[chan]->output.pbRangeIndex);
-        setSettingsBufferValue(SETTINGS_QUANTIZE_AMOUNT, chan, (uint16_t)channels[chan]->sequence.quantizeAmount);
-        setSettingsBufferValue(SETTINGS_SEQ_LENGTH, chan, channels[chan]->sequence.length);
+        setSettingsBufferValue(SETTINGS_BENDER_MIN, chan, channels[chan]->bender->adc.getInputMin()); // this
+        setSettingsBufferValue(SETTINGS_BENDER_MAX, chan, channels[chan]->bender->adc.getInputMax()); // this
+        
+        //------------------------------------------------------------
     }
     // now load this buffer into flash memory
     Flash flash;
@@ -635,15 +631,15 @@ void GlobalControl::saveCalibrationDataToFlash()
     {
         uint32_t address_offset = FLASH_CHANNEL_BLOCK_SIZE * chan;
 
-        // store channel config (playbackMode)
-        uint32_t channel_config[1];
-        channel_config[0] = (uint32_t)channels[chan]->playbackMode;
-        flash.write(FLASH_CHANNEL_CONFIG_ADDR + address_offset, channel_config, 1);
+        // store channel config
+        uint32_t channel_config[8];
+        channels[chan]->copyConfigData(channel_config);
+        flash.write(FLASH_CHANNEL_CONFIG_ADDR + address_offset, channel_config, 8);
 
-        // store sequence config for each channel
-        uint32_t sequence_config[4];
+        // store sequence config
+        uint32_t sequence_config[8];
         channels[chan]->sequence.storeSequenceConfigData(sequence_config);
-        flash.write(FLASH_SEQUENCE_CONFIG_ADDR + address_offset, sequence_config, 4);
+        flash.write(FLASH_SEQUENCE_CONFIG_ADDR + address_offset, sequence_config, 8);
 
         // if a sequence exists, store that in flash as well
         if (channels[chan]->sequence.containsEvents())

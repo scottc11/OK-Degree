@@ -477,6 +477,7 @@ void SuperSeq::storeSequenceConfigData(uint32_t *arr) {
     arr[1] = this->lengthPPQN;
     arr[2] = this->containsBendEvents;
     arr[3] = this->containsTouchEvents;
+    arr[4] = (uint32_t)this->quantizeAmount;
 }
 
 void SuperSeq::loadSequenceConfigData(uint32_t *arr)
@@ -485,6 +486,7 @@ void SuperSeq::loadSequenceConfigData(uint32_t *arr)
     this->lengthPPQN = (int)arr[1];
     this->containsBendEvents = (bool)arr[2];
     this->containsTouchEvents = (bool)arr[3];
+    this->quantizeAmount = (enum QUANT)arr[4];
 }
 
 uint8_t SuperSeq::getEventDegree(int position)

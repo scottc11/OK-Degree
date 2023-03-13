@@ -1353,3 +1353,15 @@ void TouchChannel::handleQuantAmountLEDs()
         }
     }
 }
+
+void TouchChannel::copyConfigData(uint32_t *arr) {
+    arr[0] = (uint32_t)this->playbackMode;
+    arr[1] = this->currBenderMode;
+    arr[2] = this->output.pbRangeIndex;
+}
+
+void TouchChannel::loadConfigData(uint32_t *arr) {
+    this->playbackMode = (TouchChannel::PlaybackMode)arr[0];
+    this->currBenderMode = arr[1];
+    this->output.setPitchBendRange(arr[2]);
+}

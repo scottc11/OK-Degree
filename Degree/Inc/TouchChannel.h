@@ -228,6 +228,9 @@ namespace DEGREE {
         uint8_t calculateRatchet(uint16_t bend);
         void handleRatchet(int position, uint16_t value);
 
+        void copyConfigData(uint32_t *arr);
+        void loadConfigData(uint32_t *arr);
+        
         void initializeCalibration();
         
         void logPeripherals();
