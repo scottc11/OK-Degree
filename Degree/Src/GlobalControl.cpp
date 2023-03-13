@@ -562,26 +562,32 @@ void GlobalControl::loadCalibrationDataFromFlash()
             channels[chan]->sequence.setLength(getSettingsBufferValue(SETTINGS_SEQ_LENGTH, chan));
         }
 
-        // load channel config
-        uint32_t temp = flash.read_word((void *)FLASH_CHANNEL_CONFIG_ADDR);
-        channels[0]->playbackMode = (TouchChannel::PlaybackMode)temp;
-
-        // load sequence data
-        uint32_t sequence_config[4];
-        flash.read(FLASH_SEQUENCE_CONFIG_ADDR, sequence_config, 4);
-        channels[0]->sequence.loadSequenceConfigData(sequence_config);
-
-        if (channels[0]->sequence.containsEvents())
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
-            // read a single word (4 bytes) into array, then decode it and store in seqeuence event struct
-            int addr = 0;
-            for (int i = 0; i < channels[0]->sequence.lengthPPQN; i++)
+            uint32_t address_offset = FLASH_CHANNEL_BLOCK_SIZE * chan;
+            
+            // load channel config
+            uint32_t temp = flash.read_word((void *)(FLASH_CHANNEL_CONFIG_ADDR + address_offset));
+            channels[chan]->playbackMode = (TouchChannel::PlaybackMode)temp;
+
+            // load sequence data
+            uint32_t sequence_config[4];
+            flash.read(FLASH_SEQUENCE_CONFIG_ADDR + address_offset, sequence_config, 4);
+            channels[chan]->sequence.loadSequenceConfigData(sequence_config);
+
+            if (channels[chan]->sequence.containsEvents())
             {
-                uint32_t event_data = flash.read_word((void *)FLASH_SEQUENCE_DATA_ADDR + addr);
-                channels[0]->sequence.decodeEventData(i, event_data);
-                addr += 4;
+                // read a single word (4 bytes) into array, then decode it and store in seqeuence event struct
+                int addr = 0;
+                for (int i = 0; i < channels[chan]->sequence.lengthPPQN; i++)
+                {
+                    uint32_t event_data = flash.read_word((void *)(FLASH_SEQUENCE_DATA_ADDR + addr + address_offset));
+                    channels[chan]->sequence.decodeEventData(i, event_data);
+                    addr += 4;
+                }
             }
         }
+        
     }
 }
 
@@ -624,32 +630,38 @@ void GlobalControl::saveCalibrationDataToFlash()
     flash.erase(FLASH_CONFIG_ADDR);
     flash.write(FLASH_CONFIG_ADDR, SETTINGS_BUFFER, SETTINGS_BUFFER_SIZE);
 
-    // store channel config (playbackMode)
-    uint32_t channel_config[1];
-    channel_config[0] = (uint32_t)channels[0]->playbackMode;
-    flash.write(FLASH_CHANNEL_CONFIG_ADDR, channel_config, 1);
-
-    // store sequence config for each channel
-    uint32_t sequence_config[4];
-    channels[0]->sequence.storeSequenceConfigData(sequence_config);
-    flash.write(FLASH_SEQUENCE_CONFIG_ADDR, sequence_config, 4);
-    
-    // if a sequence exists, store that in flash as well
-    if (channels[0]->sequence.containsEvents())
+    // save sequence data to flash
+    for (int chan = 0; chan < CHANNEL_COUNT; chan++)
     {
-        // Max sequence size per channel = (32 bits per event / 4 bytes) * MAX_SEQ_LENGTH_PPQN = 12,288 bytes
-        uint16_t flashWrites = channels[0]->sequence.length;
-        uint32_t sequence_data[PPQN];
-        // ensure no RAM overflow by writing to flash in smaller chunks
-        for (int x = 0; x < flashWrites; x++)
+        uint32_t address_offset = FLASH_CHANNEL_BLOCK_SIZE * chan;
+
+        // store channel config (playbackMode)
+        uint32_t channel_config[1];
+        channel_config[0] = (uint32_t)channels[chan]->playbackMode;
+        flash.write(FLASH_CHANNEL_CONFIG_ADDR + address_offset, channel_config, 1);
+
+        // store sequence config for each channel
+        uint32_t sequence_config[4];
+        channels[chan]->sequence.storeSequenceConfigData(sequence_config);
+        flash.write(FLASH_SEQUENCE_CONFIG_ADDR + address_offset, sequence_config, 4);
+
+        // if a sequence exists, store that in flash as well
+        if (channels[chan]->sequence.containsEvents())
         {
-            for (int i = 0; i < PPQN; i++)
+            // Max sequence size per channel = (32 bits per event / 4 bytes) * MAX_SEQ_LENGTH_PPQN = 12,288 bytes
+            uint16_t flashWrites = channels[chan]->sequence.length;
+            uint32_t sequence_data[PPQN];
+            // ensure no RAM overflow by writing to flash in smaller chunks
+            for (int x = 0; x < flashWrites; x++)
             {
-                int pos = (x * PPQN) + i;
-                sequence_data[i] = channels[0]->sequence.encodeEventData(pos); // encode sequence data to be stored in 32-bit chunks
+                for (int i = 0; i < PPQN; i++)
+                {
+                    int pos = (x * PPQN) + i;
+                    sequence_data[i] = channels[chan]->sequence.encodeEventData(pos); // encode sequence data to be stored in 32-bit chunks
+                }
+                uint32_t address = (FLASH_SEQUENCE_DATA_ADDR + (x * 96 * 4)) + address_offset;
+                flash.write(address, sequence_data, PPQN);
             }
-            
-            flash.write(FLASH_SEQUENCE_DATA_ADDR + (x * 96 * 4), sequence_data, PPQN);
         }
     }
 
