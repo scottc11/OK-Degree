@@ -7,6 +7,7 @@ uint32_t SETTINGS_BUFFER[SETTINGS_BUFFER_SIZE];
 void GlobalControl::init() {
     suspend_sequencer_task();
     this->loadCalibrationDataFromFlash();
+    this->loadChannelConfigDataFromFlash();
 
     display->init();
     display->clear();
@@ -337,12 +338,12 @@ void GlobalControl::handleButtonPress(int pad)
         {
             this->handleChannelGesture(callback(this, &GlobalControl::resetCalibration1VO));
         } else {
-            this->resetCalibrationDataToDefault();
+            this->deleteChannelConfigDataFromFlash();
         }
         break;
 
     case Gestures::SETTINGS_SAVE:
-        this->saveCalibrationDataToFlash();
+        this->saveChannelConfigDataToFlash();
         break;
 
     case Gestures::CALIBRATE_1VO:
@@ -561,40 +562,47 @@ void GlobalControl::loadCalibrationDataFromFlash()
             channels[chan]->bender->setMinBend((uint16_t)SETTINGS_BUFFER[0]);
             channels[chan]->bender->setMaxBend((uint16_t)SETTINGS_BUFFER[1]);
         }
+    }
+}
 
-        // load channel config and sequence data
-        configDataEmpty = flash.validate(SETTINGS_BUFFER, 8); // the first 8 words should all equal 0xFFFFFFFF
-        if (!configDataEmpty)                                 // if not empty, load channel config data
+void GlobalControl::loadChannelConfigDataFromFlash()
+{
+    Flash flash;
+    flash.read(FLASH_FIRMWARE_VERSION_ADDR, (uint32_t *)SETTINGS_BUFFER, FLASH_FIRMWARE_VERSION_SIZE);
+
+    bool configDataEmpty = flash.validate(SETTINGS_BUFFER, 8); // the first 8 words should all equal 0xFFFFFFFF
+
+    bool isVersionMatch = validateFirmwareVersionMatch(SETTINGS_BUFFER);
+    
+    // load channel config and sequence data
+    if (!configDataEmpty && isVersionMatch)
+    {
+        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
-            for (int chan = 0; chan < CHANNEL_COUNT; chan++)
+            uint32_t address_offset = FLASH_CHANNEL_BLOCK_SIZE * chan;
+
+            // load channel config
+            uint32_t channel_config[8];
+            flash.read(FLASH_CHANNEL_CONFIG_ADDR + address_offset, channel_config, 8);
+            channels[chan]->loadConfigData(channel_config);
+
+            // load sequence data
+            uint32_t sequence_config[4];
+            flash.read(FLASH_SEQUENCE_CONFIG_ADDR + address_offset, sequence_config, 4);
+            channels[chan]->sequence.loadSequenceConfigData(sequence_config);
+
+            if (channels[chan]->sequence.containsEvents())
             {
-                uint32_t address_offset = FLASH_CHANNEL_BLOCK_SIZE * chan;
-
-                // load channel config
-                uint32_t channel_config[8];
-                flash.read(FLASH_CHANNEL_CONFIG_ADDR + address_offset, channel_config, 8);
-                channels[chan]->loadConfigData(channel_config);
-
-                // load sequence data
-                uint32_t sequence_config[4];
-                flash.read(FLASH_SEQUENCE_CONFIG_ADDR + address_offset, sequence_config, 4);
-                channels[chan]->sequence.loadSequenceConfigData(sequence_config);
-
-                if (channels[chan]->sequence.containsEvents())
+                // read a single word (4 bytes) into array, then decode it and store in seqeuence event struct
+                int addr = 0;
+                for (int i = 0; i < channels[chan]->sequence.lengthPPQN; i++)
                 {
-                    // read a single word (4 bytes) into array, then decode it and store in seqeuence event struct
-                    int addr = 0;
-                    for (int i = 0; i < channels[chan]->sequence.lengthPPQN; i++)
-                    {
-                        uint32_t event_data = flash.read_word((void *)(FLASH_SEQUENCE_DATA_ADDR + addr + address_offset));
-                        channels[chan]->sequence.decodeEventData(i, event_data);
-                        addr += 4;
-                    }
+                    uint32_t event_data = flash.read_word((void *)(FLASH_SEQUENCE_DATA_ADDR + addr + address_offset));
+                    channels[chan]->sequence.decodeEventData(i, event_data);
+                    addr += 4;
                 }
             }
         }
-        
-        
     }
 }
 
@@ -640,7 +648,21 @@ void GlobalControl::saveCalibrationDataToFlash()
         flash.write(FLASH_BENDER_CALIBRATION_ADDR + address_offset, SETTINGS_BUFFER, 2);
     }
 
-    // save sequence data to flash
+    // flash the grid of leds on and off for a sec then exit
+    this->display->flash(3, 300);
+    this->display->clear();
+    logger_log("\nSaved Calibration Data to Flash");
+}
+
+/**
+ * @brief Save channel sequence data and configuration data to flash
+ *
+ */
+void GlobalControl::saveChannelConfigDataToFlash()
+{
+    this->display->fill(PWM::PWM_MID, true);
+
+    Flash flash;
     flash.erase(FLASH_CONFIG_ADDR);
     for (int chan = 0; chan < CHANNEL_COUNT; chan++)
     {
@@ -691,6 +713,29 @@ void GlobalControl::deleteCalibrationDataFromFlash()
 
     Flash flash;
     flash.erase(FLASH_CALIBRATION_ADDR);
+
+    for (int i = 0; i < DISPLAY_COLUMN_COUNT; i++)
+    {
+        int led = DISPLAY_COLUMN_COUNT - 1 - i; // go backwards
+        display->setColumn(led, 30, true);
+        vTaskDelay(50);
+    }
+    display->setScene(SCENE::SEQUENCER);
+    display->redrawScene();
+}
+
+/**
+ * @brief delete / clear all channel config data in flash
+ * 
+ */
+void GlobalControl::deleteChannelConfigDataFromFlash()
+{
+    display->setScene(SCENE::SETTINGS);
+    display->resetScene();
+    display->enableBlink();
+    display->fill(127, true);
+
+    Flash flash;
     flash.erase(FLASH_CONFIG_ADDR);
 
     for (int i = 0; i < DISPLAY_COLUMN_COUNT; i++)

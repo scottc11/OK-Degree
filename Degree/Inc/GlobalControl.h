@@ -128,6 +128,11 @@ namespace DEGREE {
         void loadCalibrationDataFromFlash();
         void saveCalibrationDataToFlash();
         void deleteCalibrationDataFromFlash();
+
+        void loadChannelConfigDataFromFlash();
+        void saveChannelConfigDataToFlash();
+        void deleteChannelConfigDataFromFlash();
+
         void resetCalibrationDataToDefault();
         void resetCalibration1VO(int chan);
 
