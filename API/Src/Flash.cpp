@@ -203,11 +203,19 @@ uint32_t Flash::read_word(void *address)
  */
 bool Flash::validate(uint32_t *data, int size)
 {
-    size = size > 65000 ? 65000 : size; // protect
-    uint32_t validator = 0;
-    for (int i = 0; i < size; i++)
-        validator += (uint16_t)data[i]; // uint16 for overflow
-    return validator == size * 0xFFFF ? true : false;
+    bool dataIsClear = false;
+    for (int i = 0; i < size; i++) {
+        if (data[i] == 0xFFFFFFFF)
+        {
+            dataIsClear = true;
+        }
+        else
+        {
+            dataIsClear = false;
+            break;
+        }
+    }
+    return dataIsClear;
 }
 
 /**

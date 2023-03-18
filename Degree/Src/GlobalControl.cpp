@@ -568,10 +568,11 @@ void GlobalControl::loadCalibrationDataFromFlash()
 void GlobalControl::loadChannelConfigDataFromFlash()
 {
     Flash flash;
+
+    flash.read(FLASH_CONFIG_ADDR, (uint32_t *)SETTINGS_BUFFER, 8);
+    bool configDataEmpty = flash.validate(SETTINGS_BUFFER, 8); // if empty the first 8 words should all equal 0xFFFFFFFF
+
     flash.read(FLASH_FIRMWARE_VERSION_ADDR, (uint32_t *)SETTINGS_BUFFER, FLASH_FIRMWARE_VERSION_SIZE);
-
-    bool configDataEmpty = flash.validate(SETTINGS_BUFFER, 8); // the first 8 words should all equal 0xFFFFFFFF
-
     bool isVersionMatch = validateFirmwareVersionMatch(SETTINGS_BUFFER);
     
     // load channel config and sequence data
