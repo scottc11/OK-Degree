@@ -133,6 +133,38 @@ HAL_StatusTypeDef Flash::write(uint32_t address, uint32_t *data, int size)
     return status;
 }
 
+void Flash::write(uint32_t address, uint32_t data)
+{
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, (uint64_t)data);
+}
+
+/**
+ * @brief Copy contents of a sector in flash into another sector in flash. Requires no buffer
+ * as it copies word by word
+ * 
+ * @param sourceSector sector you wish to copy
+ * @param targetSector sector you wish to store the copy in
+ * @param size how much of the source you want to copy
+ */
+void Flash::copySector(uint32_t sourceSector, uint32_t targetSector, uint32_t size)
+{
+    // Step 1: clear Sector 6
+    this->erase(targetSector);
+
+    // Step 2: copy all data from Sector 7 into Sector 6
+    this->unlock(sourceSector);
+    uint32_t read_address = sourceSector;
+    uint32_t write_address = targetSector;
+    while (read_address < (sourceSector + size))
+    {
+        uint32_t word = this->read_word((void *)read_address);
+        this->write(write_address, word);
+        read_address += 4;
+        write_address += 4;
+    }
+    this->lock();
+}
+
 /**
  * @brief Read data starting at defined address and load it into a buffer
  * 

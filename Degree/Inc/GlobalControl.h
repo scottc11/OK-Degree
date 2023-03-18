@@ -130,9 +130,6 @@ namespace DEGREE {
         void deleteCalibrationDataFromFlash();
         void resetCalibrationDataToDefault();
         void resetCalibration1VO(int chan);
-        int calculatePositionInSettingsBuffer(int data_index, int channel_index);
-        int getSettingsBufferValue(int position, int channel);
-        void setSettingsBufferValue(int position, int channel, int data);
 
         void log_system_status();
 
@@ -180,10 +177,12 @@ namespace DEGREE {
         enum Gestures : uint16_t
         {
             QUANTIZE_AMOUNT = SHIFT | PB_RANGE,
-            CALIBRATE_BENDER = SHIFT | BEND_MODE,    // SHIFT + BEND_MODE
+            CALIBRATE_BENDER = SHIFT | BEND_MODE,
+            RESET_BENDER_CAL_DATA = SHIFT | BEND_MODE | FREEZE,
             SETTINGS_RESET = SHIFT | FREEZE, // SHIFT + FREEZE
             SETTINGS_SAVE = SHIFT | RECORD,
             CALIBRATE_1VO = SHIFT | CMODE,
+            RESET_1VO_CAL_DATA = SHIFT | CMODE | FREEZE,
             CLEAR_SEQ_ALL = CLEAR_SEQ_BEND | CLEAR_SEQ_TOUCH,
             ENTER_HARDWARE_TEST = SHIFT | SEQ_LENGTH | QUANTIZE_SEQ | CMODE,
             LOG_SYSTEM_STATUS = SHIFT | QUANTIZE_SEQ | SEQ_LENGTH

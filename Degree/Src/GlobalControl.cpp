@@ -497,12 +497,12 @@ void GlobalControl::handleButtonRelease(int pad)
     }
 }
 
-bool validateFirmwareVersionMatch() {
+bool validateFirmwareVersionMatch(uint32_t *arr) {
     char *string = FIRMWARE_VERSION;
     int string_len = strlen(string);
     
-    if (string_len > FIRMWARE_VERSION_SIZE) {
-        string_len = FIRMWARE_VERSION_SIZE;
+    if (string_len > FLASH_FIRMWARE_VERSION_SIZE) {
+        string_len = FLASH_FIRMWARE_VERSION_SIZE;
     }
     
     // if any of the values in the buffer don't match the respective values in the firmware string array
@@ -510,7 +510,7 @@ bool validateFirmwareVersionMatch() {
     bool versionMatch;
     for (int i = 0; i < string_len; i++)
     {
-        if (SETTINGS_BUFFER[i] == (uint32_t)string[i])
+        if (arr[i] == (uint32_t)string[i])
         {
             versionMatch = true;
         }
@@ -529,11 +529,11 @@ bool validateFirmwareVersionMatch() {
 void GlobalControl::loadCalibrationDataFromFlash()
 {
     Flash flash;
-    flash.read(FLASH_CONFIG_ADDR, (uint32_t *)SETTINGS_BUFFER, SETTINGS_BUFFER_SIZE);
+    flash.read(FLASH_FIRMWARE_VERSION_ADDR, (uint32_t *)SETTINGS_BUFFER, FLASH_FIRMWARE_VERSION_SIZE);
 
     bool configDataEmpty = flash.validate(SETTINGS_BUFFER, 4);
     
-    bool isVersionMatch = validateFirmwareVersionMatch();
+    bool isVersionMatch = validateFirmwareVersionMatch(SETTINGS_BUFFER);
 
     // if no config data or firmware version mismatch, load default configuration
     if (configDataEmpty || !isVersionMatch)
@@ -548,42 +548,52 @@ void GlobalControl::loadCalibrationDataFromFlash()
     else // load the data from flash
     {
         logger_log("\nChannel Settings Source: FLASH");
+        // load calibration data
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
-            for (int i = SETTINGS_DAC_1VO; i < DAC_1VO_ARR_SIZE + SETTINGS_DAC_1VO; i++)
+            uint32_t address_offset = FLASH_CALIBRATION_BLOCK_SIZE * chan;
+            flash.read(FLASH_1VO_CALIBRATION_ADDR + address_offset, SETTINGS_BUFFER, DAC_1VO_ARR_SIZE);
+            for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
             {
-                channels[chan]->output.dacVoltageMap[i] = (uint16_t)getSettingsBufferValue(i, chan);
+                channels[chan]->output.dacVoltageMap[i] = (uint16_t)SETTINGS_BUFFER[i];
             }
-            channels[chan]->bender->setMinBend(getSettingsBufferValue(SETTINGS_BENDER_MIN, chan));
-            channels[chan]->bender->setMaxBend(getSettingsBufferValue(SETTINGS_BENDER_MAX, chan));
+            flash.read(FLASH_BENDER_CALIBRATION_ADDR, SETTINGS_BUFFER, 2);
+            channels[chan]->bender->setMinBend((uint16_t)SETTINGS_BUFFER[0]);
+            channels[chan]->bender->setMaxBend((uint16_t)SETTINGS_BUFFER[1]);
         }
 
-        for (int chan = 0; chan < CHANNEL_COUNT; chan++)
+        // load channel config and sequence data
+        configDataEmpty = flash.validate(SETTINGS_BUFFER, 8); // the first 8 words should all equal 0xFFFFFFFF
+        if (!configDataEmpty)                                 // if not empty, load channel config data
         {
-            uint32_t address_offset = FLASH_CHANNEL_BLOCK_SIZE * chan;
-            
-            // load channel config
-            uint32_t channel_config[8];
-            flash.read(FLASH_CHANNEL_CONFIG_ADDR + address_offset, channel_config, 8);
-            channels[chan]->loadConfigData(channel_config);
-
-            // load sequence data
-            uint32_t sequence_config[4];
-            flash.read(FLASH_SEQUENCE_CONFIG_ADDR + address_offset, sequence_config, 4);
-            channels[chan]->sequence.loadSequenceConfigData(sequence_config);
-
-            if (channels[chan]->sequence.containsEvents())
+            for (int chan = 0; chan < CHANNEL_COUNT; chan++)
             {
-                // read a single word (4 bytes) into array, then decode it and store in seqeuence event struct
-                int addr = 0;
-                for (int i = 0; i < channels[chan]->sequence.lengthPPQN; i++)
+                uint32_t address_offset = FLASH_CHANNEL_BLOCK_SIZE * chan;
+
+                // load channel config
+                uint32_t channel_config[8];
+                flash.read(FLASH_CHANNEL_CONFIG_ADDR + address_offset, channel_config, 8);
+                channels[chan]->loadConfigData(channel_config);
+
+                // load sequence data
+                uint32_t sequence_config[4];
+                flash.read(FLASH_SEQUENCE_CONFIG_ADDR + address_offset, sequence_config, 4);
+                channels[chan]->sequence.loadSequenceConfigData(sequence_config);
+
+                if (channels[chan]->sequence.containsEvents())
                 {
-                    uint32_t event_data = flash.read_word((void *)(FLASH_SEQUENCE_DATA_ADDR + addr + address_offset));
-                    channels[chan]->sequence.decodeEventData(i, event_data);
-                    addr += 4;
+                    // read a single word (4 bytes) into array, then decode it and store in seqeuence event struct
+                    int addr = 0;
+                    for (int i = 0; i < channels[chan]->sequence.lengthPPQN; i++)
+                    {
+                        uint32_t event_data = flash.read_word((void *)(FLASH_SEQUENCE_DATA_ADDR + addr + address_offset));
+                        channels[chan]->sequence.decodeEventData(i, event_data);
+                        addr += 4;
+                    }
                 }
             }
         }
+        
         
     }
 }
@@ -597,36 +607,41 @@ void GlobalControl::loadCalibrationDataFromFlash()
 void GlobalControl::saveCalibrationDataToFlash()
 {
     this->display->fill(PWM::PWM_MID, true);
+
+    Flash flash;
+    flash.erase(FLASH_CALIBRATION_ADDR);
+
+    // Step 1: copy firmware version to flash
+    char *string = FIRMWARE_VERSION;
+    int string_len = strlen(string);
+    uint32_t firmware_version[string_len];
+    for (int i = 0; i < string_len; i++)
+    {
+        firmware_version[i] = (uint32_t)string[i];
+    }
+    flash.write(FLASH_FIRMWARE_VERSION_ADDR, firmware_version, string_len);
+
+    // Step 2: copy calibration data into flash
     int buffer_position = 0;
     for (int chan = 0; chan < CHANNEL_COUNT; chan++) // channel iterrator
     {
-        // copy firmware version into buffer
-        char *string = FIRMWARE_VERSION;
-        int string_len = strlen(string);
-
-        for (int i = 0; i < string_len; i++)
-        {
-            SETTINGS_BUFFER[i] = (uint32_t)string[i];
-        }
-
-        //------------------------------------------------------------
+        uint32_t address_offset = FLASH_CALIBRATION_BLOCK_SIZE * chan;
         
-        for (int i = SETTINGS_DAC_1VO; i < DAC_1VO_ARR_SIZE + SETTINGS_DAC_1VO; i++) // dac array iterrator
+        // 1VO calibration data
+        for (int i = 0; i < DAC_1VO_ARR_SIZE; i++)
         {
-            setSettingsBufferValue(i, chan, channels[chan]->output.dacVoltageMap[i]);
+            SETTINGS_BUFFER[i] = channels[chan]->output.dacVoltageMap[i];
         }
-        // load max and min Bender calibration data into buffer (two 16bit chars)
-        setSettingsBufferValue(SETTINGS_BENDER_MIN, chan, channels[chan]->bender->adc.getInputMin()); // this
-        setSettingsBufferValue(SETTINGS_BENDER_MAX, chan, channels[chan]->bender->adc.getInputMax()); // this
-        
-        //------------------------------------------------------------
+        flash.write(FLASH_1VO_CALIBRATION_ADDR + address_offset, SETTINGS_BUFFER, DAC_1VO_ARR_SIZE);
+
+        // max and min Bender calibration data
+        SETTINGS_BUFFER[0] = channels[chan]->bender->adc.getInputMin();
+        SETTINGS_BUFFER[1] = channels[chan]->bender->adc.getInputMax();
+        flash.write(FLASH_BENDER_CALIBRATION_ADDR + address_offset, SETTINGS_BUFFER, 2);
     }
-    // now load this buffer into flash memory
-    Flash flash;
-    flash.erase(FLASH_CONFIG_ADDR);
-    flash.write(FLASH_CONFIG_ADDR, SETTINGS_BUFFER, SETTINGS_BUFFER_SIZE);
 
     // save sequence data to flash
+    flash.erase(FLASH_CONFIG_ADDR);
     for (int chan = 0; chan < CHANNEL_COUNT; chan++)
     {
         uint32_t address_offset = FLASH_CHANNEL_BLOCK_SIZE * chan;
@@ -675,6 +690,7 @@ void GlobalControl::deleteCalibrationDataFromFlash()
     display->fill(127, true);
 
     Flash flash;
+    flash.erase(FLASH_CALIBRATION_ADDR);
     flash.erase(FLASH_CONFIG_ADDR);
 
     for (int i = 0; i < DISPLAY_COLUMN_COUNT; i++)
@@ -702,40 +718,7 @@ void GlobalControl::resetCalibration1VO(int chan)
 {
     // basically just reset a channels voltage map to default and then save as usual
     channels[chan]->output.resetVoltageMap();
-    this->saveCalibrationDataToFlash();
-}
-
-/**
- * @brief Calibration data for all channels is stored in a single buffer, this function returns the relative
- * position of a channels calibration data inside that buffer
- *
- * @param data_index
- * @param channel_index
- * @return int
- */
-int GlobalControl::calculatePositionInSettingsBuffer(int data_index, int channel_index)
-{
-    return (data_index + CALIBRATION_ARR_SIZE * channel_index);
-}
-
-/**
- * @brief Calibration data for all channels is stored in a single buffer, this function returns the value
- * at the given position of that buffer
- *
- * @param data_index
- * @param channel_index
- * @return int
- */
-int GlobalControl::getSettingsBufferValue(int position, int channel)
-{
-    position = calculatePositionInSettingsBuffer(position, channel);
-    return (int)SETTINGS_BUFFER[position];
-}
-
-void GlobalControl::setSettingsBufferValue(int position, int channel, int data)
-{
-    position = calculatePositionInSettingsBuffer(position, channel);
-    SETTINGS_BUFFER[position] = data;
+    this->saveCalibrationDataToFlash(); // change this to just save calibration data
 }
 
 /**
