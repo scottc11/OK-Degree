@@ -279,6 +279,8 @@ void GlobalControl::handleButtonPress(int pad)
     switch (pad)
     {
     case CMODE:
+        if (recordEnabled == true) break;
+
         for (int i = 0; i < 4; i++)
         {
             if (touchPads->padIsTouched(i, currTouched))
@@ -290,6 +292,7 @@ void GlobalControl::handleButtonPress(int pad)
     case SHIFT:
         break;
     case FREEZE:
+        if (recordEnabled == true) break;
         freezeLED.write(HIGH);
         this->handleFreeze(true);
         break;
@@ -311,6 +314,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case Gestures::CALIBRATE_BENDER:
+        if (recordEnabled == true) break;
         if (this->mode == CALIBRATING_BENDER)
         {
             this->saveCalibrationDataToFlash();
@@ -334,6 +338,8 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case Gestures::SETTINGS_RESET:
+        if (recordEnabled == true) break;
+
         if (gestureFlag)
         {
             this->handleChannelGesture(callback(this, &GlobalControl::resetCalibration1VO));
@@ -343,10 +349,14 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case Gestures::SETTINGS_SAVE:
+        if (recordEnabled == true) break;
+
         this->saveChannelConfigDataToFlash();
         break;
 
     case Gestures::CALIBRATE_1VO:
+        if (recordEnabled == true) break;
+
         actionExitFlag = ACTION_EXIT_STAGE_1; // set exit flag
         mode = ControlMode::VCO_CALIBRATION;
         suspend_sequencer_task();
@@ -381,6 +391,8 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case PB_RANGE:
+        if (recordEnabled == true) break;
+        
         for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->setUIMode(TouchChannel::UIMode::UI_PITCH_BEND_RANGE);
@@ -388,6 +400,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case QUANTIZE_AMOUNT:
+        if (recordEnabled == true) break;
         actionExitFlag = ACTION_EXIT_STAGE_1;
         mode = ControlMode::SETTING_QUANTIZE_AMOUNT;
         for (int i = 0; i < CHANNEL_COUNT; i++)
@@ -397,6 +410,7 @@ void GlobalControl::handleButtonPress(int pad)
         break;
 
     case SEQ_LENGTH:
+        if (recordEnabled == true) break;
         actionExitFlag = ACTION_EXIT_STAGE_1;
         mode = ControlMode::SETTING_SEQUENCE_LENGTH;
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
@@ -439,12 +453,16 @@ void GlobalControl::handleButtonRelease(int pad)
     switch (pad)
     {
     case FREEZE:
+        if (recordEnabled == true)
+            break;
         freezeLED.write(LOW);
         handleFreeze(false);
         break;
     case RESET:
         break;
     case PB_RANGE:
+        if (recordEnabled == true)
+            break;
         for (int i = 0; i < CHANNEL_COUNT; i++)
         {
             channels[i]->setUIMode(TouchChannel::UIMode::UI_PLAYBACK);
