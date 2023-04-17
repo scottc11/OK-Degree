@@ -391,6 +391,9 @@ void TouchChannel::handleReleasePlaybackEvent(uint8_t pad)
             }
             else
             {
+                triggerNote(pad, currOctave, NOTE_OFF);
+                triggerNote(sequence.getEventDegree(sequence.prevEventPos), sequence.getEventOctave(sequence.prevEventPos), NOTE_ON);
+                sequence.snapback = true;
                 sequence.enablePlayback();
             }
             triggerNote(pad, currOctave, NOTE_OFF);
@@ -1067,6 +1070,11 @@ void TouchChannel::handleSequence(int position)
 
     if (sequence.playbackEnabled == false) {
         return;
+    }
+
+    if (sequence.snapback) {
+        sequence.snapback = false;
+        triggerNote(sequence.getEventDegree(sequence.prevEventPos), sequence.getEventOctave(sequence.prevEventPos), NOTE_OFF);
     }
 
     // Handle Touch Events (degrees)
