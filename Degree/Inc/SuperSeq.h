@@ -140,7 +140,4 @@ public:
     void attachRecordOverflowCallback(Callback<void()> func) {
         recordOverflowCallback = func;
     }
-
-private:
-    SequenceNode events[MAX_SEQ_LENGTH_PPQN];
 };
