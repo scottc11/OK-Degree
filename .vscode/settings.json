@@ -69,6 +69,8 @@
         "list": "cpp",
         "condition_variable": "cpp",
         "mutex": "cpp",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "ranges": "cpp",
+        "span": "cpp"
     }
 }

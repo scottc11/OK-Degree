@@ -69,14 +69,19 @@ public:
     HAL_StatusTypeDef erase(uint32_t address);
 
     HAL_StatusTypeDef write(uint32_t address, uint32_t *data, int size);
+    void write(uint32_t address, uint32_t data);
+
+    void copySector(uint32_t sourceSector, uint32_t targetSector, uint32_t size);
 
     void read(uint32_t address, uint32_t *rxBuffer, int size);
+    uint32_t read_word(void *address);
 
     uint32_t getSector(uint32_t Address);
     bool validate(uint32_t *data, int size);
 
-private:
-    static Mutex _mutex;
     HAL_StatusTypeDef unlock(uint32_t sector);
     HAL_StatusTypeDef lock();
+
+  private:
+    static Mutex _mutex;
 };

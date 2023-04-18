@@ -83,6 +83,16 @@ HAL_StatusTypeDef Flash::erase(uint32_t address)
     return status;
 }
 
+/**
+ * @brief Write to flash memory
+ * @note flash memory can only be written to by changing its value from a 1 to a 0.
+ * Once a bit in the flash memory is set to 0, it cannot be changed back to 1 without erasing the entire sector.
+ *
+ * @param address flash memory address you wish to write to
+ * @param data pointer to an array containing the data you want to store in flash
+ * @param size size of data array
+ * @return HAL_StatusTypeDef
+ */
 HAL_StatusTypeDef Flash::write(uint32_t address, uint32_t *data, int size)
 {
     HAL_StatusTypeDef status;
@@ -111,7 +121,7 @@ HAL_StatusTypeDef Flash::write(uint32_t address, uint32_t *data, int size)
             flashError = HAL_FLASH_GetError();
         } else {
             size--;
-            address += 4;
+            address += 4; // 1 "word" == 4 bytes
             data++;
         }
     }
@@ -123,8 +133,40 @@ HAL_StatusTypeDef Flash::write(uint32_t address, uint32_t *data, int size)
     return status;
 }
 
+void Flash::write(uint32_t address, uint32_t data)
+{
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, (uint64_t)data);
+}
+
 /**
- * @brief Read data starting at defined address
+ * @brief Copy contents of a sector in flash into another sector in flash. Requires no buffer
+ * as it copies word by word
+ * 
+ * @param sourceSector sector you wish to copy
+ * @param targetSector sector you wish to store the copy in
+ * @param size how much of the source you want to copy
+ */
+void Flash::copySector(uint32_t sourceSector, uint32_t targetSector, uint32_t size)
+{
+    // Step 1: clear Sector 6
+    this->erase(targetSector);
+
+    // Step 2: copy all data from Sector 7 into Sector 6
+    this->unlock(sourceSector);
+    uint32_t read_address = sourceSector;
+    uint32_t write_address = targetSector;
+    while (read_address < (sourceSector + size))
+    {
+        uint32_t word = this->read_word((void *)read_address);
+        this->write(write_address, word);
+        read_address += 4;
+        write_address += 4;
+    }
+    this->lock();
+}
+
+/**
+ * @brief Read data starting at defined address and load it into a buffer
  * 
  * @param address Address to begin reading from
  * @param rxBuffer The buffer to read data into. Must be of type uint32_t
@@ -142,6 +184,17 @@ void Flash::read(uint32_t address, uint32_t *rxBuffer, int size)
 }
 
 /**
+ * @brief read a single 32-bit word at a specific memory address and return it
+ * 
+ * @param address 
+ * @return uint32_t 
+ */
+uint32_t Flash::read_word(void *address)
+{
+    return *(uint32_t *)address;
+}
+
+/**
  * @brief Check if data read from flash has been cleared / not written too by testing contents of buffer
  *
  * @param data
@@ -150,11 +203,19 @@ void Flash::read(uint32_t address, uint32_t *rxBuffer, int size)
  */
 bool Flash::validate(uint32_t *data, int size)
 {
-    size = size > 65000 ? 65000 : size; // protect
-    uint32_t validator = 0;
-    for (int i = 0; i < size; i++)
-        validator += (uint16_t)data[i]; // uint16 for overflow
-    return validator == size * 0xFFFF ? true : false;
+    bool dataIsClear = false;
+    for (int i = 0; i < size; i++) {
+        if (data[i] == 0xFFFFFFFF)
+        {
+            dataIsClear = true;
+        }
+        else
+        {
+            dataIsClear = false;
+            break;
+        }
+    }
+    return dataIsClear;
 }
 
 /**

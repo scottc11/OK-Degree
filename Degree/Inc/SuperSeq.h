@@ -38,6 +38,7 @@ public:
         setQuantizeAmount(QUANT::EIGTH);
     };
 
+    SequenceNode events[MAX_SEQ_LENGTH_PPQN];
     Bender *bender;       // you need the instance of a bender for determing its idle value when clearing / initializing bender events
     QUANT quantizeAmount;
     Callback<void()> recordOverflowCallback;
@@ -69,6 +70,7 @@ public:
 
     static bool recordArmed;    // when true, recording will be enabled the next time bar overflows
     static bool recordDisarmed; // when true, recording will be disabled the next time bar overflows
+    bool snapback;           // flag indicating there was a snapback event (when you want to re-trigger the last handled event)
 
     void init();
     void reset();
@@ -110,6 +112,11 @@ public:
     void setQuantizeAmount(QUANT value);
 
     void setEventData(int position, uint8_t degree, uint8_t octave, bool gate, bool status);
+
+    uint32_t encodeEventData(int position);
+    void decodeEventData(int position, uint32_t data);
+    void storeSequenceConfigData(uint32_t *arr);
+    void loadSequenceConfigData(uint32_t *arr);
 
     uint8_t getEventDegree(int position);
     uint8_t getEventOctave(int position);

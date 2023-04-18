@@ -12,7 +12,7 @@
 ######################################
 TARGET = ok-dev-board
 
-FLASH_SIZE = $$((512 * 1024)) # 512 kB
+FLASH_SIZE = $$((256 * 1024)) # 256 kB (Sector 6 and 7 used for config data)
 RAM_SIZE = $$((128 * 1024)) # 128 kB
 
 ######################################
@@ -26,6 +26,8 @@ SERIAL_DEBUG ?= 0
 # optimization
 OPT = -Og
 
+# get firmware version from git
+FIRMWARE_VERSION = $(shell git rev-parse --short HEAD)
 
 #######################################
 # paths
@@ -235,6 +237,9 @@ endif
 ifeq ($(SERIAL_DEBUG), 1)
 CFLAGS += -DSERIAL_DEBUG=1
 endif
+
+# pass the firmware version into program
+CFLAGS += -DFIRMWARE_VERSION=\"$(FIRMWARE_VERSION)\"
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"

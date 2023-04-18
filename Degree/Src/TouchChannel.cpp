@@ -32,8 +32,6 @@ void TouchChannel::init()
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
     bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
-
-    sequence.init(); // really important sequencer initializes after the bender gets initialized
     sequence.attachRecordOverflowCallback(callback(this, &TouchChannel::handleRecordOverflow));
 
     // initialize channel touch pads
@@ -43,10 +41,15 @@ void TouchChannel::init()
     touchPads->attachCallbackReleased(callback(this, &TouchChannel::onRelease));
     touchPads->enable();
 
-    // you should actually be accessing a global settings buffer 
     display->drawSpiral(channelIndex, true, PWM::PWM_HIGH, 25);
+
+    // flash settings sensitive below
+    if (!sequence.containsEvents()) // don't init if sequence was loaded from flash
+    {
+        sequence.init(); // really important sequencer initializes after the bender gets initialized
+    }    
     setPlaybackMode(playbackMode); // value of playbackMode gets loaded and assigned from flash
-    setBenderMode((BenderMode)currBenderMode); // value of playbackMode gets loaded and assigned from flash
+    setBenderMode((BenderMode)currBenderMode);
     logPeripherals();
 }
 
@@ -389,6 +392,9 @@ void TouchChannel::handleReleasePlaybackEvent(uint8_t pad)
             }
             else
             {
+                triggerNote(pad, currOctave, NOTE_OFF);
+                triggerNote(sequence.getEventDegree(sequence.prevEventPos), sequence.getEventOctave(sequence.prevEventPos), NOTE_ON);
+                sequence.snapback = true;
                 sequence.enablePlayback();
             }
             triggerNote(pad, currOctave, NOTE_OFF);
@@ -735,13 +741,13 @@ void TouchChannel::handlePitchBend(uint16_t value) {
         if (value < bender->getIdleValue())
         {
             pitchbend = output.calculatePitchBend(value, bender->getMinBend(), bender->getIdleValue());
-            output.setPitchBend(output.maxPitchBend - pitchbend, true); // NOTE: inverted mapping
+            output.setPitchBend(output.maxPitchBend - pitchbend - BENDER_NOISE_THRESHOLD, true); // NOTE: inverted mapping
         }
         // Pitch Bend DOWN
         else if (value > bender->getIdleValue())
         {
             pitchbend = output.calculatePitchBend(value, bender->getIdleValue(), bender->getMaxBend());
-            output.setPitchBend(pitchbend, false); // value needs to be negative
+            output.setPitchBend(pitchbend - BENDER_NOISE_THRESHOLD, false); // value needs to be negative
         }
     }
 }
@@ -1066,6 +1072,11 @@ void TouchChannel::handleSequence(int position)
         return;
     }
 
+    if (sequence.snapback) {
+        sequence.snapback = false;
+        triggerNote(sequence.getEventDegree(sequence.prevEventPos), sequence.getEventOctave(sequence.prevEventPos), NOTE_OFF);
+    }
+
     // Handle Touch Events (degrees)
     if (sequence.containsTouchEvents)
     {
@@ -1373,4 +1384,16 @@ void TouchChannel::handleQuantAmountLEDs()
             setDegreeLed(6, LedState::TOGGLE, false);
         }
     }
+}
+
+void TouchChannel::copyConfigData(uint32_t *arr) {
+    arr[0] = (uint32_t)this->playbackMode;
+    arr[1] = this->currBenderMode;
+    arr[2] = this->output.pbRangeIndex;
+}
+
+void TouchChannel::loadConfigData(uint32_t *arr) {
+    this->playbackMode = (TouchChannel::PlaybackMode)arr[0];
+    this->currBenderMode = arr[1];
+    this->output.setPitchBendRange(arr[2]);
 }

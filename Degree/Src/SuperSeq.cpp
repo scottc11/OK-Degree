@@ -438,6 +438,57 @@ void SuperSeq::setEventData(int position, uint8_t degree, uint8_t octave, bool g
     events[position].data = data;
 }
 
+/**
+ * @brief combine all event struct data into a 32-bit number
+ * 
+ * @param position 
+ * @return uint32_t 
+ */
+uint32_t SuperSeq::encodeEventData(int position)
+{
+    uint32_t data;
+    data = events[position].bend;                      // 16-bits
+    data = (data << 8) | events[position].activeDegrees; // 8-bits
+    data = (data << 8) | events[position].data;          // 8-bits
+    return data;
+}
+
+/**
+ * @brief unpack event data and store into event struct
+ * 
+ * @param position 
+ * @param data data chunk from flash
+ */
+void SuperSeq::decodeEventData(int position, uint32_t data)
+{
+    events[position].bend = (uint16_t)(data >> 16);
+    events[position].activeDegrees = (uint8_t)((data & 0x0000FF00) >> 8);
+    events[position].data = (uint8_t)(data & 0x000000FF);
+}
+
+/**
+ * @brief store sequence configuration into an array (to be stored in flash)
+ * 
+ * @param arr 
+ * @return uint32_t 
+ */
+void SuperSeq::storeSequenceConfigData(uint32_t *arr) {
+    arr[0] = this->length;
+    arr[1] = this->lengthPPQN;
+    arr[2] = this->containsBendEvents;
+    arr[3] = this->containsTouchEvents;
+    arr[4] = (uint32_t)this->quantizeAmount;
+}
+
+void SuperSeq::loadSequenceConfigData(uint32_t *arr)
+{
+    this->length = (int)arr[0];
+    this->lengthPPQN = (int)arr[1];
+    this->containsBendEvents = (bool)arr[2];
+    this->containsTouchEvents = (bool)arr[3];
+    this->quantizeAmount = (enum QUANT)arr[4];
+}
+
 uint8_t SuperSeq::getEventDegree(int position)
 {
     return events[position].getDegree();
