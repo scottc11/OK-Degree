@@ -70,7 +70,6 @@ public:
 
     static bool recordArmed;    // when true, recording will be enabled the next time bar overflows
     static bool recordDisarmed; // when true, recording will be disabled the next time bar overflows
-    bool snapback;           // flag indicating there was a snapback event (when you want to re-trigger the last handled event)
 
     void init();
     void reset();
