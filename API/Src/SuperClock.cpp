@@ -161,8 +161,10 @@ void SuperClock::handleInputCaptureCallback()
 {
     // almost always, there will need to be at least 1 pulse not yet executed prior to an input capture, 
     // so you must execute all remaining until
-    if (pulse < PPQN)
+    // would doing the while loop in here achieve the same result? While also 
+    if (pulse < PPQN - 1)
     {
+        handleStep();
         if (resetCallback)
         {
             resetCallback(pulse);
@@ -215,17 +217,26 @@ void SuperClock::handleOverflowCallback()
     } else {
         if (externalInputMode)
         {
-            __HAL_TIM_DISABLE(&htim4); // halt TIM4
             // external input will reset pulse to 0 and resume TIM4 in input capture callback
+            __HAL_TIM_DISABLE(&htim4); // halt TIM4
+            handleStep();
         } else {
             pulse = 0;
-            if (step < stepsPerBar - 1) {
-                step++;
-            } else {
-                step = 0;
-                if (barResetCallback) barResetCallback();
-            }
+            handleStep();
         }
+    }
+}
+
+void SuperClock::handleStep() {
+    if (step < stepsPerBar - 1)
+    {
+        step++;
+    }
+    else
+    {
+        step = 0;
+        if (barResetCallback)
+            barResetCallback();
     }
 }
 

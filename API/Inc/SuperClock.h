@@ -63,6 +63,7 @@ public:
     void start();
     void reset();
     void setStepsPerBar(int steps);
+    void handleStep();
 
     void setPulseFrequency(uint32_t ticks);
     uint16_t convertADCReadToTicks(uint16_t min, uint16_t max, uint16_t value);
