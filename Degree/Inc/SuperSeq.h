@@ -58,7 +58,6 @@ public:
     bool bendEnabled;        // flag used for overriding current recorded bend with active bend    
     bool containsTouchEvents;// flag indicating if a sequence has any touch events
     bool containsBendEvents; // flag indicating if a sequence has any bend events
-    bool snapback;           // flag indicating there was a snapback event (when you want to re-trigger the last handled event)
 
     void init();
     void reset();
