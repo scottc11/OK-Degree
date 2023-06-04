@@ -482,8 +482,7 @@ void SuperSeq::storeSequenceConfigData(uint32_t *arr) {
 
 void SuperSeq::loadSequenceConfigData(uint32_t *arr)
 {
-    this->length = (int)arr[0];
-    this->lengthPPQN = (int)arr[1];
+    this->setLength((int)arr[0]);
     this->containsBendEvents = (bool)arr[2];
     this->containsTouchEvents = (bool)arr[3];
     this->quantizeAmount = (enum QUANT)arr[4];
