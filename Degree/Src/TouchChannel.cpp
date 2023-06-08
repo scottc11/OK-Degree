@@ -316,8 +316,13 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
                 triggerNote(pad, currOctave, NOTE_ON);
                 break;
             case QUANTIZER:
-                setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
-                handlePreRecordEvents(); // bug is here
+                if (selectPadIsTouched) {
+                    overrideQuantizer = true;
+                    triggerNote(pad, currOctave, NOTE_ON);
+                } else {
+                    setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
+                    handlePreRecordEvents(); // bug is here
+                }
                 break;
             case QUANTIZER_LOOP:
                 // every touch detected, take a snapshot of all active degree values and apply them to the sequence
@@ -397,6 +402,11 @@ void TouchChannel::handleReleasePlaybackEvent(uint8_t pad)
             triggerNote(pad, currOctave, NOTE_OFF);
             break;
         case QUANTIZER:
+            if (touchPads->padIsTouched() == false) {
+                overrideQuantizer = false;
+                armSelectPadRelease = false;
+                handleCVInput();
+            }
             break;
         case QUANTIZER_LOOP:
             sequence.disableOverdub();
@@ -551,7 +561,7 @@ void TouchChannel::setLED(int io_pin, LedState state, bool isPlaybackEvent)
             _leds->setOnTime(io_pin, 0);
             break;
         case DIM_LOW:
-            _leds->setPWM(io_pin, 10);
+            _leds->setPWM(io_pin, 15);
             break;
         case DIM_MED:
             _leds->setPWM(io_pin, 127);
@@ -942,27 +952,27 @@ void TouchChannel::handleCVInput()
             // prevent duplicate triggering of that same degree / octave
             if (currDegree != activeDegreeValues[i].noteIndex || currOctave != octave) // NOTE: currOctave used to be prevOctave 🤷‍♂️
             {
-                triggerNote(currDegree, prevOctave, NOTE_OFF); // set previous triggered degree
+                if (!overrideQuantizer) {
+                    triggerNote(currDegree, prevOctave, NOTE_OFF); // set previous triggered degree
 
-                // re-DIM previously degree LED
-                if (bitwise_read_bit(activeDegrees, prevDegree))
-                {
-                    setDegreeLed(currDegree, BLINK_OFF, true);
-                    setDegreeLed(currDegree, DIM_LOW, true);
+                    // re-DIM previously degree LED
+                    if (bitwise_read_bit(activeDegrees, prevDegree))
+                    {
+                        setDegreeLed(currDegree, DIM_LOW, true);
+                    }
+
+                    // trigger the new degree, and set its LED to blink
+                    triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON);
+                    setDegreeLed(activeDegreeValues[i].noteIndex, LedState::DIM_MED, true);
+
+                    // re-DIM previous Octave LED
+                    if (bitwise_read_bit(activeOctaves, prevOctave))
+                    {
+                        setOctaveLed(prevOctave, LedState::DIM_LOW, true);
+                    }
+                    // BLINK active quantized octave
+                    setOctaveLed(octave, LedState::DIM_MED, true);
                 }
-
-                // trigger the new degree, and set its LED to blink
-                triggerNote(activeDegreeValues[i].noteIndex, octave, NOTE_ON);
-                setDegreeLed(activeDegreeValues[i].noteIndex, LedState::BLINK_ON, true);
-
-                // re-DIM previous Octave LED
-                if (bitwise_read_bit(activeOctaves, prevOctave))
-                {
-                    setOctaveLed(prevOctave, LedState::BLINK_OFF, true);
-                    setOctaveLed(prevOctave, LedState::DIM_LOW, true);
-                }
-                // BLINK active quantized octave
-                setOctaveLed(octave, LedState::BLINK_ON, true);
             }
             break; // break from loop as soon as we can
         }

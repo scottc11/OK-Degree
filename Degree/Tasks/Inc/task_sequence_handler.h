@@ -29,6 +29,7 @@ enum class SEQ
     QUANTIZE,
     CORRECT,
     HANDLE_TOUCH,
+    HANDLE_SELECT_PAD,
     HANDLE_DEGREE,
     DISPLAY
 };

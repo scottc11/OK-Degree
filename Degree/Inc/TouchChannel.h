@@ -137,6 +137,9 @@ namespace DEGREE {
 
         bool led_state[16];
 
+        bool selectPadIsTouched;      // each channel has a select pad in the control section
+        bool armSelectPadRelease;     // if an event happens while selectPadIsTouched == true, should the pad be released, we want to treat the next event as if it is still touched
+
         uint8_t currRatchetRate;
         uint8_t prevRatchetRate;
 
@@ -158,8 +161,9 @@ namespace DEGREE {
         int freezeStep;    // the position of sequence when freeze was enabled
 
         // Quantiser members
+        bool overrideQuantizer;            // will temporarily disable the CV input 
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
-        uint8_t activeOctaves;         // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
+        uint8_t activeOctaves;             // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
         int numActiveDegrees;              // number of degrees which are active (to quantize voltage input)
         int numActiveOctaves;              // number of active octaves for mapping CV to
         int activeDegreeLimit;             // the max number of degrees allowed to be enabled at one time.

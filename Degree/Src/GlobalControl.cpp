@@ -222,7 +222,8 @@ void GlobalControl::pollTouchPads() {
 #else
     currTouched = touchPads->touched();
 #endif
-
+    // queue select pad
+    dispatch_sequencer_event(CHAN::ALL, SEQ::HANDLE_SELECT_PAD, 0);
     if (currTouched == 0x00) {
         gestureFlag = false;
     } else {
