@@ -1,10 +1,10 @@
 #pragma once
 
 #include "main.h"
+#include "task_handles.h"
 #include "Callback.h"
 #include "filters.h"
 #include "okSemaphore.h"
-#include "okQueue.h"
 #include "logger.h"
 
 #define ADC_SAMPLE_COUNTER_LIMIT 2000
@@ -19,10 +19,9 @@ public:
     AnalogHandle(PinName pin);
 
     int index;
-
-    okQueue<uint16_t, 1> queue;
     okSemaphore denoisingSemaphore;
     okSemaphore sampleSemaphore;
+    bool queueSample;                          // whether or not to send the processed sample to an external queue
     uint16_t idleNoiseThreshold;               // how much noise an idle input signal contains
     uint16_t avgValueWhenIdle;                 // where the sensor sits when "idle" (only relevant for sensors)
     uint16_t noiseCeiling;                     // highest read noise value when idle

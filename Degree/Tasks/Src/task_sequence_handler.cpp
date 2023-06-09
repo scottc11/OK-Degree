@@ -42,6 +42,22 @@ void task_sequence_handler(void *params)
             ctrl->channels[channel]->touchPads->handleTouch(); // this will trigger either onTouch() or onRelease()
             break;
 
+        case SEQ::HANDLE_SELECT_PAD:
+            for (int i = 0; i < CHANNEL_COUNT; i++)
+            {
+                if (ctrl->touchPads->padIsTouched(i, ctrl->currTouched))
+                {
+                    // you might want to put this into the sequence queue to avoid race conditions
+                    ctrl->channels[i]->selectPadIsTouched = true;
+                }
+                else
+                {
+                    ctrl->channels[i]->selectPadIsTouched = false;
+                    ctrl->channels[i]->armSelectPadRelease = true;
+                }
+            }
+            break;
+
         case SEQ::HANDLE_DEGREE:
             for (int i = 0; i < CHANNEL_COUNT; i++)
                 ctrl->channels[i]->updateDegrees();
@@ -102,6 +118,10 @@ void task_sequence_handler(void *params)
                 ctrl->channels[i]->disableSequenceRecording();
             break;
             
+        case SEQ::TOGGLE_MODE:
+            ctrl->channels[channel]->toggleMode();
+            break;
+
         case SEQ::SET_LENGTH:
             ctrl->channels[channel]->updateSequenceLength(data);
             break;

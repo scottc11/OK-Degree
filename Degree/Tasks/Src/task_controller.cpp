@@ -24,6 +24,11 @@ void task_controller(void *params)
         case CTRL_ACTION::EXIT_1VO_CALIBRATION:
             vTaskDelete(thCalibrate);
             vTaskDelete(thStartCalibration);
+            for (int i = 0; i < 4; i++)
+            {
+                controller->channels[i]->adc.queueSample = false;
+            }
+            
             // offload all this shit to a task with a much higher stack size
             multi_chan_adc_set_sample_rate(&hadc1, &htim3, ADC_SAMPLE_RATE_HZ);
 

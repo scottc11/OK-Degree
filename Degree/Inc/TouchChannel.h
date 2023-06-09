@@ -115,7 +115,7 @@ namespace DEGREE {
             currOctave = 0;
             
             activeDegrees = 0xFF;
-            currActiveOctaves = 0xF;
+            activeOctaves = 0xF;
             numActiveDegrees = DEGREE_COUNT;
             numActiveOctaves = OCTAVE_COUNT;
         };
@@ -129,11 +129,16 @@ namespace DEGREE {
         DigitalOut *globalGateOut; // global gate output
         DigitalOut gateOut; // gate output
         AnalogHandle adc;   // CV input ADC
-        VoltPerOctave output;        
+        VoltPerOctave output;
 
         bool led_state[16];
 
-        uint8_t currRatchetRate;      //
+        bool selectPadIsTouched;      // each channel has a select pad in the control section
+        bool armSelectPadRelease;     // if an event happens while selectPadIsTouched == true, should the pad be released, we want to treat the next event as if it is still touched
+
+        uint8_t currRatchetRate;
+        uint8_t prevRatchetRate;
+
         bool gateState;               // state of the gate output
 
         UIMode uiMode;
@@ -152,13 +157,14 @@ namespace DEGREE {
         int freezeStep;    // the position of sequence when freeze was enabled
 
         // Quantiser members
+        bool overrideQuantizer;            // will temporarily disable the CV input 
+        uint16_t currCV;
+        uint16_t prevCV;
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
-        uint8_t currActiveOctaves;         // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
-        uint8_t prevActiveOctaves;         // 4-bits to represent the previous octaves external CV will get mapped to (active = 1, inactive= 0)
+        uint8_t activeOctaves;             // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
         int numActiveDegrees;              // number of degrees which are active (to quantize voltage input)
         int numActiveOctaves;              // number of active octaves for mapping CV to
         int activeDegreeLimit;             // the max number of degrees allowed to be enabled at one time.
-        uint16_t prevCVInputValue;         // the previously handled CV input value 
         QuantDegree activeDegreeValues[8]; // array which holds noteIndex values and their associated DAC/1vo values
         QuantOctave activeOctaveValues[OCTAVE_COUNT];
 
@@ -184,7 +190,6 @@ namespace DEGREE {
         // UI Handler
         void updateUI(UIMode mode);
 
-        void setOctave(int octave);
         void updateOctaveLeds(int octave, bool isPlaybackEvent);
 
         void setLED(int io_pin, LedState state, bool isPlaybackEvent); // if you use a "scene" here, you could remove the boolean
@@ -229,6 +234,9 @@ namespace DEGREE {
         uint8_t calculateRatchet(uint16_t bend);
         void handleRatchet(int position, uint16_t value);
 
+        void copyConfigData(uint32_t *arr);
+        void loadConfigData(uint32_t *arr);
+        
         void initializeCalibration();
         
         void logPeripherals();

@@ -1,11 +1,3 @@
-# TODO:
-- How do I print to the console through an ST-Link?
-    - RX/TX connector from St-Link need to be wired to the TX/RX pins of the MCU
-    - you probably need StMicroelectronics STLink Virtual COM Port driver installed somewhere (dev/tty folder or file)
-
-- why is my intellisense not detecting errors prior to building?
-    google "gcc arm problem matcher vscode"
-
 ## FreeRTOS Configuration
 Could all this not be done just using a timer? Or is that what an RTOS essential is?
 ```
@@ -165,3 +157,6 @@ void __attribute__((optimize("O0"))) myFunc()
     // this will not be optimized
 }
 ```
+
+# DEV TOOLS:
+- [Bitwise Operations Playground](https://bitwisecmd.com/)

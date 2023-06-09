@@ -22,23 +22,29 @@ void taskObtainSignalFrequency(void *params)
     
     // thStartCalibration = xTaskGetCurrentTaskHandle();
 
-    uint16_t sample;
     float vcoFrequency = 0;          // the calculated frequency sample
     int frequencySampleCounter = 0;  // index for storing new frequency sample into freqSamples array
     float avgFrequencySum = 0;       // the sum of all new frequency samples (for calculating a running average afterwards)
-    
-    channel->adc.disableFilter(); // must not filter ADC input
 
+    int CALIBRATION_SAMPLE_RATE_HZ = 16000;   // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
+    int MAX_FREQ_SAMPLES = 25;               // how many frequency calculations we want to use to obtain our average frequency prediction of the input. The higher the number, the more accurate the result
+    int ZERO_CROSS_THRESHOLD = 1000;          // for handling hysterisis at zero crossing point NOTE: If set around 500 freq readings become very unstable
+
+    channel->adc.disableFilter(); // must not filter ADC input
+    
     multi_chan_adc_set_sample_rate(&hadc1, &htim3, CALIBRATION_SAMPLE_RATE_HZ); // set ADC timer overflow frequency to 16000hz (twice the freq of B8)
 
     // sample peak to peak;
     okSemaphore *sem = channel->adc.beginMinMaxSampling(2000); // sampling time should be longer than the lowest possible note frequency
     sem->wait();
     channel->adc.log_min_max("CV");
+    channel->adc.queueSample = true;
     signalZeroCrossing = channel->adc.getInputMedian();
 
     sem_obtain_freq = xSemaphoreCreateBinary();
     sem_calibrate = xSemaphoreCreateBinary();
+
+    uint16_t sample = 0;
 
     xSemaphoreGive(sem_obtain_freq); // i think you can remove this semaphore now
 
@@ -46,9 +52,10 @@ void taskObtainSignalFrequency(void *params)
 
     while (1)
     {
-        xSemaphoreTake(sem_obtain_freq, portMAX_DELAY);
-        xQueueReceive(channel->adc.queue.handle, &sample, portMAX_DELAY);
-        
+        xSemaphoreTake(sem_obtain_freq, portMAX_DELAY); // wait for tuner task to give the semaphore
+        // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);        // wait for a notification from the AnalogHandle::sampleReadyCallback
+        xQueueReceive(qh_adc_sample_ready, &sample, portMAX_DELAY);
+
         uint16_t curr_adc_sample = channel->adc.read_u16(); // obtain the sample from DMA buffer
         
         // NEGATIVE SLOPE
@@ -99,14 +106,14 @@ void taskObtainSignalFrequency(void *params)
 void taskCalibrate(void *params)
 {
     TouchChannel *channel = (TouchChannel *)params;
-
+    uint16_t CALIBRATION_DAC_SETTLE_TIME = 2; // how long in ticks the task should delay to let the DAC settle (before sampling the frequency again)
+    uint16_t MAX_CALIB_ATTEMPTS = 10;         // how many times the calibrator will try and match the given frequency
+    uint16_t DEFAULT_VOLTAGE_ADJMNT = 200;    // how much to adjust the DAC output everytime we overshoot / undershoot the target frequency
     uint16_t dacAdjustment = DEFAULT_VOLTAGE_ADJMNT;
     int calibrationAttemps = 0; // for limiting the number of calibration attempts
     float currAvgFreq;
     float prevAvgFreq;
     uint16_t newDacValue;
-    float targetFreq;           // where we want the frequency to get to
-    int targetFreqIndex;        // current voltage map iteration + initial pitch index
     int iteration = 0;          // the current interation in the voltage map array
     int initialPitchIndex = 0;  // the index of the initial target frequency in PITCH_FREQ_ARR
     bool initialized = false;   //
@@ -144,8 +151,8 @@ void taskCalibrate(void *params)
         }
 
         // obtain the target frequency
-        targetFreqIndex = initialPitchIndex + iteration;
-        targetFreq = PITCH_FREQ_ARR[targetFreqIndex];
+        int targetFreqIndex = initialPitchIndex + iteration; // current voltage map iteration + initial pitch index
+        float targetFreq = PITCH_FREQ_ARR[targetFreqIndex];  // where we want the frequency to get to
 
         // if currAvgFreq is close enough to targetFreq, or max cal attempts has been reached, break out of while loop and move to the next 'note'
         if ((currAvgFreq <= targetFreq + TUNING_TOLERANCE && currAvgFreq >= targetFreq - TUNING_TOLERANCE) || calibrationAttemps > MAX_CALIB_ATTEMPTS)
@@ -179,39 +186,27 @@ void taskCalibrate(void *params)
             iteration++;
             newDacValue = channel->output.dacVoltageMap[iteration]; // prepare for the next iteration
             vTaskDelay(CALIBRATION_DAC_SETTLE_TIME + targetFreqIndex > 69 ? 10 : 0); // wait for DAC to settle
-            xSemaphoreGive(sem_obtain_freq);
+            xSemaphoreGive(sem_obtain_freq);                                         // give semaphore back to tuner task
         }
         else
         {
             // every time currAvgFreq over/undershoots the desired frequency, decrement the 'dacAdjustment' value by half.
             if (currAvgFreq > targetFreq + TUNING_TOLERANCE)                 // overshot target freq
             {
-                if (prevAvgFreq < targetFreq - TUNING_TOLERANCE)
-                {
-                    dacAdjustment = (dacAdjustment / 2) + 1; // + 1 so it never becomes zero
-                }
-                if (newDacValue - dacAdjustment > newDacValue) // catch overflow past 0
-                {
-                    newDacValue -= dacAdjustment;
-                }
+                dacAdjustment = (dacAdjustment / 2) + 1; // + 1 so it never becomes zero
+                newDacValue -= dacAdjustment;
             }
 
             else if (currAvgFreq < targetFreq - TUNING_TOLERANCE) // undershot target freq
             {
-                if (prevAvgFreq > targetFreq + TUNING_TOLERANCE)
-                {
-                    dacAdjustment = (dacAdjustment / 2) + 1; // so it never becomes zero
-                }
-                if (newDacValue + dacAdjustment < newDacValue) // catch overflow above 65535
-                {
-                    newDacValue += dacAdjustment;
-                }
+                dacAdjustment = (dacAdjustment / 2) + 1; // so it never becomes zero
+                newDacValue += dacAdjustment;
             }
             prevAvgFreq = currAvgFreq;
             calibrationAttemps++;
             channel->output.dac->write(channel->output.dacChannel, newDacValue);
             vTaskDelay(CALIBRATION_DAC_SETTLE_TIME + targetFreqIndex > 69 ? 10 : 0); // wait for DAC to settle
-            xSemaphoreGive(sem_obtain_freq);
+            xSemaphoreGive(sem_obtain_freq); // give semaphore back to tuner task
         }
         
     }

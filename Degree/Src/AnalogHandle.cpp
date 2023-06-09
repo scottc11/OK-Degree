@@ -1,5 +1,6 @@
 #include "AnalogHandle.h"
 
+QueueHandle_t qh_adc_sample_ready;
 SemaphoreHandle_t AnalogHandle::semaphore;
 AnalogHandle *AnalogHandle::_instances[ADC_DMA_BUFF_SIZE] = {0};
 
@@ -125,10 +126,11 @@ void AnalogHandle::sampleReadyCallback(uint16_t sample)
             // maybe calulate median here
             sampleSemaphore.give();
         }
-        
+    }
+    if (queueSample) {
+        xQueueSend(qh_adc_sample_ready, &currValue, portMAX_DELAY);
     }
     
-    this->queue.send(currValue, (TickType_t)0); // send sample to queue for other tasks
 }
 
 
@@ -152,6 +154,7 @@ void AnalogHandle::RouteConversionCompleteCallback() // static
  */
 void AnalogHandle::sampleReadyTask(void *params) {
     logger_log_task_watermark();
+    qh_adc_sample_ready = xQueueCreate(16, sizeof(uint16_t));
     while (1)
     {
         xSemaphoreTake(AnalogHandle::semaphore, portMAX_DELAY);
@@ -176,6 +179,7 @@ void AnalogHandle::log_noise_threshold_to_console(char const *source_id)
 }
 
 void AnalogHandle::log_min_max(char const *source_id) {
+    logger_log("\n");
     logger_log(source_id);
     logger_log(" Signal Max: ");
     logger_log(this->inputMax);

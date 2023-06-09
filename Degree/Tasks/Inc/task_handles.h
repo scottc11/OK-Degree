@@ -3,7 +3,7 @@
 #include "main.h"
 #include "BitwiseMethods.h"
 
-#define TUNING_TOLERANCE 0.5f // tolerable frequency tuning difference
+#define TUNING_TOLERANCE 0.4f // tolerable frequency tuning difference
 
 extern TaskHandle_t main_task_handle;
 extern TaskHandle_t thStartCalibration;
@@ -15,6 +15,7 @@ extern TaskHandle_t thInterruptHandler;
 
 extern QueueHandle_t qhInterruptQueue;
 extern QueueHandle_t tuner_queue;
+extern QueueHandle_t qh_adc_sample_ready;
 
 enum CTRL_ACTION
 {
