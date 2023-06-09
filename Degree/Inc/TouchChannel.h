@@ -158,6 +158,8 @@ namespace DEGREE {
 
         // Quantiser members
         bool overrideQuantizer;            // will temporarily disable the CV input 
+        uint16_t currCV;
+        uint16_t prevCV;
         uint8_t activeDegrees;             // 8 bits to determine which scale degrees are presently active/inactive (active = 1, inactive= 0)
         uint8_t activeOctaves;             // 4-bits to represent the current octaves external CV will get mapped to (active = 1, inactive= 0)
         int numActiveDegrees;              // number of degrees which are active (to quantize voltage input)
