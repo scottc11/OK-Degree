@@ -503,13 +503,19 @@ void TouchChannel::freeze(bool state)
     freezeChannel = state;
     if (freezeChannel == true) {
         freezeStep = sequence.currStep; // log the last sequence led to be illuminated
-        // maybe blink the degree LEDs?
-        // maybe blink the display LED sequence was frozen at?
+        if (sequence.containsEvents() && sequence.playbackEnabled) {
+            display->enableBlink();
+            drawSequenceToDisplay(true);
+        }
     } else {
         // reset last led in sequence before freeze
-        if (sequence.playbackEnabled && sequence.currStep != freezeStep)
+        if (sequence.containsEvents() && sequence.playbackEnabled)
         {
-            setSequenceLED(freezeStep, PWM::PWM_LOW_MID, false);
+            if (sequence.currStep < freezeStep) {
+                display->clear(channelIndex);
+            }
+            display->disableBlink();
+            drawSequenceToDisplay(false);
         }
     }
 }
@@ -1187,6 +1193,7 @@ TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm, bool blink)
  */
 void TouchChannel::drawSequenceToDisplay(bool blink)
 {
+    sequence.setProgress(); // overkill, but ensures all the LEDs get lit
     int counter = 0;
     while (counter <= sequence.progress)
     {

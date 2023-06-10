@@ -56,7 +56,6 @@ public:
     int newEventPos;         // when a new event is created, we store the position in this variable in case we need it for something (ie. sequence overdubing)
 
     int progressDiviser;      // lengthPPQN / 16 (num LEDs used)
-    int progressCounter;      // current 
     int progress;
 
     bool adaptiveLength;     // flag determining if the sequence length should increase past its current length
