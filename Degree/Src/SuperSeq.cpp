@@ -1,5 +1,8 @@
 #include "SuperSeq.h"
 
+bool SuperSeq::recordArmed = false;
+bool SuperSeq::recordDisarmed = false;
+
 void SuperSeq::init()
 {
     this->clearAllEvents();
@@ -60,12 +63,16 @@ void SuperSeq::advance()
     {
         if (recordEnabled && adaptiveLength)
         {
-            if (currStep >= MAX_SEQ_LENGTH) // disable adaptive length, set seq length to max
+            // disable adaptive length, set seq length to max, and enable overdub
+            if (currStep >= maxLength)
             {
                 adaptiveLength = false;
-                this->setLength(MAX_SEQ_LENGTH);
+                this->setLength(maxLength);
                 currPosition = 0;
                 currStep = 0;
+                overwriteExistingEvents = true; // enable overdub
+                if (recordOverflowCallback)
+                    recordOverflowCallback();
             } else {
                 // do nothing, let things keep counting upwards
             }
@@ -78,46 +85,25 @@ void SuperSeq::advance()
     }
 }
 
-void SuperSeq::enableRecording() {
+void SuperSeq::enableRecording(int stepsPerBar /*time signature*/) {
     this->recordEnabled = true;
     // if no currently recorded events, enable adaptive length
     if (!this->containsEvents()) {
         this->reset();
         this->setLength(2);
+        this->setMaxLength(stepsPerBar);
         this->adaptiveLength = true;
     } else {
-        this->adaptiveLength = false;
+        this->overwriteExistingEvents = true;
     }
 }
 
 void SuperSeq::disableRecording() {
     this->recordEnabled = false;
-    
-    // if events were recorded and adaptive length was enabled, update the seq length
-    if (adaptiveLength)
-    {
+    this->overwriteExistingEvents = false;
+    if (this->containsEvents() && adaptiveLength) {
         this->adaptiveLength = false;
-
-        if (this->containsEvents())
-        {
-            // is all this zero indexed?
-            if (this->currStep <= SEQ_LENGTH_BLOCK_1)
-            {
-                this->setLength(SEQ_LENGTH_BLOCK_1); // 8 steps
-            }
-            else if (this->currStep > SEQ_LENGTH_BLOCK_1 && this->currStep <= SEQ_LENGTH_BLOCK_2)
-            {
-                this->setLength(SEQ_LENGTH_BLOCK_2);
-            }
-            else if (this->currStep > SEQ_LENGTH_BLOCK_2 && this->currStep <= SEQ_LENGTH_BLOCK_3)
-            {
-                this->setLength(SEQ_LENGTH_BLOCK_3);
-            }
-            else if (this->currStep > SEQ_LENGTH_BLOCK_3)
-            {
-                this->setLength(SEQ_LENGTH_BLOCK_4);
-            }
-        }
+        this->setLength(this->currStep);
     }
 }
 
@@ -283,8 +269,9 @@ void SuperSeq::createChordEvent(int position, uint8_t degrees, uint8_t octaves)
     if (!containsTouchEvents)
         containsTouchEvents = true;
 
+    newEventPos = position;
     events[position].activeDegrees = degrees;
-    events[position].data = octaves;
+    events[position].data = octaves; // this
     setEventStatus(position, true);
 };
 
@@ -297,8 +284,21 @@ void SuperSeq::setLength(int steps)
     {
         length = steps;
         lengthPPQN = length * PPQN;
+        progressDiviser = lengthPPQN / SEQ_PROGRESS_MAX;
     }
 };
+
+void SuperSeq::setMaxLength(int stepsPerBar) {
+    maxLength = (MAX_SEQ_LENGTH / stepsPerBar) * stepsPerBar;
+    if (maxLength > MAX_SEQ_LENGTH)
+    {
+        maxLength = MAX_SEQ_LENGTH;
+    }
+}
+
+void SuperSeq::setProgress() {
+    this->progress = this->currPosition / this->progressDiviser;
+}
 
 /**
  * @brief set the level new events get quantized too
@@ -482,8 +482,7 @@ void SuperSeq::storeSequenceConfigData(uint32_t *arr) {
 
 void SuperSeq::loadSequenceConfigData(uint32_t *arr)
 {
-    this->length = (int)arr[0];
-    this->lengthPPQN = (int)arr[1];
+    this->setLength((int)arr[0]);
     this->containsBendEvents = (bool)arr[2];
     this->containsTouchEvents = (bool)arr[3];
     this->quantizeAmount = (enum QUANT)arr[4];

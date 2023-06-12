@@ -10,7 +10,8 @@
 #define PPQN 96
 #endif
 
-#define PPQN_ERROR (PPQN - (PPQN / 6))
+#define PPQN_8th (PPQN / 2)
+#define PPQN_16th (PPQN / 4)
 
 #ifndef EXT_CLOCK_INPUT
 #define EXT_CLOCK_INPUT PA_3
@@ -29,15 +30,19 @@ class SuperClock {
 public:
 
     int pulse;              // the current PPQN
+    uint8_t step;           // current step. Will never exceed value of stepsPerBar
     uint16_t ticksPerStep;  // how many TIM2 ticks per one step / quarter note
     uint16_t ticksPerPulse; // how many TIM2 ticks for one PPQN
+    uint8_t stepsPerBar;    // value represents the number of quarter notes per bar (ie. 3/4, 4/4, 5/4, 6/4, 7/4)
     bool externalInputMode;
 
     Callback<void()> tickCallback;           // this callback gets executed at a frequency equal to tim1_freq
-    Callback<void()> input_capture_callback; // this callback gets executed every on the rising edge of external input
+    Callback<void()> barResetCallback;       // executes when clock.step exceeds the set time signature (ie. one bar)
+    Callback<void()> input_capture_callback; // this callback gets executed on the rising edge of an external input signal
     Callback<void(uint8_t pulse)> ppqnCallback; // this callback gets executed at a rate equal to input capture / PPQN. It passes the current tick values as arguments
+    Callback<void(uint16_t step)> stepCallback; // executes every step
     Callback<void(uint8_t pulse)> resetCallback;
-    Callback<void()> overflowCallback;       // callback executes when all when a full step completes
+    Callback<void()> overflowCallback;       // callback executes when a full step completes
 
     /**
      * TODO: initial inputCapture value should be the product of TIM1 and TIM2 prescaler values combined with 120 BPM
@@ -48,12 +53,17 @@ public:
         instance = this;
         ticksPerStep = 11129;
         ticksPerPulse = ticksPerStep / PPQN;
+        stepsPerBar = 4;
     };
 
     void init();
     void initTIM2(uint16_t prescaler, uint32_t period);
     void initTIM4(uint16_t prescaler, uint16_t period);
+    
     void start();
+    void reset();
+    void setStepsPerBar(int steps);
+    void handleStep();
 
     void setPulseFrequency(uint32_t ticks);
     uint16_t convertADCReadToTicks(uint16_t min, uint16_t max, uint16_t value);
@@ -63,8 +73,12 @@ public:
     // Callback Setters
     void attachInputCaptureCallback(Callback<void()> func);
     void attachPPQNCallback(Callback<void(uint8_t pulse)> func);
+    void attachStepCallback(Callback<void(uint16_t step)> func) {
+        stepCallback = func;
+    }
     void attachResetCallback(Callback<void(uint8_t pulse)> func);
-    
+    void attachBarResetCallback(Callback<void()> func);
+
     // Low Level HAL interupt handlers
     void handleInputCaptureCallback();
     void handleOverflowCallback();

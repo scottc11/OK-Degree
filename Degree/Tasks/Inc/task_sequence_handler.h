@@ -3,6 +3,7 @@
 #include "main.h"
 #include "logger.h"
 #include "GlobalControl.h"
+#include "SuperSeq.h"
 
 using namespace DEGREE;
 
@@ -10,13 +11,21 @@ enum class SEQ
 {
     ADVANCE,
     FREEZE,
+    RESET_ARM,
     RESET,
+    BAR_RESET,
+    QUARTER_NOTE_OVERFLOW,
     CLEAR_TOUCH,
     CLEAR_BEND,
     RECORD_ENABLE,
     RECORD_DISABLE,
+    RECORD_ARM,
+    RECORD_DISARM,
+    RECORD_OVERFLOW,
     TOGGLE_MODE,
     SET_LENGTH,
+    INCREMENT_TIME_SIG,
+    DECREMENT_TIME_SIG,
     QUANTIZE,
     CORRECT,
     HANDLE_TOUCH,

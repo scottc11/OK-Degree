@@ -14,6 +14,8 @@ void task_sequence_handler(void *params)
     sequencer_task_handle = xTaskGetCurrentTaskHandle();
     sequencer_queue = xQueueCreate(96, sizeof(uint32_t));
     uint32_t event = 0x0;
+    bool resetArmed = false;
+
     while (1)
     {
         // queue == [advance, advance, advance, clear, advance, freeze, advance, advance ]
@@ -25,16 +27,21 @@ void task_sequence_handler(void *params)
         switch (action)
         {
         case SEQ::ADVANCE:
+            if (SuperSeq::recordArmed || SuperSeq::recordDisarmed) {
+                if (data % 24 == 0) { // data in this case is the current pulse
+                    ctrl->recLED.toggle();
+                }
+            }
             if (channel == CHAN::ALL)
             {
                 for (int i = 0; i < CHANNEL_COUNT; i++)
                 {
-                    ctrl->channels[i]->sequence.advance();
                     ctrl->channels[i]->handleClock();
+                    ctrl->channels[i]->sequence.advance();
                 }
             } else {
-                ctrl->channels[channel]->sequence.advance();
                 ctrl->channels[channel]->handleClock();
+                ctrl->channels[channel]->sequence.advance();
             }
             break;
 
@@ -72,7 +79,21 @@ void task_sequence_handler(void *params)
             }
             break;
 
+        case SEQ::RESET_ARM:
+            // reset button pressed, and in clock ect mode, so we set 
+            if (ctrl->clock->externalInputMode) {
+                resetArmed = true;
+            } else {
+                dispatch_sequencer_event(channel, SEQ::RESET, 0);
+            }
+            break;
+
+        // time this so that it triggers:
+        //  if pressed 12 PPQN before beat 1, wait to reset once beat 1 happens
+        //  if < 12 ppqn after beat 1, reset immediately
         case SEQ::RESET:
+            ctrl->clock->reset();
+            ctrl->freezeLED.write(1);
             if (channel == CHAN::ALL)
             {
                 for (int i = 0; i < CHANNEL_COUNT; i++)
@@ -88,9 +109,11 @@ void task_sequence_handler(void *params)
                 for (int i = 0; i < CHANNEL_COUNT; i++)
                 {
                     ctrl->channels[i]->sequence.clearAllTouchEvents();
+                    ctrl->channels[i]->setGate(0);
                 }
             } else {
                 ctrl->channels[channel]->sequence.clearAllTouchEvents();
+                ctrl->channels[channel]->setGate(0);
             }
             break;
 
@@ -108,22 +131,68 @@ void task_sequence_handler(void *params)
             }
             break;
 
+        // when the bar overflows back to step 1 (ex. step 4 to step 1)
+        case SEQ::BAR_RESET:
+            if (SuperSeq::recordArmed) {
+                SuperSeq::recordArmed = false;
+                dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
+            } else if (SuperSeq::recordDisarmed) {
+                SuperSeq::recordDisarmed = false;
+                dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
+            }
+            break;
+        
+        // every qaurternote
+        case SEQ::QUARTER_NOTE_OVERFLOW:
+            if (resetArmed) {
+                resetArmed = false;
+                dispatch_sequencer_event(channel, SEQ::RESET, 0);
+            }
+            break;
+
         case SEQ::RECORD_ENABLE:
+            ctrl->recLED.write(1);
             for (int i = 0; i < CHANNEL_COUNT; i++)
                 ctrl->channels[i]->enableSequenceRecording();
             break;
 
         case SEQ::RECORD_DISABLE:
+            ctrl->recLED.write(0);
             for (int i = 0; i < CHANNEL_COUNT; i++)
                 ctrl->channels[i]->disableSequenceRecording();
             break;
             
+        case SEQ::RECORD_ARM:
+            SuperSeq::recordDisarmed = false;
+            SuperSeq::recordArmed = true;
+            break;
+
+        case SEQ::RECORD_DISARM:
+            SuperSeq::recordArmed = false;
+            SuperSeq::recordDisarmed = true;
+            break;
+
+        case SEQ::RECORD_OVERFLOW:
+            if (ctrl->channels[channel]->sequence.containsEvents())
+                ctrl->channels[channel]->drawSequenceToDisplay(true);
+            break;
+
         case SEQ::TOGGLE_MODE:
             ctrl->channels[channel]->toggleMode();
             break;
 
         case SEQ::SET_LENGTH:
             ctrl->channels[channel]->updateSequenceLength(data);
+            break;
+
+        case SEQ::INCREMENT_TIME_SIG:
+            ctrl->clock->setStepsPerBar(ctrl->clock->stepsPerBar + 1);
+            ctrl->drawTimeSignatureToDisplay();
+            break;
+
+        case SEQ::DECREMENT_TIME_SIG:
+            ctrl->clock->setStepsPerBar(ctrl->clock->stepsPerBar - 1);
+            ctrl->drawTimeSignatureToDisplay();
             break;
 
         case SEQ::QUANTIZE:

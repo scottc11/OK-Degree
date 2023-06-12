@@ -2,6 +2,7 @@
 
 #include "main.h"
 #include "Bender.h"
+#include "Callback.h"
 #include "ArrayMethods.h"
 #include "Quantization.h"
 
@@ -10,11 +11,10 @@
 #define SEQ_EVENT_GATE_BIT 4
 #define SEQ_EVENT_INDEX_BIT_MASK 0b00001111
 #define SEQ_EVENT_OCTAVE_BIT_MASK 0b11000000
+#define SEQ_EVENT_ACTIVE_OCTAVES_BIT_MASK 0b00001111
 
-#define SEQ_LENGTH_BLOCK_1 (MAX_SEQ_LENGTH / 4)                        // 1 bar
-#define SEQ_LENGTH_BLOCK_2 (MAX_SEQ_LENGTH / 2)                        // 2 bars
-#define SEQ_LENGTH_BLOCK_3 ((MAX_SEQ_LENGTH / 2) + SEQ_LENGTH_BLOCK_1) // 3 bars
-#define SEQ_LENGTH_BLOCK_4 (MAX_SEQ_LENGTH)                            // 4 bars
+#define SEQ_PROGRESS_MAX 15 // "15"
+#define SEQ_PROGRESS_MIN 0 // "0"
 
 typedef struct SequenceNode
 {
@@ -26,6 +26,7 @@ typedef struct SequenceNode
     bool getGate() { return bitwise_read_bit(data, SEQ_EVENT_GATE_BIT); }
     uint8_t getOctave() { return (data & SEQ_EVENT_OCTAVE_BIT_MASK) >> 6; }
     uint8_t getActiveOctaves() { return data; }
+    // void setActiveOctaves(uint8_t octaves) { data = data}
 } SequenceNode;
 
 class SuperSeq {
@@ -40,9 +41,12 @@ public:
     SequenceNode events[MAX_SEQ_LENGTH_PPQN];
     Bender *bender;       // you need the instance of a bender for determing its idle value when clearing / initializing bender events
     QUANT quantizeAmount;
+    Callback<void()> recordOverflowCallback;
 
     int length;              // how many steps the sequence contains
     int lengthPPQN;          // how many PPQN the sequence contains
+    int maxLength;           // the maximum allowable steps in a sequence
+    
     int currStepPosition;    // the number of PPQN that have passed since the last step was advanced
     int currStep;            // current sequence step
     int prevStep;            // the previous step executed in the sequence
@@ -51,13 +55,20 @@ public:
     int prevEventPos;        // represents the position of the last event which got triggered (either HIGH or LOW)
     int newEventPos;         // when a new event is created, we store the position in this variable in case we need it for something (ie. sequence overdubing)
 
+    int progressDiviser;      // lengthPPQN / 16 (num LEDs used)
+    int progress;
+
     bool adaptiveLength;     // flag determining if the sequence length should increase past its current length
     bool overdub;            // flag gets set to true so that the sequence handler clears/overdubs existing events
+    bool overwriteExistingEvents;
     bool recordEnabled;      // when true, sequence will create and new events to the event list
     bool playbackEnabled;    // when true, sequence will playback event list
     bool bendEnabled;        // flag used for overriding current recorded bend with active bend    
     bool containsTouchEvents;// flag indicating if a sequence has any touch events
     bool containsBendEvents; // flag indicating if a sequence has any bend events
+
+    static bool recordArmed;    // when true, recording will be enabled the next time bar overflows
+    static bool recordDisarmed; // when true, recording will be disabled the next time bar overflows
 
     void init();
     void reset();
@@ -77,8 +88,8 @@ public:
     void createChordEvent(int position, uint8_t degrees, uint8_t octaves);
     
     void setLength(int steps);
-    int getLength();
-    int getLengthPPQN();
+    void setMaxLength(int stepsPerBar);
+    void setProgress();
 
     int getNextPosition(int position);
     int getPrevPosition(int position);
@@ -86,7 +97,7 @@ public:
 
     void advance();
 
-    void enableRecording();
+    void enableRecording(int stepsPerBar);
     void disableRecording();
 
     void enablePlayback();
@@ -123,4 +134,8 @@ public:
     uint8_t setActiveOctaveBits(uint8_t octaves);
 
     void logSequenceToConsole();
+
+    void attachRecordOverflowCallback(Callback<void()> func) {
+        recordOverflowCallback = func;
+    }
 };

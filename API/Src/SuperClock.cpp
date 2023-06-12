@@ -19,6 +19,26 @@ void SuperClock::start()
     error_handler(status);
 }
 
+void SuperClock::reset()
+{
+    __HAL_TIM_SetCounter(&htim2, 0); // not certain this has to happen, just assuming
+    __HAL_TIM_SetCounter(&htim4, 0);
+    if (!externalInputMode) { // special for timing!
+        this->pulse = 0;
+    }
+    this->step = 0;
+}
+
+void SuperClock::setStepsPerBar(int steps) {
+    if (steps < 3) {
+        return;
+    } else if (steps > 7) {
+        return;
+    } else {
+        stepsPerBar = steps;
+    }
+}
+
 /**
  * @brief initialize TIM2 as a slave to TIM1
  * @param prescaler setting to 1 should be best
@@ -141,10 +161,10 @@ void SuperClock::setPulseFrequency(uint32_t ticks)
  */
 void SuperClock::handleInputCaptureCallback()
 {
-    // almost always, there will need to be at least 1 pulse not yet executed prior to an input capture, 
-    // so you must execute all remaining until
-    if (pulse < PPQN)
+    // almost always, there will need to be at least 1 pulse not yet executed prior to an input capture, so you must execute all remaining until
+    if (pulse < PPQN - 1)
     {
+        handleStep();
         if (resetCallback)
         {
             resetCallback(pulse);
@@ -185,23 +205,38 @@ void SuperClock::handleOverflowCallback()
 {
     if (ppqnCallback)
         ppqnCallback(pulse); // when clock inits, this ensures the 0ith pulse will get handled
-
+    
     // by checking this first, you have the chance to reset any sequences prior to executing their 0ith pulse
-    // if (pulse == 0) {
-    //     if (resetCallback)
-    //         resetCallback();
-    // }
+    if (pulse == 0) {
+        if (stepCallback)
+            stepCallback(step);
+    }
 
     if (pulse < PPQN - 1) {
         pulse++;
     } else {
         if (externalInputMode)
         {
-            __HAL_TIM_DISABLE(&htim4); // halt TIM4
             // external input will reset pulse to 0 and resume TIM4 in input capture callback
+            __HAL_TIM_DISABLE(&htim4); // halt TIM4
+            handleStep();
         } else {
             pulse = 0;
+            handleStep();
         }
+    }
+}
+
+void SuperClock::handleStep() {
+    if (step < stepsPerBar - 1)
+    {
+        step++;
+    }
+    else
+    {
+        step = 0;
+        if (barResetCallback)
+            barResetCallback();
     }
 }
 
@@ -218,6 +253,10 @@ void SuperClock::attachPPQNCallback(Callback<void(uint8_t pulse)> func)
 void SuperClock::attachResetCallback(Callback<void(uint8_t pulse)> func)
 {
     resetCallback = func;
+}
+
+void SuperClock::attachBarResetCallback(Callback<void()> func) {
+    barResetCallback = func;
 }
 
 void SuperClock::RouteOverflowCallback(TIM_HandleTypeDef *htim)

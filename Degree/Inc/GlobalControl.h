@@ -94,6 +94,7 @@ namespace DEGREE {
         uint16_t currTempoPotValue;
         uint16_t prevTempoPotValue;
 
+        bool freezeBtn;         // state of the freeze button
         bool gestureFlag;
         uint8_t currTouched;
         uint8_t prevTouched;
@@ -107,6 +108,9 @@ namespace DEGREE {
 
         void advanceSequencer(uint8_t pulse);
         void resetSequencer(uint8_t pulse);
+        void handleBarReset();
+        void handleStepCallback(uint16_t step);
+        void drawTimeSignatureToDisplay();
 
         void handleFreeze(bool freeze);
 

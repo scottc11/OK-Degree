@@ -1,3 +1,4 @@
+
 ## FreeRTOS Configuration
 Could all this not be done just using a timer? Or is that what an RTOS essential is?
 ```
@@ -31,18 +32,30 @@ Could all this not be done just using a timer? Or is that what an RTOS essential
 
 ## Toolchain
 
-#### Install OpenOCD for ST-Link Debugging
+### Install OpenOCD for ST-Link Debugging
+ref: [GDB and OpenOCD](https://openocd.org/doc-release/html/GDB-and-OpenOCD.html#GDB-and-OpenOCD)
 ```
 brew install openocd
 ```
+### Install [ARM Embedded Toolchain](https://developer.arm.com/downloads/-/gnu-rm)
 
-#### Install ARM Embedded Toolchain
+This toolchain contains the C compiler, GDB, etc.
+
+The commands below tap a repository which holds the latest version of the toolchain and then installs it into `/opt/hombrew/bin`. You need to specify this path in VSCode `c_cpp_properties.json`.
+
 ```
-# not sure about the brew tap, but it works.
-brew tap PX4/homebrew-px4
+brew tap ArmMbed/homebrew-formulae
 brew update
-brew install gcc-arm-none-eabi
+brew install arm-none-eabi-gcc
 arm-none-eabi-gcc --version
+```
+
+### GDB
+GDB is apart of the gcc-arm-none-eabi toolchain. It can be accessed via `arm-none-eabi-gdb`
+
+### Install dfu-util for firmware upload over USB
+```
+brew install dfu-util
 ```
 
 #### Pull submodules

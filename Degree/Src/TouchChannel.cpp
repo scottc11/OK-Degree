@@ -32,6 +32,7 @@ void TouchChannel::init()
     bender->attachActiveCallback(callback(this, &TouchChannel::benderActiveCallback));
     bender->attachIdleCallback(callback(this, &TouchChannel::benderIdleCallback));
     bender->attachTriStateCallback(callback(this, &TouchChannel::benderTriStateCallback));
+    sequence.attachRecordOverflowCallback(callback(this, &TouchChannel::handleRecordOverflow));
 
     // initialize channel touch pads
     touchPads->init();
@@ -177,8 +178,6 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
         break;
     case MONO_LOOP:
         sequence.playbackEnabled = true;
-        drawSequenceToDisplay(false);
-        setSequenceLED(sequence.currStep, PWM::PWM_HIGH, false);
         setLED(CHANNEL_REC_LED, ON, false);
         setOctaveLed(currOctave, LedState::ON, false);
         triggerNote(currDegree, currOctave, SUSTAIN);
@@ -190,8 +189,6 @@ void TouchChannel::setPlaybackMode(PlaybackMode targetMode)
         break;
     case QUANTIZER_LOOP:
         sequence.playbackEnabled = true;
-        drawSequenceToDisplay(false);
-        setSequenceLED(sequence.currStep, PWM::PWM_HIGH, false);
         setLED(CHANNEL_REC_LED, ON, false);
         setActiveDegrees(activeDegrees);
         triggerNote(currDegree, currOctave, NOTE_OFF);
@@ -303,6 +300,7 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
         switch (playbackMode) {
             case MONO:
                 triggerNote(pad, currOctave, NOTE_ON);
+                handlePreRecordEvents();
                 break;
             case MONO_LOOP:
                 // create a new event
@@ -323,6 +321,7 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
                     triggerNote(pad, currOctave, NOTE_ON);
                 } else {
                     setActiveDegrees(bitwise_write_bit(activeDegrees, pad, !bitwise_read_bit(activeDegrees, pad)));
+                    handlePreRecordEvents(); // bug is here
                 }
                 break;
             case QUANTIZER_LOOP:
@@ -346,6 +345,7 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
         {
         case MONO:
             triggerNote(currDegree, pad, NOTE_ON);
+            handlePreRecordEvents();
             break;
         case MONO_LOOP:
             if (sequence.recordEnabled)
@@ -362,6 +362,7 @@ void TouchChannel::handleTouchPlaybackEvent(uint8_t pad)
         case QUANTIZER:
             setActiveOctaves(pad);
             setActiveDegrees(activeDegrees); // update active degrees thresholds
+            handlePreRecordEvents();
             break;
         case QUANTIZER_LOOP:
             setActiveOctaves(pad);
@@ -502,13 +503,19 @@ void TouchChannel::freeze(bool state)
     freezeChannel = state;
     if (freezeChannel == true) {
         freezeStep = sequence.currStep; // log the last sequence led to be illuminated
-        // maybe blink the degree LEDs?
-        // maybe blink the display LED sequence was frozen at?
+        if (sequence.containsEvents() && sequence.playbackEnabled) {
+            display->enableBlink();
+            drawSequenceToDisplay(true);
+        }
     } else {
         // reset last led in sequence before freeze
-        if (sequence.playbackEnabled && sequence.currStep != freezeStep)
+        if (sequence.containsEvents() && sequence.playbackEnabled)
         {
-            setSequenceLED(freezeStep, PWM::PWM_LOW_MID, false);
+            if (sequence.currStep < freezeStep) {
+                display->clear(channelIndex);
+            }
+            display->disableBlink();
+            drawSequenceToDisplay(false);
         }
     }
 }
@@ -875,11 +882,11 @@ void TouchChannel::benderTriStateCallback(Bender::BendState state)
     case TouchChannel::UIMode::UI_SEQUENCE_LENGTH:
         if (state == Bender::BendState::BENDING_UP)
         {
-            dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length + 2);
+            dispatch_sequencer_event((CHAN)channelIndex, SEQ::INCREMENT_TIME_SIG, 0);
         }
         else if (state == Bender::BendState::BENDING_DOWN)
         {
-            dispatch_sequencer_event((CHAN)channelIndex, SEQ::SET_LENGTH, sequence.length - 2);
+            dispatch_sequencer_event((CHAN)channelIndex, SEQ::DECREMENT_TIME_SIG, 0);
         }
         break;
     default:
@@ -1067,12 +1074,11 @@ void TouchChannel::setActiveOctaves(int octave)
 */
 void TouchChannel::handleSequence(int position)
 {
-    // always display sequence progression regardless if there are events or not
-    if (sequence.currStep != sequence.prevStep) // only set led every step
-    {
+    // don't show progress when recording a fresh sequence. Only if there is an existing sequence
+    if (!sequence.recordEnabled || sequence.overwriteExistingEvents) {
         if (uiMode == UIMode::UI_PLAYBACK)
         {
-            stepSequenceLED(sequence.currStep, sequence.prevStep, sequence.length);
+            stepSequenceLED();
         }
     }
 
@@ -1113,7 +1119,7 @@ void TouchChannel::handleSequence(int position)
         case QUANTIZER_LOOP:
             if (sequence.getEventStatus(position))
             {
-                if (sequence.overdub)
+                if (sequence.overdub && position != sequence.newEventPos)
                 {
                     sequence.clearTouchAtPosition(position);
                 }
@@ -1138,6 +1144,11 @@ void TouchChannel::handleSequence(int position)
     }
 }
 
+void TouchChannel::handleRecordOverflow()
+{
+    dispatch_sequencer_event(CHAN(channelIndex), SEQ::RECORD_OVERFLOW, 0);
+}
+
 /**
  * @brief reset the sequence
  * @todo you should probably get the currently queued event, see if it has been triggered yet, and disable it if it has been triggered
@@ -1148,7 +1159,7 @@ void TouchChannel::resetSequence()
     sequence.reset();
     if (sequence.containsEvents() || sequence.recordEnabled)
     {
-        drawSequenceToDisplay(false);
+        // drawSequenceToDisplay(false);
     }
 }
 
@@ -1163,15 +1174,18 @@ void TouchChannel::updateSequenceLength(uint8_t steps)
     drawSequenceToDisplay(true);
 }
 
+static const int DISPLAY_PATTERN_LED_MAP[16] = { 1, 11, 12, 7, 8, 15, 5, 14, 4, 3, 9, 2, 10, 0, 6, 13 };
+static const int SEQ_LED_PROGRESS_PWM_MAP[16] = {1, 7, 15, 25, 33, 40, 47, 54, 60, 70, 78, 84, 90, 100, 111, 127};
+
 /**
- * @brief given a sequence step, 
- * 
- * @param step 
+ * @brief map a given step in the sequence to an display LED
+ *
+ * @param step
  */
-void TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm, bool blink)
+void
+TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm, bool blink)
 {
-    uint8_t ledIndex = step / 2; // 32 step seq displayed with 16 LEDs
-    display->setChannelLED(channelIndex, ledIndex, pwm, blink); // it is possible ledIndex needs to be subracted by 1 🤔
+    display->setChannelLED(channelIndex, DISPLAY_PATTERN_LED_MAP[step], pwm, blink);
 }
 
 /**
@@ -1179,57 +1193,37 @@ void TouchChannel::setSequenceLED(uint8_t step, uint8_t pwm, bool blink)
  */
 void TouchChannel::drawSequenceToDisplay(bool blink)
 {
-    for (int i = 0; i < MAX_SEQ_LENGTH; i += 2)
+    sequence.setProgress(); // overkill, but ensures all the LEDs get lit
+    int counter = 0;
+    while (counter <= sequence.progress)
     {
-        if (i < sequence.length)
-        {
-            if (i == sequence.currStep && sequence.playbackEnabled && uiMode == UIMode::UI_PLAYBACK)
-            {
-                setSequenceLED(i, PWM::PWM_HIGH, blink);
-            }
-            else
-            {
-                setSequenceLED(i, PWM::PWM_LOW_MID, blink);
-            }
-        }
-        else
-        {
-            setSequenceLED(i, PWM::PWM_OFF, blink);
-        }
+        display->setChannelLED(channelIndex, DISPLAY_SPIRAL_LED_MAP[counter], SEQ_LED_PROGRESS_PWM_MAP[counter], blink);
+        counter++;
     }
 }
 
-void TouchChannel::stepSequenceLED(int currStep, int prevStep, int length)
-{    
-    if (sequence.currStepPosition == 0)
-    {
-        if (currStep % 2 == 0)
-        {
-            // set currStep PWM High
-            setSequenceLED(currStep, PWM::PWM_HIGH, false);
+// this is going to have to take a ppqn instead of a step
+void TouchChannel::stepSequenceLED()
+{
+    if (sequence.currPosition == 0) {
+        display->clear(channelIndex);
+    }
+    
+    // TODO: maybe flash for every step?
 
-            // handle odd sequence lengths.
-            if (length % 2 == 1)
-            {
-                // The last LED in sequence gets set to a different PWM
-                if (prevStep == length - 1)
-                {
-                    setSequenceLED(prevStep, PWM::PWM_LOW, false);
-                }
-            }
-            // regular sequence lengths
-            else
-            {
-                // set prevStep PWM back to Mid
-                setSequenceLED(prevStep, PWM::PWM_LOW_MID, false);
-            }
-        }
+    if (sequence.currPosition % sequence.progressDiviser == 0) { // check if this ppqn should advance the LEDs
+        sequence.setProgress();
+        display->setChannelLED(
+            channelIndex,
+            DISPLAY_SPIRAL_LED_MAP[sequence.progress],
+            SEQ_LED_PROGRESS_PWM_MAP[sequence.progress],
+            sequence.recordEnabled);
     }
 }
 
 void TouchChannel::enableSequenceRecording()
 {
-    sequence.enableRecording();
+    sequence.enableRecording(clock->stepsPerBar);
 
     if (playbackMode == MONO)
     {
@@ -1238,6 +1232,18 @@ void TouchChannel::enableSequenceRecording()
     else if (playbackMode == QUANTIZER)
     {
         setPlaybackMode(QUANTIZER_LOOP);
+    }
+
+    // display->enableBlink();
+
+    // if no sequence exists, light all 16 seq leds and flash them
+    if (!sequence.containsEvents())
+    {
+        display->fill(this->channelIndex, 20, false);
+    }
+    else
+    {
+        drawSequenceToDisplay(sequence.recordEnabled);
     }
 }
 
@@ -1249,12 +1255,10 @@ void TouchChannel::enableSequenceRecording()
 void TouchChannel::disableSequenceRecording()
 {
     sequence.disableRecording();
-    
+    display->disableBlink();
     // if a touch event was recorded, remain in loop mode
     if (sequence.containsEvents())
     {
-        // make sure to update the display so it shows the new seq length
-        display->clear(channelIndex);
         drawSequenceToDisplay(false);
         return;
     }
@@ -1270,6 +1274,33 @@ void TouchChannel::disableSequenceRecording()
         }
         display->clear(channelIndex);
     }
+}
+
+/**
+ * @brief When armed for recording, sudo record touch events leading up to recordEnable and
+ * place them at position 0 of a sequence
+ * ie. the last touch during the last 16th note prior to recording being enabled
+ * 
+ * @param pad 
+ */
+void TouchChannel::handlePreRecordEvents()
+{
+    if (SuperSeq::recordArmed && !sequence.containsEvents()) {
+        if (clock->step == clock->stepsPerBar - 1) {
+            if (clock->pulse > PPQN - PPQN_16th) {
+                switch (playbackMode)
+                {
+                case MONO:
+                    sequence.createTouchEvent(0, currDegree, currOctave, HIGH);
+                    break;
+                case QUANTIZER:
+                    sequence.createChordEvent(0, activeDegrees, activeOctaves);
+                    break;
+                }
+            }
+        }
+    }
+    sequence.containsTouchEvents = false;
 }
 
 void TouchChannel::initializeCalibration() {

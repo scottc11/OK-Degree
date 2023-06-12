@@ -11,6 +11,21 @@
 #define OK_UART_TX (PinName) PC_10
 #endif
 
+#define MAX_MESSAGE_LENGTH 50
+
+typedef union
+{
+    bool boolValue;
+    int intValue;
+    char *charValue;
+} QueueMessage;
+
+void logger_queue_message(char const *message);
+void logger_queue_message(int num);
+void logger_queue_message_ISR(char const *message);
+void logger_queue_message_ISR(int num);
+void task_logger(void *params);
+
 void logger_init();
 
 void logger_log(char const *str);
@@ -47,7 +62,3 @@ void logger_log_system_config();
 
 void logger_log_task_watermark(void);
 void logger_log_task_watermark(TaskHandle_t task_handle);
-
-void logger_queue_message(uint16_t message);
-
-void TASK_logger(void *params);

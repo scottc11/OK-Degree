@@ -70,7 +70,9 @@ void GlobalControl::init() {
 
     // initialize tempo
     clock->init();
+    clock->attachStepCallback(callback(this, &GlobalControl::handleStepCallback));
     clock->attachResetCallback(callback(this, &GlobalControl::resetSequencer));
+    clock->attachBarResetCallback(callback(this, &GlobalControl::handleBarReset));
     clock->attachPPQNCallback(callback(this, &GlobalControl::advanceSequencer)); // always do this last
     clock->disableInputCaptureISR(); // pollTempoPot() will re-enable should pot be in teh right position
     currTempoPotValue = tempoPot.read_u16();
@@ -303,10 +305,10 @@ void GlobalControl::handleButtonPress(int pad)
         {
             for (int i = 0; i < CHANNEL_COUNT; i++) {
                 if (touchPads->padIsTouched(i, currTouched))
-                    dispatch_sequencer_event(CHAN(i), SEQ::RESET, 0);
+                    dispatch_sequencer_event(CHAN(i), SEQ::RESET_ARM, 0);
             }
         } else {
-            dispatch_sequencer_event(CHAN::ALL, SEQ::RESET, 0);
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RESET_ARM, 0);
         }
         break;
 
@@ -416,10 +418,16 @@ void GlobalControl::handleButtonPress(int pad)
         mode = ControlMode::SETTING_SEQUENCE_LENGTH;
         for (int chan = 0; chan < CHANNEL_COUNT; chan++)
         {
+            // deactivate any downstream channel interactions with the display,
             channels[chan]->setUIMode(TouchChannel::UIMode::UI_SEQUENCE_LENGTH);
+            
+            // take control of all the benders
             channels[chan]->enableBenderOverride();
-            display->enableBlink();
-            channels[chan]->drawSequenceToDisplay(true);
+            
+            // draw the current clock time signature to the display
+            drawTimeSignatureToDisplay();
+
+            // bender tristate callback will send commands to the rtos
         }
         break;
 
@@ -427,13 +435,12 @@ void GlobalControl::handleButtonPress(int pad)
         if (!recordEnabled)
         {
             recLED.write(1);
-            dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_ENABLE, 0);
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_ARM, 0);
             recordEnabled = true;
         }
         else
         {
-            recLED.write(0);
-            dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISABLE, 0);
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RECORD_DISARM, 0);
             recordEnabled = false;
         }
         break;
@@ -484,7 +491,7 @@ void GlobalControl::handleButtonRelease(int pad)
                 if (touchPads->padIsTouched(i, currTouched))
                 {
                     dispatch_sequencer_event((CHAN)i, SEQ::CLEAR_TOUCH, 0);
-                    if (!recordEnabled)
+                    if (!recordEnabled) // this chunk is a shortcut for clearing the display
                         dispatch_sequencer_event((CHAN)i, SEQ::RECORD_DISABLE, 0);
                 }
             }
@@ -793,17 +800,19 @@ void GlobalControl::resetCalibration1VO(int chan)
  */
 void GlobalControl::advanceSequencer(uint8_t pulse)
 {
-    // if (pulse % 16 == 0)
-    // {
-    //     display_dispatch_isr(DISPLAY_ACTION::PULSE_DISPLAY, CHAN::ALL, 0);
-    // }
-
     if (pulse == 0) {
         tempoLED.write(HIGH);
         tempoGate.write(HIGH);
+        if (clock->step == 0) {
+            freezeLED.write(HIGH);
+        }
     } else if (pulse == 4) {
         tempoLED.write(LOW);
         tempoGate.write(LOW);
+        if (freezeBtn == false)
+        {
+            freezeLED.write(LOW);
+        }
     }
 
     dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::ADVANCE, pulse);
@@ -825,7 +834,41 @@ void GlobalControl::resetSequencer(uint8_t pulse)
     dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::CORRECT, 0);
 }
 
+/**
+ * @brief triggers in ISR everytime clock progresses by one step
+ * 
+ * @param step 
+ */
+void GlobalControl::handleStepCallback(uint16_t step)
+{
+    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::QUARTER_NOTE_OVERFLOW, 0);
+}
+
+/**
+ * @brief function that triggers at the begining of every bar
+ *
+ */
+void GlobalControl::handleBarReset()
+{
+    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::BAR_RESET, 0);
+}
+
+/**
+ * @brief draw the current clock time signature to the display
+ *
+ */
+void GlobalControl::drawTimeSignatureToDisplay()
+{
+    display->clear();
+    for (int i = 0; i < clock->stepsPerBar; i++)
+    {
+        display->setLED(i, 127, false);
+    }
+}
+
 void GlobalControl::handleFreeze(bool freeze) {
+    // set freeze variable here, and check in clock callback if freeze is true/false
+    freezeBtn = freeze;
     if (this->gestureFlag)
     {
         for (int i = 0; i < CHANNEL_COUNT; i++)

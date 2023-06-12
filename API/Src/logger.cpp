@@ -140,25 +140,57 @@ void logger_log_task_watermark(TaskHandle_t task_handle) {
     logger_log((uint32_t)stackSpace);
 }
 
-static QueueHandle_t logger_queue = NULL;
-void logger_queue_message(uint16_t message) {
+QueueHandle_t qhLoggerQueue = NULL;
+QueueHandle_t qhLoggerIntQueue = NULL;
+
+void logger_queue_message(char const *message) {
+    const char *_message = message;
+    xQueueSend(qhLoggerQueue, _message, portMAX_DELAY);
+}
+
+void logger_queue_message(int num)
+{
+    int _num = num;
+    xQueueSend(qhLoggerIntQueue, &_num, portMAX_DELAY);
+}
+
+void logger_queue_message_ISR(char const *message)
+{
     BaseType_t xHigherPriorityTaskWoken;
     xHigherPriorityTaskWoken = pdFALSE;
-    uint16_t _message = message;
-    xQueueSendFromISR(logger_queue, (void *)&message, &xHigherPriorityTaskWoken);
+    const char *_message = message;
+    xQueueSendFromISR(qhLoggerQueue, _message, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void TASK_logger(void *params) {
-    uint16_t pulse;
-    logger_queue = xQueueCreate(32, sizeof(uint16_t));
+void logger_queue_message_ISR(int num)
+{
+    BaseType_t xHigherPriorityTaskWoken;
+    xHigherPriorityTaskWoken = pdFALSE;
+    int _num = num;
+    xQueueSendFromISR(qhLoggerIntQueue, &_num, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void task_logger(void *params)
+{
+    char message[MAX_MESSAGE_LENGTH];
+    int integerMessage;
+    qhLoggerIntQueue = xQueueCreate(16, sizeof(int));
+    qhLoggerQueue = xQueueCreate(16, sizeof(char[MAX_MESSAGE_LENGTH]));
+    logger_log("\nLogger task started \n");
+    logger_log_task_watermark();
     while (1)
     {
-        if (xQueueReceive(logger_queue, &pulse, portMAX_DELAY))
+
+        if (xQueueReceive(qhLoggerQueue, message, portMAX_DELAY))
         {
-            logger_log("\n");
-            logger_log(pulse);
+            logger_log(message);
         }
-        
-    }   
+        if (xQueueReceive(qhLoggerIntQueue, &integerMessage, portMAX_DELAY))
+        {
+            logger_log("\nQ:");
+            logger_log(integerMessage);
+        }
+    }
 }
