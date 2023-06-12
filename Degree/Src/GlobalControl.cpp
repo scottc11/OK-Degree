@@ -305,10 +305,10 @@ void GlobalControl::handleButtonPress(int pad)
         {
             for (int i = 0; i < CHANNEL_COUNT; i++) {
                 if (touchPads->padIsTouched(i, currTouched))
-                    dispatch_sequencer_event(CHAN(i), SEQ::RESET, 0);
+                    dispatch_sequencer_event(CHAN(i), SEQ::RESET_ARM, 0);
             }
         } else {
-            dispatch_sequencer_event(CHAN::ALL, SEQ::RESET, 0);
+            dispatch_sequencer_event(CHAN::ALL, SEQ::RESET_ARM, 0);
         }
         break;
 
@@ -845,6 +845,15 @@ void GlobalControl::handleStepCallback(uint16_t step)
 }
 
 /**
+ * @brief function that triggers at the begining of every bar
+ *
+ */
+void GlobalControl::handleBarReset()
+{
+    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::BAR_RESET, 0);
+}
+
+/**
  * @brief draw the current clock time signature to the display
  *
  */
@@ -855,16 +864,6 @@ void GlobalControl::drawTimeSignatureToDisplay()
     {
         display->setLED(i, 127, false);
     }
-}
-
-
-/**
- * @brief function that triggers at the begining of every bar
- * 
- */
-void GlobalControl::handleBarReset()
-{
-    dispatch_sequencer_event_ISR(CHAN::ALL, SEQ::BAR_RESET, 0);
 }
 
 void GlobalControl::handleFreeze(bool freeze) {

@@ -80,15 +80,20 @@ void task_sequence_handler(void *params)
             break;
 
         case SEQ::RESET_ARM:
-            resetArmed = true;
+            // reset button pressed, and in clock ect mode, so we set 
+            if (ctrl->clock->externalInputMode) {
+                resetArmed = true;
+            } else {
+                dispatch_sequencer_event(channel, SEQ::RESET, 0);
+            }
             break;
 
         // time this so that it triggers:
         //  if pressed 12 PPQN before beat 1, wait to reset once beat 1 happens
         //  if < 12 ppqn after beat 1, reset immediately
         case SEQ::RESET:
-            resetArmed = false; // nyi
             ctrl->clock->reset();
+            ctrl->freezeLED.write(1);
             if (channel == CHAN::ALL)
             {
                 for (int i = 0; i < CHANNEL_COUNT; i++)
@@ -126,6 +131,7 @@ void task_sequence_handler(void *params)
             }
             break;
 
+        // when the bar overflows back to step 1 (ex. step 4 to step 1)
         case SEQ::BAR_RESET:
             if (SuperSeq::recordArmed) {
                 SuperSeq::recordArmed = false;
@@ -136,9 +142,11 @@ void task_sequence_handler(void *params)
             }
             break;
         
+        // every qaurternote
         case SEQ::QUARTER_NOTE_OVERFLOW:
             if (resetArmed) {
-                dispatch_sequencer_event(CHAN::ALL, SEQ::RESET, 0);
+                resetArmed = false;
+                dispatch_sequencer_event(channel, SEQ::RESET, 0);
             }
             break;
 

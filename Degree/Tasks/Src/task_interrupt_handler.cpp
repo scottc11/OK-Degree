@@ -21,15 +21,15 @@ void task_interrupt_handler(void *params)
         switch (isr_source)
         {
         case ISR_ID_TOGGLE_SWITCHES:
-            logger_log("\n### Toggle Switch ISR ###\n");
+            // logger_log("\n### Toggle Switch ISR ###\n");
             global_control->switches->updateDegreeStates();
             break;
         case ISR_ID_TACTILE_BUTTONS:
-            logger_log("\n### Tactile Buttons ISR ###\n");
+            // logger_log("\n### Tactile Buttons ISR ###\n");
             global_control->pollButtons();
             break;
         case ISR_ID_TOUCH_PADS:
-            logger_log("\n### Touch Pads ISR ###\n");
+            // logger_log("\n### Touch Pads ISR ###\n");
             global_control->pollTouchPads();
             break;
         default:

@@ -23,7 +23,9 @@ void SuperClock::reset()
 {
     __HAL_TIM_SetCounter(&htim2, 0); // not certain this has to happen, just assuming
     __HAL_TIM_SetCounter(&htim4, 0);
-    this->pulse = 0;
+    if (!externalInputMode) { // special for timing!
+        this->pulse = 0;
+    }
     this->step = 0;
 }
 
@@ -159,9 +161,7 @@ void SuperClock::setPulseFrequency(uint32_t ticks)
  */
 void SuperClock::handleInputCaptureCallback()
 {
-    // almost always, there will need to be at least 1 pulse not yet executed prior to an input capture, 
-    // so you must execute all remaining until
-    // would doing the while loop in here achieve the same result? While also 
+    // almost always, there will need to be at least 1 pulse not yet executed prior to an input capture, so you must execute all remaining until
     if (pulse < PPQN - 1)
     {
         handleStep();
@@ -205,7 +205,7 @@ void SuperClock::handleOverflowCallback()
 {
     if (ppqnCallback)
         ppqnCallback(pulse); // when clock inits, this ensures the 0ith pulse will get handled
-
+    
     // by checking this first, you have the chance to reset any sequences prior to executing their 0ith pulse
     if (pulse == 0) {
         if (stepCallback)
